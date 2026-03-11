@@ -5,7 +5,7 @@ const gitContentData = `<ul>
 <hr>
 <h1 id="git-github-qa-and-commands">Git &amp; GitHub Q\&amp;A and Commands</h1>
 <hr>
-<details open>
+<details>
 <summary><strong>1. Git vs GitHub</strong></summary>
 <ul>
 <li><strong>Git:</strong> A distributed version control system to track changes in source code during software development.</li>
@@ -18,31 +18,52 @@ const gitContentData = `<ul>
 <summary><strong>2. Create a New Repository on the Command Line</strong></summary>
 <pre><code class="language-bash">
 echo &quot;# Sarath69Kumar.github.io&quot; &gt;&gt; README.md
+# Append the text &quot;# Sarath69Kumar.github.io&quot; to README.md (creates the file if it doesn’t exist)
 
 git init
-git add README.md        # Add single file
-git add .                # Add all files (new and existing)
+# Initialize a new Git repository in the current directory (.git folder is created)
+
+git add README.md
+# Stage only README.md for the next commit
+
+git add .
+# Stage all files in the directory (new, modified, and deleted) for commit
+
 git commit -m &quot;first commit&quot;
+# Create the first commit with the message &quot;first commit&quot;
+
 git remote add origin git@github.com:s14321k/SbMsDocKub.git
-git branch -M main       # Rename current branch to main
-git push -u origin main  # Push to remote repository
+# Add a remote repository named &quot;origin&quot; with the provided GitHub SSH URL
+
+git branch -M main
+# Rename the current branch to &quot;main&quot; (force rename if it already exists)
+
+git push -u origin main
+# Push commits to the remote &quot;origin&quot; on branch &quot;main&quot; and set upstream tracking
 </code></pre>
 <hr>
 <p>If push or commit fails due to index.lock file:</p>
 <pre><code class="language-bash">
-rm -f .git/index.lock
+rm -f .git/index.lock   # Force delete the Git index.lock file (used to remove a stale lock when Git thinks another process is running)
 </code></pre>
 </details>
 <hr>
 <details>
 <summary><strong>3. Push Contents to an Existing Repo</strong></summary>
 <pre><code class="language-bash">
-cd /path/to/repo
-git add .
-git commit -m &quot;commit message&quot;
-git branch -M branchName
-git push -u origin main
+cd /path/to/repo        # Navigate into your local repository directory
+
+git add .               # Stage all new and modified files for commit
+
+git commit -m &quot;commit message&quot;   # Create a commit with a descriptive message
+
+git branch -M branchName         # Rename the current branch to &quot;branchName&quot; (force rename if needed)
+
+git push -u origin main          # Push commits to the remote repository&#x27;s main branch and set upstream tracking
 </code></pre>
+<p><code>-m → message</code></p>
+<p><code>-M → Move (force rename)</code></p>
+<p><code>-u → Upstream tracking</code></p>
 <hr>
 <p><strong>Common Git commands</strong></p>
 <ul>
@@ -70,16 +91,22 @@ cd ~/Desktop
 <details>
 <summary><strong>5. Remove Files/Folders</strong></summary>
 <pre><code class="language-bash">
-git checkout branch_name     # Ensure on correct branch
-git rm -r folder-name        # Remove folder recursively
+git checkout branch_name     # Switch to the specified branch to make changes there
+
+git rm -r folder-name        # Remove the folder and all its contents from Git and the working directory
+
 git commit -m &quot;Remove folder&quot;
+# Commit the deletion with a message describing the change
+
 git push origin branch_name
+# Push the commit to the remote repository on the same branch
 </code></pre>
 <hr>
 <p>Rename files:</p>
 <pre><code class="language-bash">
-git mv oldfilename newfilename
-git commit -m &quot;Renamed file&quot;
+git mv oldfilename newfilename   # Rename or move a file and stage the change in one step
+
+git commit -m &quot;Renamed file&quot;     # Commit the rename operation with a descriptive message
 </code></pre>
 </details>
 <hr>
@@ -88,9 +115,20 @@ git commit -m &quot;Renamed file&quot;
 <ul>
 <li>Rollback last commit but keep changes staged:</li>
 </ul>
-<pre><code class="language-bash">
-git reset --soft HEAD~1
+<pre><code class="language-bash id="y8wnw9"">
+git reset --soft HEAD~1   # Undo the last commit but keep all changes staged (files remain in the index ready to recommit)
 </code></pre>
+<p>✅ <strong>What it does</strong></p>
+<ul>
+<li>Moves <code>HEAD</code> back by <strong>1 commit</strong></li>
+<li>Keeps your changes in the <strong>staging area</strong></li>
+<li>Lets you modify the commit message or add/remove files before committing again</li>
+</ul>
+<p>💡 <strong>Tip</strong></p>
+<ul>
+<li>Use <code>--mixed</code> → keeps changes but unstaged (default)</li>
+<li>Use <code>--hard</code> → deletes commit and all changes permanently (dangerous)</li>
+</ul>
 <ul>
 <li>Rollback last commit and discard changes:</li>
 </ul>
@@ -116,11 +154,20 @@ git branch new-branch-name
 <ul>
 <li>Create and switch to new branch:</li>
 </ul>
-<pre><code class="language-bash">
-git checkout -b new_branch_name
+<pre><code class="language-bash id="r6g0qy"">
+git checkout -b new_branch_name   # Create a new branch and immediately switch to it
+
 # or
-git switch -c new_branch_name
+
+git switch -c new_branch_name     # Modern command to create a new branch and switch to it (recommended)
 </code></pre>
+<p>✅ <strong>Difference</strong></p>
+<ul>
+<li><code>git checkout -b</code> → older, multifunction command (used for branches + files)</li>
+<li><code>git switch -c</code> → newer, clearer command dedicated to branch switching</li>
+</ul>
+<p>💡 Both commands do the <strong>same thing</strong>:</p>
+<p>👉 create branch + move HEAD to it immediately</p>
 <ul>
 <li>Check branch origin:</li>
 </ul>
@@ -156,18 +203,34 @@ ls -al ~/.ssh
 <summary><strong>9. Pushing to Codeberg (or other Git hosting)</strong></summary>
 <pre><code class="language-bash">
 touch README.md
+# Create an empty README.md file (does nothing if file already exists)
+
 git init
+# Initialize a new Git repository in the current directory
+
 git checkout -b main
+# Create a new branch named &quot;main&quot; and switch to it
+
 git add README.md
+# Stage the README.md file for commit
+
 git commit -m &quot;first commit&quot;
+# Create the first commit with message &quot;first commit&quot;
+
 git remote add origin https://codeberg.org/username/repository.git
+# Add a remote repository named &quot;origin&quot; with the given URL
+
 git push -u origin main
+# Push commits to the remote &quot;origin&quot; on branch &quot;main&quot; and set upstream tracking
 </code></pre>
 <hr>
 <p>Push existing repo:</p>
 <pre><code class="language-bash">
 git remote add origin https://codeberg.org/username/repository.git
+# Add a remote repository named &quot;origin&quot; pointing to the specified URL
+
 git push -u origin main
+# Push the local &quot;main&quot; branch to the remote &quot;origin&quot; and set it as the upstream tracking branch
 </code></pre>
 </details>
 <hr>

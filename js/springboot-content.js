@@ -7064,6 +7064,7 @@ class Order { ... }
 @EntityGraph(attributePaths = {&quot;items&quot;, &quot;customer&quot;})
 List&lt;Order&gt; findAllWithGraph();
 </code></pre>
+<p><img src="../images/SpringBoot/n+1.png" alt="entityGraph"></p>
 <hr>
 <h4 id="3-use-projections-instead-of-full-entities">3. <strong>Use projections instead of full entities</strong></h4>
 <pre><code class="language-java">
