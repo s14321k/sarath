@@ -15,6 +15,13 @@
         </header>
 
         <div class="cards-grid">
+            <div class="card pdf-card">
+                <div class="card-icon">📄</div>
+                <h2>PDF Library</h2>
+                <p>Browse all PDFs from the library.</p>
+                <ul class="pdf-list" id="pdfList"></ul>
+            </div>
+
             <a href="pages/angular.html" class="card">
                 <div class="card-icon">📘</div>
                 <h2>Angular</h2>
@@ -314,5 +321,24 @@
             <p>&copy; 2026 By s14321k .</p>
         </footer>
     </div>
+
+    <script src="js/pdf-list.js"></script>
+    <script>
+        (function () {
+            const list = document.getElementById('pdfList');
+            if (!list) return;
+            const pdfFiles = Array.isArray(window.pdfFiles) ? window.pdfFiles : [];
+
+            pdfFiles.forEach((fileName) => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.textContent = fileName;
+                a.href = 'pages/pdf-viewer.html?file=' + encodeURIComponent(fileName);
+                li.appendChild(a);
+                list.appendChild(li);
+            });
+        })();
+    </script>
 </body>
 </html>
+

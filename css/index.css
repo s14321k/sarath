@@ -158,6 +158,40 @@ body {
     color: #ffa07a;
 }
 
+/* PDF tile */
+.pdf-card {
+    grid-row: span 1;
+}
+
+.pdf-list {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow: auto;
+}
+
+.pdf-list a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+    display: block;
+}
+
+.pdf-list a:hover {
+    color: var(--accent-light);
+    border-color: var(--accent);
+    background: rgba(233, 69, 96, 0.12);
+}
+
 /* Coming Soon Cards */
 .card.coming-soon {
     opacity: 0.6;

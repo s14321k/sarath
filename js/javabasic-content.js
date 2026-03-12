@@ -1628,7 +1628,7 @@ literal == &quot;Sarath&quot;; // true (both point to pool)
 <summary><strong>🧠 Java Memory Areas Related to Strings</strong></summary>
 <h3 id="memory-areas-related-to-strings">Memory Areas Related to Strings</h3>
 <p>Strings are stored differently depending on how they are created and the Java version.</p>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 flowchart TD
 
     Start[&quot;String Creation&quot;]
@@ -1643,7 +1643,7 @@ flowchart TD
     IsLiteral -- Yes --&gt; Literal[&quot;&amp;quot;Hello&amp;quot; (String Literal)&lt;br/&gt;Goes to String Pool&quot;]
     Literal --&gt; Interned[&quot;Interned in:&lt;br/&gt;- PermGen (Java ≤ 7)&lt;br/&gt;- Metaspace (Java 8+)&quot;]
 
-</code></pre>
+</div>
 <hr>
 <h3 id="memory-areas-explained">Memory Areas Explained</h3>
 <p><img src="../images/JavaBasic/HeapPermgenSpace.png" alt="HeapPermgenSpace"></p>
@@ -1713,7 +1713,7 @@ System.out.println(a == b.intern()); // true
 <p>Java Virtual Machine (JVM) memory is split into several <strong>memory areas</strong>, each with a <strong>specific purpose</strong> for managing objects, threads, and class-level data.</p>
 <hr>
 <h3 id="flow-diagram-markdown-text-format">🔁 Flow Diagram (Markdown Text Format)</h3>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 flowchart TD
 
     App[&quot;Java Application&quot;]
@@ -1734,7 +1734,7 @@ flowchart TD
     Metaspace --&gt; ClassNames[&quot;Class Names&quot;]
     Metaspace --&gt; Methods[&quot;Methods&quot;]
     Metaspace --&gt; ConstantPool[&quot;Constant Pool&quot;]
-</code></pre>
+</div>
 <hr>
 <h2 id="jvm-memory-areas-explained">🧩 JVM Memory Areas Explained</h2>
 <h3 id="1-heap">1. <strong>Heap</strong></h3>
@@ -2815,11 +2815,11 @@ Comparator&lt;Student&gt; nameComparator = (s1, s2) -&gt; s1.name.compareTo(s2.n
 <li><strong>Aggregation</strong>: &quot;Has-a&quot; relationship, loosely coupled.</li>
 <li><strong>Composition</strong>: Strong ownership, tightly coupled.</li>
 </ul>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 flowchart TB
     A[Association] -- Weak (Loose Coupling) --&gt; B[Aggregation]
     A -- Strong (Tight Coupling) --&gt; C[Composition]
-</code></pre>
+</div>
 <p><img src="../images/JavaBasic/AssosiationAggregation.png" alt="AssosiationAggregation.png"></p>
 <ul>
 <li>Spring Boot MongoDB Join Example: <a href="https://www.javaprogramto.com/2020/05/spring-boot-data-mongodb-projections-aggregations.html">Link</a></li>
@@ -3168,7 +3168,7 @@ class Department {
 <p><img src="../images/JavaBasic/ListQueueSet.png" alt="Collection"></p>
 <hr>
 <h3 id="collections-hierarchy-overview">🌐 Collections Hierarchy Overview</h3>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 flowchart TD
 
     %% Iterable hierarchy
@@ -3196,10 +3196,10 @@ flowchart TD
     Map --&gt; HashMap[&quot;HashMap&quot;]
     HashMap --&gt; LinkedHashMap[&quot;LinkedHashMap&quot;]
     Map --&gt; TreeMap[&quot;TreeMap&quot;]
-</code></pre>
+</div>
 <hr>
 <h3 id="interactive-decision-flowchart-pick-the-right-collection">🧭 Interactive Decision Flowchart: Pick the Right Collection</h3>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 flowchart TD
 
     Start([&quot;Start&quot;])
@@ -3245,7 +3245,7 @@ flowchart TD
     TreeSet --&gt; AfterSelection
     LinkedHashSet --&gt; AfterSelection
     HashSet --&gt; AfterSelection
-</code></pre>
+</div>
 <hr>
 <h4 id="example-scenarios">🧠 Example Scenarios</h4>
 <h4 id="1-you-need-to-store-data-with-keys-and-values-and-want-to-sort-them-by-keys">1. You need to store data with keys and values and want to sort them by keys:</h4>
@@ -5176,6 +5176,41 @@ java.lang.Throwable (class)
 └── InterruptedException (class)
 
 </code></pre>
+<div class="mermaid">
+
+mindmap
+  root((Throwable))
+
+    Error
+      AssertionError
+      OutOfMemoryError
+      StackOverflowError
+      VirtualMachineError
+        InternalError
+        OutOfMemoryError
+      LinkageError
+        ClassNotFoundError
+        NoClassDefFoundError
+
+    Exception (Checked)
+      IOException
+        FileNotFoundException
+        EOFException
+        SocketException
+      SQLException
+      ParseException
+      InterruptedException
+
+      RuntimeException (Unchecked)
+        NullPointerException
+        ArithmeticException
+        ArrayIndexOutOfBoundsException
+        ClassCastException
+        IllegalArgumentException
+        IllegalStateException
+        UnsupportedOperationException
+
+</div>
 </details>
 <hr>
 <h2 id="throw-new-and-throws">throw new and throws</h2>

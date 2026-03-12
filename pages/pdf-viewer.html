@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer</title>
+    <link rel="stylesheet" href="../css/pdf-viewer.css">
+</head>
+<body>
+    <header class="viewer-header">
+        <a class="back-link" href="../index.html">Back to Home</a>
+        <div class="title" id="pdfTitle">PDF Viewer</div>
+        <div class="spacer"></div>
+    </header>
+
+    <main class="viewer-body">
+        <iframe id="pdfFrame" title="PDF Viewer"></iframe>
+        <div class="empty" id="pdfEmpty">
+            Select a PDF from the library.
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const file = params.get('file');
+            const frame = document.getElementById('pdfFrame');
+            const title = document.getElementById('pdfTitle');
+            const empty = document.getElementById('pdfEmpty');
+
+            if (!file) {
+                frame.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+
+            title.textContent = file;
+            frame.src = '../pdf/' + encodeURIComponent(file);
+            frame.style.display = 'block';
+            empty.style.display = 'none';
+        })();
+    </script>
+</body>
+</html>

@@ -441,8 +441,8 @@ const architectContentData = `<h1 id="system-architecture-ascii-diagram-with-zip
 <li><strong>Prometheus/Grafana/Zipkin</strong> → Observability</li>
 </ul>
 <hr>
-<p>Perfect! Let’s take your <strong>end-to-end system flow</strong> and integrate <strong>all the tools, CI/CD, IaC, Kubernetes/OpenShift, and alternatives</strong> directly into a <strong>Mermaid diagram</strong>. I’ll design it hierarchically so each layer is clear, and interchangeable options are noted.</p>
-<p>Got it! Let&#x27;s create a <strong>full ASCII flow diagram</strong> that includes <strong>source control → CI/CD → IaC → orchestration → microservices → observability → delivery</strong>, and shows <strong>alternative tools using “or”</strong> like you suggested. I’ll keep it readable while showing the main flow and options.</p>
+<p><strong>end-to-end system flow</strong> and integrate <strong>all the tools, CI/CD, IaC, Kubernetes/OpenShift, and alternatives</strong> directly into a <strong>Mermaid diagram</strong>.</p>
+<p><strong>source control → CI/CD → IaC → orchestration → microservices → observability → delivery</strong>, and shows <strong>alternative tools using “or”</strong> like you suggested.</p>
 <pre><code class="language-">
                                          +------------------------+
                                          | GitHub / GitLab /      |

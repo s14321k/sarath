@@ -143,6 +143,66 @@
         }
     });
 
+    // Mermaid diagrams (supports both .mermaid blocks and code.language-mermaid)
+    safe(() => {
+        const content = $('#content');
+        if (!content) return;
+        let mermaidLoaded = false;
+        let mermaidLoading = false;
+
+        function ensureMermaid(cb) {
+            if (mermaidLoaded && window.mermaid) {
+                cb();
+                return;
+            }
+            if (mermaidLoading) return;
+            mermaidLoading = true;
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+            script.async = true;
+            script.onload = () => {
+                mermaidLoaded = true;
+                mermaidLoading = false;
+                if (window.mermaid && window.mermaid.initialize) {
+                    window.mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+                }
+                cb();
+            };
+            script.onerror = () => { mermaidLoading = false; };
+            document.head.appendChild(script);
+        }
+
+        function normalizeMermaidBlocks() {
+            const codeBlocks = $$('pre > code.language-mermaid', content);
+            codeBlocks.forEach((code) => {
+                const pre = code.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = code.textContent;
+                pre.replaceWith(div);
+            });
+        }
+
+        function renderMermaid() {
+            normalizeMermaidBlocks();
+            const nodes = $$('.mermaid', content);
+            if (!nodes.length) return;
+            ensureMermaid(() => {
+                if (!window.mermaid) return;
+                if (typeof window.mermaid.run === 'function') {
+                    window.mermaid.run({ nodes });
+                } else if (typeof window.mermaid.init === 'function') {
+                    window.mermaid.init(undefined, nodes);
+                }
+            });
+        }
+
+        const observer = new MutationObserver(() => renderMermaid());
+        observer.observe(content, { childList: true, subtree: true });
+        document.addEventListener('DOMContentLoaded', () => setTimeout(renderMermaid, 200));
+        renderMermaid();
+    });
+
     // Active TOC highlighting based on scroll position
     safe(() => {
         const toc = $('#toc');

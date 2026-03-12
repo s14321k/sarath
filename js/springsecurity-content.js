@@ -2036,7 +2036,7 @@ fetch(&quot;https://api.backend.com/data&quot;, {
 <details open>
 <summary><strong>🍪 Cookies in Spring Boot</strong></summary>
 <h1 id="cookies-in-spring-boot-extended">🍪 Cookies in Spring Boot (Extended)</h1>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 
 sequenceDiagram
 participant FE as Frontend (React/Angular/Vue)
@@ -2049,7 +2049,7 @@ participant BE as Spring Boot Backend
     BE--&gt;&gt;BR: 4. Respond with data + Set-Cookie&lt;br/&gt;+ Access-Control-Allow-* headers
     BR-&gt;&gt;BR: 5. Enforce cookie policies&lt;br/&gt;- Secure?&lt;br/&gt;- HttpOnly?&lt;br/&gt;- SameSite?
     BR--&gt;&gt;FE: 6. Expose response&lt;br/&gt;- HttpOnly cookies hidden&lt;br/&gt;- Non-HttpOnly cookies accessible (CSRF, theme)
-</code></pre>
+</div>
 <ul>
 <li><strong>Frontend</strong> → sends request with <code>credentials: &#x27;include&#x27;</code>.</li>
 <li><strong>Browser</strong> → checks <strong>CORS rules</strong> before allowing cookies.</li>
@@ -2615,7 +2615,7 @@ fetch(&quot;https://api.backend.com/api/user/theme/dark&quot;, {
 </ul>
 <hr>
 <p>Here’s a <strong>Mermaid sequence diagram</strong> showing the <strong>Spring Security + JWT + CSRF flow</strong> step by step 🚀</p>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 sequenceDiagram
     participant FE as Frontend (React/Angular/Vue)
     participant BR as Browser (CORS + Cookies + CSRF)
@@ -2644,7 +2644,7 @@ sequenceDiagram
     BR-&gt;&gt;BE: 14. Send logout request
     BE--&gt;&gt;BR: 15. Set-Cookie with access_token + refresh_token maxAge=0 (delete)
     BR--&gt;&gt;FE: 16. Session terminated
-</code></pre>
+</div>
 <hr>
 <p>✅ This shows the <strong>full lifecycle</strong>:</p>
 <ul>
@@ -2655,7 +2655,7 @@ sequenceDiagram
 </ul>
 <hr>
 <p>Perfect 👍 A <strong>state diagram</strong> is a great way to visualize the <strong>JWT lifecycle</strong> in Spring Security. Here’s the <strong>Mermaid state diagram</strong> for JWT authentication with refresh + logout:</p>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 stateDiagram-v2
     [*] --&gt; NoToken: User not logged in
 
@@ -2667,7 +2667,7 @@ stateDiagram-v2
     Authenticated --&gt; NoToken: Logout&lt;br/&gt;delete access_token + refresh_token
 
     NoToken --&gt; [*]
-</code></pre>
+</div>
 <hr>
 <p>✅ <strong>Explanation of states:</strong></p>
 <ul>
@@ -2679,7 +2679,7 @@ stateDiagram-v2
 </ul>
 <hr>
 <p><strong>JWT lifecycle state diagram</strong> with the <strong>CSRF token lifecycle</strong>, since in Spring Security both interact for secure requests.</p>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 stateDiagram-v2
     [*] --&gt; NoToken: User not logged in
 
@@ -2703,7 +2703,7 @@ stateDiagram-v2
     Authenticated --&gt; NoToken: Logout&lt;br/&gt;delete access_token + refresh_token&lt;br/&gt;clear XSRF-TOKEN
 
     NoToken --&gt; [*]
-</code></pre>
+</div>
 <hr>
 <h3 id="explanation">🔑 Explanation:</h3>
 <ul>
@@ -2727,7 +2727,7 @@ stateDiagram-v2
 <p>They work <strong>together</strong>: JWT proves <em>who you are</em>, CSRF token proves <em>it’s really you making the request from your client</em>.</p>
 <hr>
 <p>Here’s the <strong>enhanced complete Mermaid sequence diagram</strong> with both <strong>valid ✅ and invalid ❌ flows</strong>:</p>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 sequenceDiagram
     participant FE as Frontend (React/Angular/Vue)
     participant BR as Browser (CORS + Cookies + CSRF)
@@ -2776,7 +2776,7 @@ sequenceDiagram
         BE--&gt;&gt;BR: 15b. 200 OK (no cookies to clear)
         BR--&gt;&gt;FE: 16b. Stay logged out
     end
-</code></pre>
+</div>
 <hr>
 <h3 id="whats-new-here">🔑 What’s New Here</h3>
 <ul>

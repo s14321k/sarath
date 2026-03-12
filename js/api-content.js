@@ -432,7 +432,7 @@ ETag: &quot;v3&quot;
 <h2 id="sequence-diagram-without-idempotency">🧭 Sequence Diagram — Without Idempotency</h2>
 <details>
 <summary><strong>Duplicate payment flow</strong></summary>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 sequenceDiagram
     participant Client
     participant PaymentService
@@ -447,7 +447,7 @@ sequenceDiagram
     PaymentService-&gt;&gt;Bank: Charge ₹5000
     Bank--&gt;&gt;PaymentService: Success
     PaymentService--&gt;&gt;Client: Success
-</code></pre>
+</div>
 <p>❌ Result: <strong>Two charges</strong></p>
 </details>
 <hr>
@@ -465,7 +465,7 @@ sequenceDiagram
 <h2 id="sequence-diagram-with-idempotency">🧭 Sequence Diagram — With Idempotency</h2>
 <details>
 <summary><strong>Safe retry flow</strong></summary>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 sequenceDiagram
     participant Client
     participant PaymentService
@@ -484,7 +484,7 @@ sequenceDiagram
     PaymentService-&gt;&gt;DB: Check key txn-123
     DB--&gt;&gt;PaymentService: Found
     PaymentService--&gt;&gt;Client: Previous success response
-</code></pre>
+</div>
 <p>✅ Result: <strong>One charge, safe retry</strong></p>
 </details>
 <hr>

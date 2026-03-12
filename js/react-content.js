@@ -75,10 +75,10 @@ npm start
 <li>Simple and readable</li>
 <li>UI-focused</li>
 </ul>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 graph LR
 A[Props] --&gt; B[Function] --&gt; C[JSX]
-</code></pre>
+</div>
 </details>
 <details open>
 <summary><strong>🧠 Class (Stateful) Components</strong></summary>
@@ -86,10 +86,10 @@ A[Props] --&gt; B[Function] --&gt; C[JSX]
 <li>Extend <code>React.Component</code></li>
 <li>Use <code>this.state</code> and lifecycle methods</li>
 </ul>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 graph LR
 A[Props] --&gt; B[Class] --&gt; C[JSX]
-</code></pre>
+</div>
 </details>
 </details>
 <hr>

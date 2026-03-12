@@ -1,0 +1,1 @@
+window.pdfFiles = ["API testing.pdf", "cicd1.pdf", "JavaInterviewQuestions.pdf", "javaQuestions.pdf", "js1.pdf", "JWT.pdf", "Microservice.pdf", "springboot1.pdf", "springBoot2.pdf", "SpringbootToDocker.pdf", "𝑪𝒐𝒓𝒆_𝑱𝒂𝒗𝒂_𝑪𝒉𝒆𝒂𝒕_𝒔𝒉𝒆𝒆𝒕_.pdf"];

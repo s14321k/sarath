@@ -3986,7 +3986,7 @@ com.example.MyAutoConfiguration
 <hr>
 <details>
 <summary><strong>📊 5. Auto-Configuration Flow Diagram</strong></summary>
-<pre><code class="language-mermaid">
+<div class="mermaid">
 
 flowchart TD
 A[&quot;@SpringBootApplication&lt;br/&gt;(Entry Point of Application)&quot;] --&gt; B[&quot;@Configuration&quot;]
@@ -4003,7 +4003,7 @@ A --&gt; D[&quot;@EnableAutoConfiguration&quot;]
     I --&gt;|Yes| J[&quot;Registered&quot;]
     I --&gt;|No| K[&quot;Ignored&quot;]
 
-</code></pre>
+</div>
 </details>
 <hr>
 <h2 id="load-balancing-in-spring-boot">🔄 Load Balancing in Spring Boot</h2>
