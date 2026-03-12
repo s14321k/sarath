@@ -29,9 +29,9 @@ const reactContentData = `<details open>
 <ul>
 <li>Run:</li>
 </ul>
-<p>   ```bash</p>
-<p>   npx create-react-app react-app-name</p>
-<p>   ```</p>
+<pre><code class="language-bash">
+npx create-react-app react-app-name
+</code></pre>
 <ul>
 <li><code>npx</code>: Executes a package without installing globally.</li>
 <li>Alternatively: <code>npm install -g create-react-app</code> (global installation)</li>
@@ -39,15 +39,15 @@ const reactContentData = `<details open>
 <ul>
 <li>Navigate:</li>
 </ul>
-<p>   ```bash</p>
-<p>   cd react-app-name</p>
-<p>   ```</p>
+<pre><code class="language-bash">
+cd react-app-name
+</code></pre>
 <ul>
 <li>Start:</li>
 </ul>
-<p>   ```bash</p>
-<p>   npm start</p>
-<p>   ```</p>
+<pre><code class="language-bash">
+npm start
+</code></pre>
 </details>
 <hr>
 <details open>

@@ -111,7 +111,7 @@ WHERE e.salary &gt; m.salary;
 </tbody></table>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔗 3. Types of Relationships in DBMS</strong></summary>
 <table>
 <thead><tr>
@@ -138,7 +138,7 @@ WHERE e.salary &gt; m.salary;
 <p>🔗 <a href="https://www.javatpoint.com/types-of-relationship-in-database-table">Javatpoint Article</a></p>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>👓 4. Views in SQL</strong></summary>
 <h3 id="what-is-a-view">📄 What is a View?</h3>
 <ul>
@@ -155,7 +155,7 @@ WHERE condition;
 </code></pre>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>⚖️ 5. Predicates in SQL</strong></summary>
 <h3 id="predicates-expressions-that-evaluate-to-true-false-unknown">📌 Predicates = Expressions that evaluate to TRUE / FALSE / UNKNOWN</h3>
 <table>
@@ -279,10 +279,11 @@ CREATE TABLE Orders (
 </code></pre>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔗 7. SQL Joins</strong></summary>
 <h3 id="types-of-joins">📌 Types of Joins</h3>
 <p><img src="../images/SQL/Joins.gif" alt="Joins"></p>
+<p><img src="../images/SQL/impJoins.jpg" alt="Joins2"></p>
 <table>
 <thead><tr>
 <th>Join Type</th>
@@ -314,7 +315,7 @@ ON Products.CategoryID = Categories.CategoryID;
 </code></pre>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔑 8. SQL Keywords</strong></summary>
 <p>🔗 <a href="https://www.w3schools.com/sql/sql<em>ref</em>keywords.asp">W3Schools SQL Keywords Reference</a></p>
 <p>Examples include:</p>
@@ -325,7 +326,7 @@ ON Products.CategoryID = Categories.CategoryID;
 </ul>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔧 9. SQL Functions</strong></summary>
 <p>🔗 <a href="https://www.w3schools.com/sql/sql<em>ref</em>mysql.asp">Function Reference - MySQL</a></p>
 <h3 id="types-of-functions">Types of Functions</h3>
@@ -353,7 +354,7 @@ ON Products.CategoryID = Categories.CategoryID;
 </tbody></table>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>⚡ 10. Indexing in SQL</strong></summary>
 <h3 id="what-is-indexing">🔍 What is Indexing?</h3>
 <p>Indexing improves data retrieval performance by creating a fast lookup reference for certain columns.</p>
@@ -379,7 +380,7 @@ ON Employees (FirstName, LastName);
 </code></pre>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔐 11. Primary Key vs Foreign Key</strong></summary>
 <h3 id="definitions">📌 Definitions</h3>
 <table>
@@ -441,7 +442,7 @@ CREATE TABLE Orders (
 </tbody></table>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>📦 12. Stored Procedures</strong></summary>
 <h3 id="what-is-a-stored-procedure">📘 What is a Stored Procedure?</h3>
 <p>A <strong>stored procedure</strong> is a saved set of SQL commands, stored in the DB and executed as needed. Helps enforce business logic and reduce duplication.</p>
@@ -487,7 +488,7 @@ PRINT @Count;
 </code></pre>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🧑‍💼 13. Query: Employees with Age > 40</strong></summary>
 <h3 id="sql-query">📌 SQL Query</h3>
 <pre><code class="language-sql">
@@ -497,7 +498,7 @@ WHERE Age &gt; 40;
 <p>🧠 Assumes a column named <code>Age</code> exists in the <code>Employees</code> table.</p>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔁 14. Referential Constraint</strong></summary>
 <h3 id="what-is-a-referential-constraint">📘 What Is a Referential Constraint?</h3>
 <p>A <strong>referential constraint</strong> enforces a link between two tables using a <strong>foreign key</strong>, ensuring consistency and <strong>referential integrity</strong>.</p>
@@ -534,7 +535,7 @@ CREATE TABLE Employees (
 </code></pre>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>🔑 15. Composite Key vs Foreign Key</strong></summary>
 <h3 id="composite-key">🧩 Composite Key</h3>
 <p>A <strong>composite key</strong> is made up of two or more columns that together uniquely identify a record.</p>
@@ -657,8 +658,9 @@ CREATE TABLE DepartmentLocations (
 </ul>
 </details>
 <hr>
-<details>
+<details open>
 <summary><strong>⚙️ 17. Ways to Reduce Database Load</strong></summary>
+<p><img src="../images/SQL/scallingDB.jpg" alt="Joins2"></p>
 <h3 id="key-techniques">💡 Key Techniques</h3>
 <table>
 <thead><tr>

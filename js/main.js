@@ -77,6 +77,72 @@
         scrollTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     });
 
+    // Expand/Collapse all <details>
+    safe(() => {
+        let toggleBtn = null;
+
+        function getDetails() {
+            return $$('details');
+        }
+
+        function allOpen(details) {
+            return details.length > 0 && details.every((d) => d.hasAttribute('open'));
+        }
+
+        function updateLabel(details) {
+            if (!toggleBtn) return;
+            const label = allOpen(details) ? 'Minimize All' : 'Maximize All';
+            toggleBtn.textContent = label;
+            toggleBtn.setAttribute('aria-label', label);
+        }
+
+        function ensureButton() {
+            if (toggleBtn) return toggleBtn;
+            toggleBtn = document.createElement('button');
+            toggleBtn.id = 'detailsToggle';
+            toggleBtn.className = 'details-toggle';
+            toggleBtn.type = 'button';
+            toggleBtn.textContent = 'Maximize All';
+            toggleBtn.setAttribute('aria-label', 'Maximize All');
+            document.body.appendChild(toggleBtn);
+            return toggleBtn;
+        }
+
+        function setup() {
+            const details = getDetails();
+            if (!details.length) return;
+            const btn = ensureButton();
+            updateLabel(details);
+
+            if (!btn.dataset.bound) {
+                btn.addEventListener('click', () => {
+                    const current = getDetails();
+                    const openAll = !allOpen(current);
+                    current.forEach((d) => {
+                        if (openAll) d.setAttribute('open', '');
+                        else d.removeAttribute('open');
+                    });
+                    updateLabel(current);
+                });
+                btn.dataset.bound = 'true';
+            }
+
+            details.forEach((d) => {
+                if (d.dataset.boundToggle) return;
+                d.addEventListener('toggle', () => updateLabel(getDetails()));
+                d.dataset.boundToggle = 'true';
+            });
+        }
+
+        setup();
+
+        const content = $('#content');
+        if (content) {
+            const observer = new MutationObserver(() => setup());
+            observer.observe(content, { childList: true, subtree: true });
+        }
+    });
+
     // Active TOC highlighting based on scroll position
     safe(() => {
         const toc = $('#toc');
