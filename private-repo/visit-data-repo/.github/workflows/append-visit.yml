@@ -1,0 +1,30 @@
+name: Append Visit
+
+on:
+  repository_dispatch:
+    types: [append_visit]
+
+permissions:
+  contents: write
+
+jobs:
+  append:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Append visit to JSON
+        run: python3 scripts/append-visit.py
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/visits.json
+          git commit -m "Append visit entry"
+          git push
