@@ -37,6 +37,16 @@
         const endpoint = window.VISIT_ENDPOINT || '';
         const name = sessionStorage.getItem('visitorName') || '';
         if (!endpoint || !name) return;
+        const key = `pv:${window.location.pathname}`;
+        const last = Number(sessionStorage.getItem(key) || '0');
+        const now = Date.now();
+        if (now - last < 30000) return; // 30s throttle per page
+        sessionStorage.setItem(key, String(now));
+        let geo = null;
+        try {
+            const raw = sessionStorage.getItem('geo');
+            geo = raw ? JSON.parse(raw) : null;
+        } catch {}
         const payload = {
             eventType: 'page_view',
             name,
@@ -46,6 +56,7 @@
             page: window.location.href,
             referrer: document.referrer || '',
             userAgent: navigator.userAgent || '',
+            geo: geo || undefined,
         };
         fetch(endpoint, {
             method: 'POST',
