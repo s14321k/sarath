@@ -254,6 +254,7 @@ const architectContentData = `<h1 id="system-architecture-ascii-diagram-with-zip
    └─────────────────────────┘
 
 </code></pre>
+<p><img src="../Architect/systemArchitectureDiagram.svg" alt="Arch"></p>
 <h3 id="whats-added-that-was-missing">🔑 What’s Added That Was Missing:</h3>
 <ul>
 <li><strong>CI/CD split:</strong> GitHub Actions (lightweight build/test) + Jenkins/Tekton (integration + deploy).</li>

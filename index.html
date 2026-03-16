@@ -322,7 +322,21 @@
         </footer>
     </div>
 
+    <div class="visit-modal hidden" id="visitModal">
+        <div class="visit-dialog">
+            <h2>Welcome</h2>
+            <p>Enter your name to continue.</p>
+            <form id="visitForm" class="visit-form">
+                <input id="visitName" type="text" placeholder="Your name" maxlength="40" required>
+                <div class="visit-error" id="visitError"></div>
+                <button type="submit">Continue</button>
+            </form>
+        </div>
+    </div>
+
     <script src="js/pdf-list.js"></script>
+    <script src="js/visit-config.js"></script>
+    <script src="js/visit-tracker.js"></script>
     <script>
         (function () {
             const list = document.getElementById('pdfList');
@@ -341,4 +355,6 @@
     </script>
 </body>
 </html>
+
+
 

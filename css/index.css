@@ -223,6 +223,85 @@ body {
     font-size: 14px;
 }
 
+/* Visit modal */
+.visit-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+.visit-modal.hidden {
+    display: none;
+}
+
+.visit-dialog {
+    width: min(420px, 92vw);
+    background: #121224;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.visit-dialog h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.visit-dialog p {
+    color: var(--text-dim);
+    margin-bottom: 16px;
+}
+
+.visit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.visit-form input {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.visit-form input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+}
+
+.visit-error {
+    color: #ff8aa0;
+    font-size: 12px;
+    min-height: 16px;
+}
+
+.visit-form button {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.visit-form button:hover {
+    background: var(--accent-light);
+}
+
 /* Animations */
 @keyframes fadeInDown {
     from {
