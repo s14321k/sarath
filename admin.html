@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visit Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header class="admin-header">
+            <h1>Visit Admin</h1>
+            <p>Login to view visit statistics.</p>
+        </header>
+
+        <section class="admin-card" id="loginCard">
+            <h2>Login</h2>
+            <form id="adminLoginForm" class="admin-form">
+                <label>
+                    Username
+                    <input type="text" id="adminUser" required>
+                </label>
+                <label>
+                    Password
+                    <input type="password" id="adminPass" required>
+                </label>
+                <div class="admin-error" id="adminError"></div>
+                <button type="submit">Sign In</button>
+            </form>
+        </section>
+
+        <section class="admin-card hidden" id="statsCard">
+            <div class="stats-header">
+                <h2>Visits</h2>
+                <button id="refreshBtn" type="button">Refresh</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table" id="statsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Page Name (Count)</th>
+                            <th>Total Visits</th>
+                            <th>User Agents</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/visit-config.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
