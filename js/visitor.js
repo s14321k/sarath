@@ -3,8 +3,6 @@
 
     const VISIT_KEY = 'visitRecorded';
     const NAME_KEY = 'visitorName';
-    const KNOWN_KEY = 'knownUser';
-    const WELCOME_KEY = 'welcomeMessage';
 
     function $(id) { return document.getElementById(id); }
 
@@ -49,19 +47,11 @@
         if (el) el.textContent = msg || '';
     }
 
-    function showBanner(message) {
-        const banner = $('welcomeBanner');
-        if (!banner) return;
-        banner.textContent = message;
-        banner.classList.remove('hidden');
-    }
-
-    async function sendLogin(name) {
+    async function sendVisit(name) {
         const endpoint = window.VISIT_ENDPOINT || '';
-        if (!endpoint) return { knownUser: false };
+        if (!endpoint) return;
 
         const payload = {
-            eventType: 'login',
             name,
             clientTime: new Date().toISOString(),
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
@@ -69,29 +59,16 @@
             page: window.location.href,
             referrer: document.referrer || '',
             userAgent: navigator.userAgent || '',
-            screen: `${screen.width}x${screen.height}`,
-            windowSize: `${window.innerWidth}x${window.innerHeight}`,
-            colorDepth: screen.colorDepth || '',
-            platform: navigator.platform || '',
-            vendor: navigator.vendor || '',
-            hardwareConcurrency: navigator.hardwareConcurrency || '',
-            deviceMemory: navigator.deviceMemory || '',
-            connection: navigator.connection?.effectiveType || '',
-            languages: navigator.languages?.join(',') || '',
-            cookiesEnabled: navigator.cookieEnabled,
         };
 
         try {
-            const res = await fetch(endpoint, {
+            await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(payload),
             });
-            const json = await res.json().catch(() => ({}));
-            return { knownUser: Boolean(json.knownUser) };
         } catch (e) {
             // Ignore network errors to avoid blocking UX
-            return { knownUser: false };
         }
     }
 
@@ -100,10 +77,6 @@
         const nextUrl = safeNextUrl(next);
 
         if (sessionStorage.getItem(VISIT_KEY)) {
-            const name = sessionStorage.getItem(NAME_KEY) || '';
-            const known = sessionStorage.getItem(KNOWN_KEY) === '1';
-            const msg = known ? `Welcome back, ${name}` : `Welcome, ${name}`;
-            if (name) showBanner(msg);
             if (nextUrl) window.location.replace(nextUrl);
             return;
         }
@@ -125,11 +98,7 @@
             sessionStorage.setItem(VISIT_KEY, '1');
             sessionStorage.setItem(NAME_KEY, name);
             hideModal();
-            const result = await sendLogin(name);
-            sessionStorage.setItem(KNOWN_KEY, result.knownUser ? '1' : '0');
-            const msg = result.knownUser ? `Welcome back, ${name}` : `Welcome new user, ${name}`;
-            sessionStorage.setItem(WELCOME_KEY, msg);
-            showBanner(msg);
+            await sendVisit(name);
             if (nextUrl) window.location.replace(nextUrl);
         });
     }

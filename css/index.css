@@ -223,6 +223,23 @@ body {
     font-size: 14px;
 }
 
+/* Welcome banner */
+.welcome-banner {
+    margin: -30px auto 40px auto;
+    padding: 12px 16px;
+    max-width: 720px;
+    background: rgba(233, 69, 96, 0.12);
+    border: 1px solid rgba(233, 69, 96, 0.35);
+    border-radius: 12px;
+    color: var(--text);
+    text-align: center;
+    font-weight: 600;
+}
+
+.welcome-banner.hidden {
+    display: none;
+}
+
 /* Visit modal */
 .visit-modal {
     position: fixed;

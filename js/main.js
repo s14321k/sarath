@@ -10,6 +10,51 @@
         try { fn(); } catch (e) { console.error('main.js error:', e); }
     }
 
+    // Gate access if name was not provided on index page
+    safe(() => {
+        if (sessionStorage.getItem('visitRecorded')) return;
+        const current = window.location.pathname + window.location.search + window.location.hash;
+        const indexUrl = new URL('../index.html', window.location.href);
+        indexUrl.searchParams.set('next', current);
+        window.location.replace(indexUrl.toString());
+    });
+
+    // Show welcome banner on content pages (after redirect)
+    safe(() => {
+        const msg = sessionStorage.getItem('welcomeMessage');
+        if (!msg) return;
+        const banner = document.createElement('div');
+        banner.className = 'welcome-banner';
+        banner.textContent = msg;
+        document.body.appendChild(banner);
+        sessionStorage.removeItem('welcomeMessage');
+        setTimeout(() => banner.classList.add('fade'), 3000);
+        setTimeout(() => banner.remove(), 4500);
+    });
+
+    // Track page views
+    safe(() => {
+        const endpoint = window.VISIT_ENDPOINT || '';
+        const name = sessionStorage.getItem('visitorName') || '';
+        if (!endpoint || !name) return;
+        const payload = {
+            eventType: 'page_view',
+            name,
+            clientTime: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+            locale: navigator.language || '',
+            page: window.location.href,
+            referrer: document.referrer || '',
+            userAgent: navigator.userAgent || '',
+        };
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+        }).catch(() => {});
+    });
+
     // Menu toggle for mobile
     safe(() => {
         const menuToggle = $('#menuToggle');
