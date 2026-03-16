@@ -59,10 +59,44 @@
         banner.classList.remove('hidden');
     }
 
+    function getStoredGeo() {
+        try {
+            const raw = sessionStorage.getItem('geo');
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function storeGeo(geo) {
+        try {
+            sessionStorage.setItem('geo', JSON.stringify(geo));
+        } catch {}
+    }
+
+    function getGeoAsync() {
+        return new Promise((resolve) => {
+            if (!navigator.geolocation) return resolve(null);
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const geo = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        accuracy: pos.coords.accuracy
+                    };
+                    resolve(geo);
+                },
+                () => resolve(null),
+                { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
+            );
+        });
+    }
+
     async function sendLogin(name) {
         const endpoint = window.VISIT_ENDPOINT || '';
         if (!endpoint) return { knownUser: false };
 
+        const geo = getStoredGeo();
         const payload = {
             eventType: 'login',
             name,
@@ -82,6 +116,7 @@
             connection: navigator.connection?.effectiveType || '',
             languages: navigator.languages?.join(',') || '',
             cookiesEnabled: navigator.cookieEnabled,
+            geo: geo || undefined,
         };
 
         try {
@@ -128,6 +163,8 @@
             sessionStorage.setItem(VISIT_KEY, '1');
             sessionStorage.setItem(NAME_KEY, name);
             hideModal();
+            const geo = await getGeoAsync();
+            if (geo) storeGeo(geo);
             const result = await sendLogin(name);
             sessionStorage.setItem(KNOWN_KEY, result.knownUser ? '1' : '0');
             const msg = result.knownUser ? `Welcome back, ${name}` : `Welcome new user, ${name}`;
