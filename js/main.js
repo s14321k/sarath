@@ -13,7 +13,7 @@
     // Gate access if name was not provided on index page
     safe(() => {
         if (sessionStorage.getItem('visitRecorded')) return;
-        const current = window.location.pathname + window.location.search + window.location.hash;
+        const current = window.location.href;
         const indexUrl = new URL('../index.html', window.location.href);
         indexUrl.searchParams.set('next', current);
         window.location.replace(indexUrl.toString());

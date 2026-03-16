@@ -17,6 +17,9 @@
         try {
             const url = new URL(next, window.location.origin);
             if (url.origin !== window.location.origin) return '';
+            const parts = window.location.pathname.split('/').filter(Boolean);
+            const base = parts.length > 0 ? `/${parts[0]}/` : '/';
+            if (!url.pathname.startsWith(base)) return '';
             return url.href;
         } catch {
             return '';
