@@ -5,6 +5,7 @@
     const NAME_KEY = 'visitorName';
     const KNOWN_KEY = 'knownUser';
     const WELCOME_KEY = 'welcomeMessage';
+    const ANON_KEY = 'anonRecorded';
 
     function $(id) { return document.getElementById(id); }
 
@@ -156,6 +157,31 @@
         }
     }
 
+    async function sendAnonymousVisit() {
+        const endpoint = window.VISIT_ENDPOINT || '';
+        if (!endpoint) return;
+        if (sessionStorage.getItem(ANON_KEY)) return;
+        sessionStorage.setItem(ANON_KEY, '1');
+        const payload = {
+            eventType: 'anon',
+            name: 'anonymous',
+            clientTime: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+            locale: navigator.language || '',
+            page: window.location.href,
+            referrer: document.referrer || '',
+            userAgent: navigator.userAgent || ''
+        };
+        try {
+            await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(payload),
+                keepalive: true,
+            });
+        } catch {}
+    }
+
     function bind() {
         const next = getNextParam();
         const nextUrl = safeNextUrl(next);
@@ -170,6 +196,7 @@
             return;
         }
 
+        sendAnonymousVisit();
         showModal();
 
         const loginForm = $('loginForm');

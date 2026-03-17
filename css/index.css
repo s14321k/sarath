@@ -430,8 +430,8 @@ body {
     position: fixed;
     right: 20px;
     bottom: 20px;
-    width: min(55vw, 900px);
-    height: 60vh;
+    width: min(80vw, 900px);
+    height: 80vh;
     min-height: 320px;
     background: #121224;
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -487,6 +487,20 @@ body {
     border-color: var(--accent);
 }
 
+.chat-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    margin-left: 6px;
+}
+
 .chat-body {
     overflow-y: auto;
     padding: 10px;
@@ -502,12 +516,42 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 6px 8px;
     border-radius: 8px;
+    align-self: flex-start;
+    max-width: 85%;
+}
+
+.chat-item-own {
+    align-self: flex-end;
+    background: rgba(233, 69, 96, 0.18);
+    border-color: rgba(233, 69, 96, 0.45);
+    text-align: right;
 }
 
 .chat-meta {
     color: var(--text-dim);
     font-size: 11px;
     margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.chat-time {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+.chat-seen {
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.chat-day {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 6px 0;
 }
 
 .chat-form {
