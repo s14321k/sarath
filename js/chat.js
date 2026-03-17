@@ -57,9 +57,11 @@
             if (minimized) {
                 container.classList.add('chat-minimized');
                 bubble.classList.remove('hidden');
+                schedulePoll(30000);
             } else {
                 container.classList.remove('chat-minimized');
                 bubble.classList.add('hidden');
+                poll();
             }
         }
 
@@ -132,179 +134,183 @@
             resizeActive = false;
         });
 
-    tabs.forEach((t) => {
-        t.addEventListener('click', () => {
-            tabs.forEach((x) => x.classList.remove('active'));
-            t.classList.add('active');
-            current = t.dataset.tab;
-            poll();
+        tabs.forEach((t) => {
+            t.addEventListener('click', () => {
+                tabs.forEach((x) => x.classList.remove('active'));
+                t.classList.add('active');
+                current = t.dataset.tab;
+                poll();
+            });
         });
-    });
 
         form.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-        if (!endpoint || !user) {
-            showStatus('Chat is unavailable. Please login and allow requests.');
-            return;
-        }
-        const msg = (input.value || '').trim();
-        if (!msg) return;
-        await sendMessage(current, msg);
-        input.value = '';
-        poll();
+            ev.preventDefault();
+            if (!endpoint || !user) {
+                showStatus('Chat is unavailable. Please login and allow requests.');
+                return;
+            }
+            const msg = (input.value || '').trim();
+            if (!msg) return;
+            await sendMessage(current, msg);
+            input.value = '';
+            poll();
         });
 
         async function sendMessage(scope, message) {
-        if (!endpoint || !user) return;
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'message_send',
-                    scope: scope === 'global' ? 'global' : 'admin',
-                    from: user,
-                    to: scope === 'admin' ? 'admin' : '',
-                    message
-                })
-            });
-            if (!res.ok) throw new Error('Send failed');
-            showStatus('');
-        } catch {
-            networkOk = false;
-            showStatus('Chat is blocked by the browser or network.');
+            if (!endpoint || !user) return;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: 'message_send',
+                        scope: scope === 'global' ? 'global' : 'admin',
+                        from: user,
+                        to: scope === 'admin' ? 'admin' : '',
+                        message
+                    })
+                });
+                if (!res.ok) throw new Error('Send failed');
+                showStatus('');
+            } catch {
+                networkOk = false;
+                showStatus('Chat is blocked by the browser or network.');
+            }
         }
-    }
 
         async function fetchMessages(scope, markSeen) {
-        if (!endpoint || !user) return { messages: [], unseenCount: 0 };
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'message_fetch',
-                    scope: scope === 'global' ? 'global' : 'user',
-                    user,
-                    markSeen: Boolean(markSeen)
-                })
-            });
-            if (!res.ok) throw new Error('Fetch failed');
-            const json = await res.json().catch(() => ({}));
-            showStatus('');
-            return { messages: json.messages || [], unseenCount: Number(json.unseenCount || 0) };
-        } catch {
-            networkOk = false;
-            showStatus('Chat is blocked by the browser or network.');
-            return { messages: [], unseenCount: 0 };
+            if (!endpoint || !user) return { messages: [], unseenCount: 0 };
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: 'message_fetch',
+                        scope: scope === 'global' ? 'global' : 'user',
+                        user,
+                        markSeen: Boolean(markSeen)
+                    })
+                });
+                if (!res.ok) throw new Error('Fetch failed');
+                const json = await res.json().catch(() => ({}));
+                showStatus('');
+                return { messages: json.messages || [], unseenCount: Number(json.unseenCount || 0) };
+            } catch {
+                networkOk = false;
+                showStatus('Chat is blocked by the browser or network.');
+                return { messages: [], unseenCount: 0 };
+            }
         }
-    }
 
         function dayLabel(date) {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const that = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.round((today - that) / 86400000);
-        if (diffDays === 0) return 'Today';
-        if (diffDays === 1) return 'Yesterday';
-        return that.toLocaleDateString();
-    }
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const that = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const diffDays = Math.round((today - that) / 86400000);
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            return that.toLocaleDateString();
+        }
 
         function fmtTime(date) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
 
         function render(list) {
-        bodyEl.innerHTML = '';
-        const items = list.slice(-50).map((m) => {
-            const dt = new Date(m.time || Date.now());
-            return { m, dt, label: dayLabel(dt) };
-        });
-        let currentLabel = '';
-        items.forEach(({ m, dt, label }) => {
-            if (label !== currentLabel) {
-                currentLabel = label;
-                const header = document.createElement('div');
-                header.className = 'chat-day';
-                header.textContent = label;
-                bodyEl.appendChild(header);
-            }
-            const row = document.createElement('div');
-            row.className = 'chat-item';
-            if ((m.from || '').toLowerCase() === (user || '').toLowerCase()) {
-                row.classList.add('chat-item-own');
-            }
-            const meta = document.createElement('div');
-            meta.className = 'chat-meta';
-            const name = document.createElement('span');
-            name.textContent = m.from || '';
-            const time = document.createElement('span');
-            time.className = 'chat-time';
-            time.textContent = fmtTime(dt);
-            meta.appendChild(name);
-            meta.appendChild(time);
-            const body = document.createElement('div');
-            body.textContent = m.message || '';
-            row.appendChild(meta);
-            row.appendChild(body);
-            if (m.seenAt && (m.from || '').toLowerCase() === (user || '').toLowerCase()) {
-                const seen = document.createElement('div');
-                seen.className = 'chat-seen';
-                seen.textContent = `seen ${new Date(m.seenAt).toLocaleString()}`;
-                row.appendChild(seen);
-            }
-            bodyEl.appendChild(row);
-        });
-        bodyEl.scrollTop = bodyEl.scrollHeight;
-    }
+            bodyEl.innerHTML = '';
+            const items = list.slice(-50).map((m) => {
+                const dt = new Date(m.time || Date.now());
+                return { m, dt, label: dayLabel(dt) };
+            });
+            let currentLabel = '';
+            items.forEach(({ m, dt, label }) => {
+                if (label !== currentLabel) {
+                    currentLabel = label;
+                    const header = document.createElement('div');
+                    header.className = 'chat-day';
+                    header.textContent = label;
+                    bodyEl.appendChild(header);
+                }
+                const row = document.createElement('div');
+                row.className = 'chat-item';
+                if ((m.from || '').toLowerCase() === (user || '').toLowerCase()) {
+                    row.classList.add('chat-item-own');
+                }
+                const meta = document.createElement('div');
+                meta.className = 'chat-meta';
+                const name = document.createElement('span');
+                name.textContent = m.from || '';
+                const time = document.createElement('span');
+                time.className = 'chat-time';
+                time.textContent = fmtTime(dt);
+                meta.appendChild(name);
+                meta.appendChild(time);
+                const body = document.createElement('div');
+                body.textContent = m.message || '';
+                row.appendChild(meta);
+                row.appendChild(body);
+                if (m.seenAt && (m.from || '').toLowerCase() === (user || '').toLowerCase()) {
+                    const seen = document.createElement('div');
+                    seen.className = 'chat-seen';
+                    seen.textContent = `seen ${new Date(m.seenAt).toLocaleString()}`;
+                    row.appendChild(seen);
+                }
+                bodyEl.appendChild(row);
+            });
+            bodyEl.scrollTop = bodyEl.scrollHeight;
+        }
 
         function showStatus(text) {
-        if (!statusEl) return;
-        if (!text) {
-            statusEl.classList.add('hidden');
-            statusEl.textContent = '';
-            return;
+            if (!statusEl) return;
+            if (!text) {
+                statusEl.classList.add('hidden');
+                statusEl.textContent = '';
+                return;
+            }
+            statusEl.textContent = text;
+            statusEl.classList.remove('hidden');
         }
-        statusEl.textContent = text;
-        statusEl.classList.remove('hidden');
-    }
 
-    function schedulePoll(delay) {
-        if (pollTimer) clearTimeout(pollTimer);
-        pollTimer = setTimeout(poll, delay);
-    }
+        function schedulePoll(delay) {
+            if (pollTimer) clearTimeout(pollTimer);
+            pollTimer = setTimeout(poll, delay);
+        }
 
         function setBadge(el, count) {
-        if (!el) return;
-        if (count > 0) {
-            el.textContent = String(count);
-            el.classList.remove('hidden');
-        } else {
-            el.textContent = '';
-            el.classList.add('hidden');
+            if (!el) return;
+            if (count > 0) {
+                el.textContent = String(count);
+                el.classList.remove('hidden');
+            } else {
+                el.textContent = '';
+                el.classList.add('hidden');
+            }
         }
-    }
 
         async function poll() {
-        if (document.visibilityState === 'hidden') {
-            schedulePoll(30000);
-            return;
-        }
-        try {
-            const currentRes = await fetchMessages(current, true);
-            render(currentRes.messages);
-            const other = current === 'global' ? 'admin' : 'global';
-            const otherRes = await fetchMessages(other, false);
-            if (current === 'global') {
-                setBadge(globalBadge, 0);
-                setBadge(adminBadge, otherRes.unseenCount);
-            } else {
-                setBadge(adminBadge, 0);
-                setBadge(globalBadge, otherRes.unseenCount);
+            if (minimized) {
+                schedulePoll(30000);
+                return;
             }
-        } catch {}
-        schedulePoll(networkOk ? 10000 : 30000);
-    }
+            if (document.visibilityState === 'hidden') {
+                schedulePoll(30000);
+                return;
+            }
+            try {
+                const currentRes = await fetchMessages(current, true);
+                render(currentRes.messages);
+                const other = current === 'global' ? 'admin' : 'global';
+                const otherRes = await fetchMessages(other, false);
+                if (current === 'global') {
+                    setBadge(globalBadge, 0);
+                    setBadge(adminBadge, otherRes.unseenCount);
+                } else {
+                    setBadge(adminBadge, 0);
+                    setBadge(globalBadge, otherRes.unseenCount);
+                }
+            } catch {}
+            schedulePoll(networkOk ? 10000 : 30000);
+        }
         if (!endpoint || !user) {
             showStatus('Chat is unavailable until you login.');
         }
