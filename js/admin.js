@@ -36,6 +36,14 @@
             const totalTd = document.createElement('td');
             totalTd.textContent = String(row.total || 0);
 
+            const loginCountTd = document.createElement('td');
+            loginCountTd.textContent = String(row.loginCount || 0);
+
+            const lastLoginTd = document.createElement('td');
+            lastLoginTd.textContent = row.lastLogin
+                ? new Date(row.lastLogin).toLocaleString()
+                : '-';
+
             const uaTd = document.createElement('td');
             const uaList = document.createElement('div');
             uaList.className = 'ua-list';
@@ -48,6 +56,8 @@
 
             tr.appendChild(nameTd);
             tr.appendChild(pagesTd);
+            tr.appendChild(loginCountTd);
+            tr.appendChild(lastLoginTd);
             tr.appendChild(totalTd);
             tr.appendChild(uaTd);
             tableBody.appendChild(tr);
