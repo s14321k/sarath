@@ -112,6 +112,12 @@ body {
     margin-bottom: 16px;
 }
 
+.stats-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .stats-header button {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -161,4 +167,56 @@ body {
     padding: 6px 8px;
     border-radius: 8px;
     word-break: break-word;
+}
+
+.dashboard-view.hidden {
+    display: none;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.dashboard-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.dashboard-card h3 {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.big-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent-light);
+}
+
+.small-text {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.list span {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 6px 8px;
+    border-radius: 8px;
+    word-break: break-word;
+    font-size: 13px;
 }

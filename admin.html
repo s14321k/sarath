@@ -32,7 +32,43 @@
     <section class="admin-card hidden" id="statsCard">
         <div class="stats-header">
             <h2>Visits</h2>
-            <button id="refreshBtn" type="button">Refresh</button>
+            <div class="stats-actions">
+                <button id="dashboardBtn" type="button">Dashboard View</button>
+                <button id="tableBtn" type="button">Table View</button>
+                <button id="refreshBtn" type="button">Refresh</button>
+            </div>
+        </div>
+        <div class="dashboard-view hidden" id="dashboardView">
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>Total Unique Pages</h3>
+                    <div class="big-number" id="totalPagesCount">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Most Visited Page</h3>
+                    <div class="small-text" id="mostVisitedPage">-</div>
+                    <div class="small-text" id="mostVisitedCount">0 visits</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Top Pages</h3>
+                    <div class="list" id="topPagesList"></div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>Daily Hits</h3>
+                    <div class="list" id="dailyList"></div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Weekly Hits</h3>
+                    <div class="list" id="weeklyList"></div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Monthly Hits</h3>
+                    <div class="list" id="monthlyList"></div>
+                </div>
+            </div>
         </div>
         <div class="admin-table-wrap">
             <table class="admin-table" id="statsTable">
