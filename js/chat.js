@@ -4,9 +4,10 @@
     const endpoint = window.VISIT_ENDPOINT || '';
     let user = sessionStorage.getItem('visitorName') || '';
 
-    const container = document.createElement('div');
-    container.className = 'chat-widget';
-    container.innerHTML = `
+    function initChat() {
+        const container = document.createElement('div');
+        container.className = 'chat-widget';
+        container.innerHTML = `
         <div class="chat-header">
             <span>Messages</span>
             <button type="button" class="chat-min-btn" id="chatMinBtn" aria-label="Minimize">-</button>
@@ -22,230 +23,234 @@
             <button type="submit">Send</button>
         </form>
     `;
-    document.body.appendChild(container);
+        document.body.appendChild(container);
 
-    const bodyEl = container.querySelector('#chatBody');
-    const form = container.querySelector('#chatForm');
-    const input = container.querySelector('#chatInput');
-    const statusEl = container.querySelector('#chatStatus');
-    const minBtn = container.querySelector('#chatMinBtn');
-    const tabs = container.querySelectorAll('.chat-tab');
-    let current = 'global';
-    let networkOk = true;
-    let pollTimer = null;
-    let minimized = false;
+        const bodyEl = container.querySelector('#chatBody');
+        const form = container.querySelector('#chatForm');
+        const input = container.querySelector('#chatInput');
+        const statusEl = container.querySelector('#chatStatus');
+        const minBtn = container.querySelector('#chatMinBtn');
+        const tabs = container.querySelectorAll('.chat-tab');
+        let current = 'global';
+        let networkOk = true;
+        let pollTimer = null;
+        let minimized = false;
 
-    const bubble = document.createElement('button');
-    bubble.type = 'button';
-    bubble.className = 'chat-bubble hidden';
-    bubble.textContent = 'Chat';
-    document.body.appendChild(bubble);
+        const bubble = document.createElement('button');
+        bubble.type = 'button';
+        bubble.className = 'chat-bubble hidden';
+        bubble.textContent = 'Chat';
+        document.body.appendChild(bubble);
 
-    const resizer = document.createElement('div');
-    resizer.className = 'chat-resizer';
-    container.appendChild(resizer);
+        const resizer = document.createElement('div');
+        resizer.className = 'chat-resizer';
+        container.appendChild(resizer);
 
-    function setMinimized(next) {
-        minimized = next;
-        if (minimized) {
-            container.classList.add('chat-minimized');
-            bubble.classList.remove('hidden');
-        } else {
-            container.classList.remove('chat-minimized');
-            bubble.classList.add('hidden');
+        function setMinimized(next) {
+            minimized = next;
+            if (minimized) {
+                container.classList.add('chat-minimized');
+                bubble.classList.remove('hidden');
+            } else {
+                container.classList.remove('chat-minimized');
+                bubble.classList.add('hidden');
+            }
         }
-    }
 
-    minBtn?.addEventListener('click', () => setMinimized(true));
+        minBtn?.addEventListener('click', () => setMinimized(true));
 
-    // Draggable bubble
-    let dragActive = false;
-    let dragOffsetX = 0;
-    let dragOffsetY = 0;
-    let dragMoved = false;
+        // Draggable bubble
+        let dragActive = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let dragMoved = false;
 
-    bubble.addEventListener('pointerdown', (ev) => {
-        dragActive = true;
-        dragMoved = false;
-        bubble.setPointerCapture(ev.pointerId);
-        const rect = bubble.getBoundingClientRect();
-        dragOffsetX = ev.clientX - rect.left;
-        dragOffsetY = ev.clientY - rect.top;
-    });
-    bubble.addEventListener('pointermove', (ev) => {
-        if (!dragActive) return;
-        dragMoved = true;
-        const x = Math.max(10, Math.min(window.innerWidth - 70, ev.clientX - dragOffsetX));
-        const y = Math.max(10, Math.min(window.innerHeight - 70, ev.clientY - dragOffsetY));
-        bubble.style.left = `${x}px`;
-        bubble.style.top = `${y}px`;
-    });
-    bubble.addEventListener('pointerup', () => {
-        dragActive = false;
-    });
+        bubble.addEventListener('pointerdown', (ev) => {
+            dragActive = true;
+            dragMoved = false;
+            bubble.setPointerCapture(ev.pointerId);
+            const rect = bubble.getBoundingClientRect();
+            dragOffsetX = ev.clientX - rect.left;
+            dragOffsetY = ev.clientY - rect.top;
+        });
+        bubble.addEventListener('pointermove', (ev) => {
+            if (!dragActive) return;
+            dragMoved = true;
+            const x = Math.max(10, Math.min(window.innerWidth - 70, ev.clientX - dragOffsetX));
+            const y = Math.max(10, Math.min(window.innerHeight - 70, ev.clientY - dragOffsetY));
+            bubble.style.left = `${x}px`;
+            bubble.style.top = `${y}px`;
+        });
+        bubble.addEventListener('pointerup', () => {
+            dragActive = false;
+        });
 
-    bubble.addEventListener('click', (ev) => {
-        if (dragMoved) {
+        bubble.addEventListener('click', (ev) => {
+            if (dragMoved) {
+                ev.preventDefault();
+                return;
+            }
+            setMinimized(false);
+        });
+
+        // Resize handle
+        let resizeActive = false;
+        let startW = 0;
+        let startH = 0;
+        let startX = 0;
+        let startY = 0;
+
+        resizer.addEventListener('pointerdown', (ev) => {
+            resizeActive = true;
+            resizer.setPointerCapture(ev.pointerId);
+            const rect = container.getBoundingClientRect();
+            startW = rect.width;
+            startH = rect.height;
+            startX = ev.clientX;
+            startY = ev.clientY;
+            container.style.right = `${window.innerWidth - rect.right}px`;
+            container.style.bottom = `${window.innerHeight - rect.bottom}px`;
+        });
+        resizer.addEventListener('pointermove', (ev) => {
+            if (!resizeActive) return;
+            const dx = startX - ev.clientX;
+            const dy = startY - ev.clientY;
+            const maxW = Math.min(window.innerWidth * 0.95, 1200);
+            const maxH = Math.min(window.innerHeight * 0.95, window.innerHeight - 20);
+            const nextW = Math.min(maxW, Math.max(280, startW + dx));
+            const nextH = Math.min(maxH, Math.max(320, startH + dy));
+            container.style.width = `${nextW}px`;
+            container.style.height = `${nextH}px`;
+        });
+        resizer.addEventListener('pointerup', () => {
+            resizeActive = false;
+        });
+
+        tabs.forEach((t) => {
+            t.addEventListener('click', () => {
+                tabs.forEach((x) => x.classList.remove('active'));
+                t.classList.add('active');
+                current = t.dataset.tab;
+                poll();
+            });
+        });
+
+        form.addEventListener('submit', async (ev) => {
             ev.preventDefault();
-            return;
-        }
-        setMinimized(false);
-    });
-
-    // Resize handle
-    let resizeActive = false;
-    let startW = 0;
-    let startH = 0;
-    let startX = 0;
-    let startY = 0;
-
-    resizer.addEventListener('pointerdown', (ev) => {
-        resizeActive = true;
-        resizer.setPointerCapture(ev.pointerId);
-        const rect = container.getBoundingClientRect();
-        startW = rect.width;
-        startH = rect.height;
-        startX = ev.clientX;
-        startY = ev.clientY;
-        container.style.right = `${window.innerWidth - rect.right}px`;
-        container.style.bottom = `${window.innerHeight - rect.bottom}px`;
-    });
-    resizer.addEventListener('pointermove', (ev) => {
-        if (!resizeActive) return;
-        const dx = startX - ev.clientX;
-        const dy = startY - ev.clientY;
-        const maxW = Math.min(window.innerWidth * 0.95, 1200);
-        const maxH = Math.min(window.innerHeight * 0.95, window.innerHeight - 20);
-        const nextW = Math.min(maxW, Math.max(280, startW + dx));
-        const nextH = Math.min(maxH, Math.max(320, startH + dy));
-        container.style.width = `${nextW}px`;
-        container.style.height = `${nextH}px`;
-    });
-    resizer.addEventListener('pointerup', () => {
-        resizeActive = false;
-    });
-
-    tabs.forEach((t) => {
-        t.addEventListener('click', () => {
-            tabs.forEach((x) => x.classList.remove('active'));
-            t.classList.add('active');
-            current = t.dataset.tab;
+            if (!endpoint || !user) {
+                showStatus('Chat is unavailable. Please login and allow requests.');
+                return;
+            }
+            const msg = (input.value || '').trim();
+            if (!msg) return;
+            await sendMessage(current, msg);
+            input.value = '';
             poll();
         });
-    });
 
-    form.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
+        async function sendMessage(scope, message) {
+            if (!endpoint || !user) return;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: 'message_send',
+                        scope: scope === 'global' ? 'global' : 'admin',
+                        from: user,
+                        to: scope === 'admin' ? 'admin' : '',
+                        message
+                    })
+                });
+                if (!res.ok) throw new Error('Send failed');
+                showStatus('');
+            } catch {
+                networkOk = false;
+                showStatus('Chat is blocked by the browser or network.');
+            }
+        }
+
+        async function fetchMessages(scope) {
+            if (!endpoint || !user) return [];
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: 'message_fetch',
+                        scope: scope === 'global' ? 'global' : 'user',
+                        user
+                    })
+                });
+                if (!res.ok) throw new Error('Fetch failed');
+                const json = await res.json().catch(() => ({}));
+                showStatus('');
+                return json.messages || [];
+            } catch {
+                networkOk = false;
+                showStatus('Chat is blocked by the browser or network.');
+                return [];
+            }
+        }
+
+        function render(list) {
+            bodyEl.innerHTML = '';
+            list.slice(-50).forEach((m) => {
+                const row = document.createElement('div');
+                row.className = 'chat-item';
+                row.innerHTML = `<div class="chat-meta">${m.from || ''} • ${m.time || ''}</div><div>${m.message || ''}</div>`;
+                bodyEl.appendChild(row);
+            });
+            bodyEl.scrollTop = bodyEl.scrollHeight;
+        }
+
+        function showStatus(text) {
+            if (!statusEl) return;
+            if (!text) {
+                statusEl.classList.add('hidden');
+                statusEl.textContent = '';
+                return;
+            }
+            statusEl.textContent = text;
+            statusEl.classList.remove('hidden');
+        }
+
+        function schedulePoll(delay) {
+            if (pollTimer) clearTimeout(pollTimer);
+            pollTimer = setTimeout(poll, delay);
+        }
+
+        async function poll() {
+            if (document.visibilityState === 'hidden') {
+                schedulePoll(30000);
+                return;
+            }
+            try {
+                const list = await fetchMessages(current);
+                render(list);
+            } catch {}
+            schedulePoll(networkOk ? 10000 : 30000);
+        }
+
         if (!endpoint || !user) {
-            showStatus('Chat is unavailable. Please login and allow requests.');
-            return;
+            showStatus('Chat is unavailable until you login.');
         }
-        const msg = (input.value || '').trim();
-        if (!msg) return;
-        await sendMessage(current, msg);
-        input.value = '';
-        poll();
-    });
-
-    async function sendMessage(scope, message) {
-        if (!endpoint || !user) return;
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'message_send',
-                    scope: scope === 'global' ? 'global' : 'admin',
-                    from: user,
-                    to: scope === 'admin' ? 'admin' : '',
-                    message
-                })
-            });
-            if (!res.ok) throw new Error('Send failed');
-            showStatus('');
-        } catch {
-            networkOk = false;
-            showStatus('Chat is blocked by the browser or network.');
-        }
-    }
-
-    async function fetchMessages(scope) {
-        if (!endpoint || !user) return [];
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'message_fetch',
-                    scope: scope === 'global' ? 'global' : 'user',
-                    user
-                })
-            });
-            if (!res.ok) throw new Error('Fetch failed');
-            const json = await res.json().catch(() => ({}));
-            showStatus('');
-            return json.messages || [];
-        } catch {
-            networkOk = false;
-            showStatus('Chat is blocked by the browser or network.');
-            return [];
-        }
-    }
-
-    function render(list) {
-        bodyEl.innerHTML = '';
-        list.slice(-50).forEach((m) => {
-            const row = document.createElement('div');
-            row.className = 'chat-item';
-            row.innerHTML = `<div class="chat-meta">${m.from || ''} • ${m.time || ''}</div><div>${m.message || ''}</div>`;
-            bodyEl.appendChild(row);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                poll();
+            }
         });
-        bodyEl.scrollTop = bodyEl.scrollHeight;
+        poll();
     }
 
-    function showStatus(text) {
-        if (!statusEl) return;
-        if (!text) {
-            statusEl.classList.add('hidden');
-            statusEl.textContent = '';
-            return;
-        }
-        statusEl.textContent = text;
-        statusEl.classList.remove('hidden');
+    if (user) {
+        initChat();
     }
-
-    function schedulePoll(delay) {
-        if (pollTimer) clearTimeout(pollTimer);
-        pollTimer = setTimeout(poll, delay);
-    }
-
-    async function poll() {
-        if (document.visibilityState === 'hidden') {
-            schedulePoll(30000);
-            return;
-        }
-        try {
-            const list = await fetchMessages(current);
-            render(list);
-        } catch {}
-        schedulePoll(networkOk ? 10000 : 30000);
-    }
-
-    if (!endpoint || !user) {
-        showStatus('Chat is unavailable until you login.');
-    }
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            poll();
-        }
-    });
     document.addEventListener('visit-login', (ev) => {
         const name = ev?.detail?.username || sessionStorage.getItem('visitorName') || '';
-        if (name) {
+        if (name && !user) {
             user = name;
-            showStatus('');
-            poll();
+            initChat();
         }
     });
-    poll();
 })();
