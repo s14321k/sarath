@@ -32,7 +32,7 @@
         setTimeout(() => banner.remove(), 4500);
     });
 
-    // Track page views
+    // Track page views and time on page
     safe(() => {
         const endpoint = window.VISIT_ENDPOINT || '';
         const name = sessionStorage.getItem('visitorName') || '';
@@ -47,7 +47,7 @@
             const raw = sessionStorage.getItem('geo');
             geo = raw ? JSON.parse(raw) : null;
         } catch {}
-        const payload = {
+        const basePayload = {
             eventType: 'page_view',
             name,
             clientTime: new Date().toISOString(),
@@ -61,9 +61,42 @@
         fetch(endpoint, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(basePayload),
             keepalive: true,
         }).catch(() => {});
+
+        const start = Date.now();
+        let sentExit = false;
+
+        function sendExit() {
+            if (sentExit) return;
+            sentExit = true;
+            const durationMs = Date.now() - start;
+            const payload = {
+                ...basePayload,
+                eventType: 'page_exit',
+                durationMs
+            };
+            const body = JSON.stringify(payload);
+            if (navigator.sendBeacon) {
+                try {
+                    const blob = new Blob([body], { type: 'application/json' });
+                    navigator.sendBeacon(endpoint, blob);
+                    return;
+                } catch {}
+            }
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body,
+                keepalive: true,
+            }).catch(() => {});
+        }
+
+        window.addEventListener('beforeunload', sendExit);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') sendExit();
+        });
     });
 
     // Menu toggle for mobile

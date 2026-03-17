@@ -24,9 +24,11 @@
             const pagesTd = document.createElement('td');
             const pageList = document.createElement('div');
             pageList.className = 'page-list';
-            Object.entries(row.pages || {}).forEach(([page, count]) => {
+            (row.pages || []).forEach((p) => {
                 const item = document.createElement('span');
-                item.textContent = `${page} (${count})`;
+                const hours = (Number(p.totalMs || 0) / 3600000).toFixed(2);
+                const lastSeen = p.lastSeenMs ? new Date(p.lastSeenMs).toLocaleString() : '-';
+                item.textContent = `${p.page} (${p.count}) | ${hours}h | ${lastSeen}`;
                 pageList.appendChild(item);
             });
             pagesTd.appendChild(pageList);
