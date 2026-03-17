@@ -15,10 +15,15 @@
     const totalPagesCount = document.getElementById('totalPagesCount');
     const mostVisitedPage = document.getElementById('mostVisitedPage');
     const mostVisitedCount = document.getElementById('mostVisitedCount');
-    const topPagesList = document.getElementById('topPagesList');
-    const dailyList = document.getElementById('dailyList');
-    const weeklyList = document.getElementById('weeklyList');
-    const monthlyList = document.getElementById('monthlyList');
+    const topPagesChartEl = document.getElementById('topPagesChart');
+    const dailyChartEl = document.getElementById('dailyChart');
+    const weeklyChartEl = document.getElementById('weeklyChart');
+    const monthlyChartEl = document.getElementById('monthlyChart');
+
+    let topPagesChart = null;
+    let dailyChart = null;
+    let weeklyChart = null;
+    let monthlyChart = null;
 
     function setError(msg) {
         if (err) err.textContent = msg || '';
@@ -86,24 +91,61 @@
             mostVisitedCount.textContent = '0 visits';
         }
 
-        topPagesList.innerHTML = '';
-        (dashboard.topPages || []).forEach((p) => {
-            const item = document.createElement('span');
-            item.textContent = `${p.page} (${p.count})`;
-            topPagesList.appendChild(item);
-        });
+        const topLabels = (dashboard.topPages || []).map((p) => p.page);
+        const topCounts = (dashboard.topPages || []).map((p) => p.count);
+        topPagesChart = renderChart(topPagesChart, topPagesChartEl, 'bar', topLabels, topCounts, 'Visits');
 
-        renderList(dailyList, dashboard.daily || []);
-        renderList(weeklyList, dashboard.weekly || []);
-        renderList(monthlyList, dashboard.monthly || []);
+        const dailyLabels = (dashboard.daily || []).map((d) => d.label).reverse();
+        const dailyCounts = (dashboard.daily || []).map((d) => d.count).reverse();
+        dailyChart = renderChart(dailyChart, dailyChartEl, 'line', dailyLabels, dailyCounts, 'Daily Hits');
+
+        const weeklyLabels = (dashboard.weekly || []).map((w) => w.label).reverse();
+        const weeklyCounts = (dashboard.weekly || []).map((w) => w.count).reverse();
+        weeklyChart = renderChart(weeklyChart, weeklyChartEl, 'bar', weeklyLabels, weeklyCounts, 'Weekly Hits');
+
+        const monthlyLabels = (dashboard.monthly || []).map((m) => m.label).reverse();
+        const monthlyCounts = (dashboard.monthly || []).map((m) => m.count).reverse();
+        monthlyChart = renderChart(monthlyChart, monthlyChartEl, 'bar', monthlyLabels, monthlyCounts, 'Monthly Hits');
     }
 
-    function renderList(container, items) {
-        container.innerHTML = '';
-        items.forEach((i) => {
-            const item = document.createElement('span');
-            item.textContent = `${i.label} (${i.count})`;
-            container.appendChild(item);
+    function renderChart(instance, canvas, type, labels, data, label) {
+        if (!canvas || !window.Chart) return instance;
+        if (instance) {
+            instance.data.labels = labels;
+            instance.data.datasets[0].data = data;
+            instance.update();
+            return instance;
+        }
+        return new Chart(canvas, {
+            type,
+            data: {
+                labels,
+                datasets: [{
+                    label,
+                    data,
+                    borderColor: '#ff6b9d',
+                    backgroundColor: 'rgba(233, 69, 96, 0.35)',
+                    fill: type === 'line',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#a0a0a0' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y: {
+                        ticks: { color: '#a0a0a0' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
         });
     }
 

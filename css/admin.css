@@ -55,6 +55,10 @@ body {
     display: none;
 }
 
+.hidden {
+    display: none;
+}
+
 .admin-form {
     display: grid;
     gap: 12px;
@@ -185,6 +189,15 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 16px;
+}
+
+.chart-card {
+    min-height: 220px;
+}
+
+.chart-card canvas {
+    width: 100% !important;
+    height: 180px !important;
 }
 
 .dashboard-card h3 {

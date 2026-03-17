@@ -49,24 +49,24 @@
                     <div class="small-text" id="mostVisitedPage">-</div>
                     <div class="small-text" id="mostVisitedCount">0 visits</div>
                 </div>
-                <div class="dashboard-card">
+                <div class="dashboard-card chart-card">
                     <h3>Top Pages</h3>
-                    <div class="list" id="topPagesList"></div>
+                    <canvas id="topPagesChart"></canvas>
                 </div>
             </div>
 
             <div class="dashboard-grid">
-                <div class="dashboard-card">
+                <div class="dashboard-card chart-card">
                     <h3>Daily Hits</h3>
-                    <div class="list" id="dailyList"></div>
+                    <canvas id="dailyChart"></canvas>
                 </div>
-                <div class="dashboard-card">
+                <div class="dashboard-card chart-card">
                     <h3>Weekly Hits</h3>
-                    <div class="list" id="weeklyList"></div>
+                    <canvas id="weeklyChart"></canvas>
                 </div>
-                <div class="dashboard-card">
+                <div class="dashboard-card chart-card">
                     <h3>Monthly Hits</h3>
-                    <div class="list" id="monthlyList"></div>
+                    <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
         </div>
@@ -89,6 +89,7 @@
 </div>
 
 <script src="js/visit-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>
