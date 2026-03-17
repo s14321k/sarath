@@ -136,6 +136,7 @@
     function bind() {
         const next = getNextParam();
         const nextUrl = safeNextUrl(next);
+        const pageStart = Date.now();
 
         if (sessionStorage.getItem(VISIT_KEY)) {
             const name = sessionStorage.getItem(NAME_KEY) || '';
@@ -170,6 +171,64 @@
             const msg = result.knownUser ? `Welcome back, ${name}` : `Welcome new user, ${name}`;
             sessionStorage.setItem(WELCOME_KEY, msg);
             showBanner(msg);
+
+            // Track index page view + exit after login
+            const endpoint = window.VISIT_ENDPOINT || '';
+            if (endpoint) {
+                let geoData = null;
+                try {
+                    const raw = sessionStorage.getItem('geo');
+                    geoData = raw ? JSON.parse(raw) : null;
+                } catch {}
+                const basePayload = {
+                    eventType: 'page_view',
+                    name,
+                    clientTime: new Date().toISOString(),
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+                    locale: navigator.language || '',
+                    page: window.location.href,
+                    referrer: document.referrer || '',
+                    userAgent: navigator.userAgent || '',
+                    geo: geoData || undefined,
+                };
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify(basePayload),
+                    keepalive: true,
+                }).catch(() => {});
+
+                let sentExit = false;
+                function sendExit() {
+                    if (sentExit) return;
+                    sentExit = true;
+                    const durationMs = Date.now() - pageStart;
+                    const payload = {
+                        ...basePayload,
+                        eventType: 'page_exit',
+                        durationMs
+                    };
+                    const body = JSON.stringify(payload);
+                    if (navigator.sendBeacon) {
+                        try {
+                            const blob = new Blob([body], { type: 'application/json' });
+                            navigator.sendBeacon(endpoint, blob);
+                            return;
+                        } catch {}
+                    }
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body,
+                        keepalive: true,
+                    }).catch(() => {});
+                }
+                window.addEventListener('beforeunload', sendExit);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'hidden') sendExit();
+                });
+            }
+
             if (nextUrl) window.location.replace(nextUrl);
         });
     }
