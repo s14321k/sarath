@@ -370,12 +370,37 @@ body {
     padding: 8px 10px;
     border-radius: 8px;
     font-size: 13px;
+    align-self: flex-start;
+    max-width: 85%;
 }
 
 .message-meta {
     color: var(--text-dim);
     font-size: 11px;
     margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.chat-item-own {
+    align-self: flex-end;
+    background: rgba(233, 69, 96, 0.18);
+    border-color: rgba(233, 69, 96, 0.45);
+    text-align: right;
+}
+
+.chat-day {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 6px 0;
+}
+
+.chat-seen {
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-dim);
 }
 
 .message-actions {

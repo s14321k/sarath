@@ -40,6 +40,7 @@
     let weeklyChart = null;
     let monthlyChart = null;
     let adminCreds = { username: '', password: '' };
+    let messagesActive = false;
 
     function setError(msg) {
         if (err) err.textContent = msg || '';
@@ -307,16 +308,47 @@
         return json.messages || [];
     }
 
+    function dayLabel(date) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const that = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const diffDays = Math.round((today - that) / 86400000);
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        return that.toLocaleDateString();
+    }
+
+    function fmtTime(date) {
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
     function renderMessages(container, list, scope) {
         if (!container) return;
         container.innerHTML = '';
-        const items = list.map((m, index) => ({ m, index })).slice(-50).reverse();
+        const items = list.map((m, index) => {
+            const dt = new Date(m.time || Date.now());
+            return { m, index, dt, label: dayLabel(dt) };
+        }).slice(-50).reverse();
+        let currentLabel = '';
         items.forEach(({ m, index }) => {
+            const dt = new Date(m.time || Date.now());
+            const label = dayLabel(dt);
+            if (label !== currentLabel) {
+                currentLabel = label;
+                const header = document.createElement('div');
+                header.className = 'chat-day';
+                header.textContent = label;
+                container.appendChild(header);
+            }
             const item = document.createElement('div');
             item.className = 'message-item';
+            if ((m.from || '').toLowerCase() === (adminCreds.username || '').toLowerCase()) {
+                item.classList.add('chat-item-own');
+            }
             const meta = document.createElement('div');
             meta.className = 'message-meta';
-            meta.textContent = `${m.from || ''} -> ${m.to || ''} * ${m.time || ''}`;
+            const timeText = m.time ? fmtTime(dt) : '';
+            meta.textContent = `${m.from || ''} -> ${m.to || ''} * ${timeText}`;
             const body = document.createElement('div');
             body.textContent = m.message || '';
             const actions = document.createElement('div');
@@ -330,6 +362,12 @@
             actions.appendChild(delBtn);
             item.appendChild(meta);
             item.appendChild(body);
+            if (m.seenAt && (m.from || '').toLowerCase() === (adminCreds.username || '').toLowerCase()) {
+                const seen = document.createElement('div');
+                seen.className = 'chat-seen';
+                seen.textContent = `seen ${new Date(m.seenAt).toLocaleString()}`;
+                item.appendChild(seen);
+            }
             item.appendChild(actions);
             container.appendChild(item);
         });
@@ -372,18 +410,23 @@
     function showDashboard() {
         if (dashboardView) dashboardView.classList.remove('hidden');
         if (tableWrap) tableWrap.classList.add('hidden');
+        if (messagesView) messagesView.classList.add('hidden');
+        messagesActive = false;
     }
 
     function showTable() {
         if (dashboardView) dashboardView.classList.add('hidden');
         if (tableWrap) tableWrap.classList.remove('hidden');
         if (messagesView) messagesView.classList.add('hidden');
+        messagesActive = false;
     }
 
     function showMessages() {
         if (dashboardView) dashboardView.classList.add('hidden');
         if (tableWrap) tableWrap.classList.add('hidden');
         if (messagesView) messagesView.classList.remove('hidden');
+        messagesActive = true;
+        pollMessages();
     }
 
     function wireMessageForms() {
@@ -414,6 +457,10 @@
     }
 
     async function pollMessages() {
+        if (!messagesActive) {
+            schedulePoll(30000);
+            return;
+        }
         if (document.visibilityState === 'hidden') {
             schedulePoll(30000);
             return;
@@ -479,7 +526,7 @@
     }
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            pollMessages();
+            if (messagesActive) pollMessages();
         }
     });
 })();

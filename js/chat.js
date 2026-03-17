@@ -247,7 +247,7 @@
             body.textContent = m.message || '';
             row.appendChild(meta);
             row.appendChild(body);
-            if (m.seenAt) {
+            if (m.seenAt && (m.from || '').toLowerCase() === (user || '').toLowerCase()) {
                 const seen = document.createElement('div');
                 seen.className = 'chat-seen';
                 seen.textContent = `seen ${new Date(m.seenAt).toLocaleString()}`;
