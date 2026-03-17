@@ -16,6 +16,7 @@
     const mostVisitedPage = document.getElementById('mostVisitedPage');
     const mostVisitedCount = document.getElementById('mostVisitedCount');
     const topPagesChartEl = document.getElementById('topPagesChart');
+    const topPagesLegend = document.getElementById('topPagesLegend');
     const dailyChartEl = document.getElementById('dailyChart');
     const weeklyChartEl = document.getElementById('weeklyChart');
     const monthlyChartEl = document.getElementById('monthlyChart');
@@ -44,7 +45,7 @@
                 const item = document.createElement('span');
                 const hours = (Number(p.totalMs || 0) / 3600000).toFixed(2);
                 const lastSeen = p.lastSeenMs ? new Date(p.lastSeenMs).toLocaleString() : '-';
-                item.textContent = `${p.page} (${p.count}) | ${hours}h | ${lastSeen}`;
+                item.textContent = `${formatPageName(p.page)} (${p.count}) | ${hours}h | ${lastSeen}`;
                 pageList.appendChild(item);
             });
             pagesTd.appendChild(pageList);
@@ -84,16 +85,17 @@
         if (!dashboard) return;
         totalPagesCount.textContent = String(dashboard.totalPages || 0);
         if (dashboard.mostVisitedPage) {
-            mostVisitedPage.textContent = dashboard.mostVisitedPage.page;
+            mostVisitedPage.textContent = formatPageName(dashboard.mostVisitedPage.page);
             mostVisitedCount.textContent = `${dashboard.mostVisitedPage.count} visits`;
         } else {
             mostVisitedPage.textContent = '-';
             mostVisitedCount.textContent = '0 visits';
         }
 
-        const topLabels = (dashboard.topPages || []).map((p) => p.page);
+        const topLabels = (dashboard.topPages || []).map((p) => formatPageName(p.page));
         const topCounts = (dashboard.topPages || []).map((p) => p.count);
-        topPagesChart = renderChart(topPagesChart, topPagesChartEl, 'bar', topLabels, topCounts, 'Visits');
+        topPagesChart = renderChart(topPagesChart, topPagesChartEl, 'doughnut', topLabels, topCounts, 'Visits');
+        renderLegend(topPagesLegend, topLabels, topCounts);
 
         const dailyLabels = (dashboard.daily || []).map((d) => d.label).reverse();
         const dailyCounts = (dashboard.daily || []).map((d) => d.count).reverse();
@@ -116,6 +118,7 @@
             instance.update();
             return instance;
         }
+        const colors = makeColors(data.length);
         return new Chart(canvas, {
             type,
             data: {
@@ -124,7 +127,7 @@
                     label,
                     data,
                     borderColor: '#ff6b9d',
-                    backgroundColor: 'rgba(233, 69, 96, 0.35)',
+                    backgroundColor: type === 'doughnut' ? colors : 'rgba(233, 69, 96, 0.35)',
                     fill: type === 'line',
                     tension: 0.3
                 }]
@@ -133,7 +136,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: type === 'doughnut' }
                 },
                 scales: {
                     x: {
@@ -147,6 +150,48 @@
                 }
             }
         });
+    }
+
+    function renderLegend(container, labels, counts) {
+        if (!container) return;
+        container.innerHTML = '';
+        const colors = makeColors(labels.length);
+        labels.forEach((label, idx) => {
+            const row = document.createElement('div');
+            row.className = 'legend-item';
+            const swatch = document.createElement('span');
+            swatch.className = 'legend-swatch';
+            swatch.style.backgroundColor = colors[idx];
+            const text = document.createElement('span');
+            text.textContent = `${label} (${counts[idx] || 0})`;
+            row.appendChild(swatch);
+            row.appendChild(text);
+            container.appendChild(row);
+        });
+    }
+
+    function makeColors(n) {
+        const palette = [
+            '#ff6b9d', '#ffa07a', '#87ceeb', '#98d8c8', '#f9c74f',
+            '#90be6d', '#f9844a', '#577590', '#e76f51', '#9b5de5'
+        ];
+        const out = [];
+        for (let i = 0; i < n; i++) {
+            out.push(palette[i % palette.length]);
+        }
+        return out;
+    }
+
+    function formatPageName(url) {
+        if (!url) return '';
+        try {
+            const u = new URL(url, window.location.origin);
+            const parts = u.pathname.split('/').filter(Boolean);
+            const last = parts[parts.length - 1] || '';
+            return last.replace(/\.html$/i, '') || last;
+        } catch {
+            return String(url).replace(/.*\/([^/]+)\.html?$/i, '$1');
+        }
     }
 
     async function fetchStats(username, password) {
