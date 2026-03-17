@@ -30,7 +30,7 @@
         const modal = $('visitModal');
         if (!modal) return;
         modal.classList.remove('hidden');
-        const input = $('visitName');
+        const input = $('loginUser');
         if (input) input.focus();
     }
 
@@ -43,7 +43,7 @@
     function validateName(name) {
         const trimmed = String(name || '').trim();
         if (trimmed.length < 2 || trimmed.length > 40) return '';
-        if (!/^[A-Za-z][A-Za-z\s.'-]*$/.test(trimmed)) return '';
+        if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(trimmed)) return '';
         return trimmed;
     }
 
@@ -92,14 +92,15 @@
         });
     }
 
-    async function sendLogin(name) {
+    async function sendLogin(username, password) {
         const endpoint = window.VISIT_ENDPOINT || '';
         if (!endpoint) return { knownUser: false };
 
         const geo = getStoredGeo();
         const payload = {
-            eventType: 'login',
-            name,
+            eventType: 'auth',
+            username,
+            password,
             clientTime: new Date().toISOString(),
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
             locale: navigator.language || '',
@@ -126,10 +127,32 @@
                 body: JSON.stringify(payload),
             });
             const json = await res.json().catch(() => ({}));
-            return { knownUser: Boolean(json.knownUser) };
+            if (!res.ok) return { ok: false };
+            return { ok: true, knownUser: Boolean(json.knownUser) };
         } catch (e) {
             // Ignore network errors to avoid blocking UX
-            return { knownUser: false };
+            return { ok: false };
+        }
+    }
+
+    async function sendSignup(username, password) {
+        const endpoint = window.VISIT_ENDPOINT || '';
+        if (!endpoint) return { ok: false };
+        const payload = {
+            eventType: 'signup',
+            username,
+            password
+        };
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) return { ok: false, status: res.status };
+            return { ok: true };
+        } catch {
+            return { ok: false };
         }
     }
 
@@ -149,28 +172,66 @@
 
         showModal();
 
-        const form = $('visitForm');
-        const input = $('visitName');
-        if (!form || !input) return;
+        const loginForm = $('loginForm');
+        const loginUser = $('loginUser');
+        const loginPass = $('loginPass');
+        const loginError = $('loginError');
+        const signupForm = $('signupForm');
+        const signupUser = $('signupUser');
+        const signupPass = $('signupPass');
+        const signupConfirm = $('signupConfirm');
+        const signupError = $('signupError');
+        const loginTab = $('loginTab');
+        const signupTab = $('signupTab');
+        const loginPanel = $('loginPanel');
+        const signupPanel = $('signupPanel');
 
-        form.addEventListener('submit', async (ev) => {
+        if (!loginForm || !loginUser || !loginPass) return;
+
+        function showLogin() {
+            loginTab.classList.add('active');
+            signupTab.classList.remove('active');
+            loginPanel.classList.remove('hidden');
+            signupPanel.classList.add('hidden');
+        }
+
+        function showSignup() {
+            signupTab.classList.add('active');
+            loginTab.classList.remove('active');
+            signupPanel.classList.remove('hidden');
+            loginPanel.classList.add('hidden');
+        }
+
+        loginTab?.addEventListener('click', showLogin);
+        signupTab?.addEventListener('click', showSignup);
+
+        // Default to login only
+        showLogin();
+
+        loginForm.addEventListener('submit', async (ev) => {
             ev.preventDefault();
-            const name = validateName(input.value);
-            if (!name) {
-                setError('Enter a valid name (letters, spaces, 2-40 chars).');
+            if (loginError) loginError.textContent = '';
+            const username = validateName(loginUser.value);
+            const password = String(loginPass.value || '');
+            if (!username || password.length < 6) {
+                if (loginError) loginError.textContent = 'Enter valid username and password.';
                 return;
             }
-            setError('');
+            const result = await sendLogin(username, password);
+            if (!result.ok) {
+                if (loginError) loginError.textContent = 'Invalid username or password.';
+                return;
+            }
             sessionStorage.setItem(VISIT_KEY, '1');
-            sessionStorage.setItem(NAME_KEY, name);
+            sessionStorage.setItem(NAME_KEY, username);
             hideModal();
             const geo = await getGeoAsync();
             if (geo) storeGeo(geo);
-            const result = await sendLogin(name);
             sessionStorage.setItem(KNOWN_KEY, result.knownUser ? '1' : '0');
-            const msg = result.knownUser ? `Welcome back, ${name}` : `Welcome new user, ${name}`;
+            const msg = `Welcome back, ${username}`;
             sessionStorage.setItem(WELCOME_KEY, msg);
             showBanner(msg);
+            document.dispatchEvent(new CustomEvent('visit-login', { detail: { username } }));
 
             // Track index page view + exit after login
             const endpoint = window.VISIT_ENDPOINT || '';
@@ -182,7 +243,7 @@
                 } catch {}
                 const basePayload = {
                     eventType: 'page_view',
-                    name,
+                    name: username,
                     clientTime: new Date().toISOString(),
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
                     locale: navigator.language || '',
@@ -230,6 +291,36 @@
             }
 
             if (nextUrl) window.location.replace(nextUrl);
+        });
+
+        signupForm?.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            if (signupError) signupError.textContent = '';
+            const username = validateName(signupUser.value);
+            const password = String(signupPass.value || '');
+            const confirm = String(signupConfirm.value || '');
+            if (!username || password.length < 6) {
+                if (signupError) signupError.textContent = 'Enter valid username and password.';
+                return;
+            }
+            if (password !== confirm) {
+                if (signupError) signupError.textContent = 'Passwords do not match.';
+                return;
+            }
+            const result = await sendSignup(username, password);
+            if (!result.ok) {
+                if (result.status === 409) {
+                    if (signupError) signupError.textContent = 'Username already exists.';
+                } else {
+                    if (signupError) signupError.textContent = 'Signup failed.';
+                }
+                return;
+            }
+            // Switch to login after signup
+            signupPass.value = '';
+            signupConfirm.value = '';
+            showLogin();
+            if (loginError) loginError.textContent = 'Signup successful. Please login.';
         });
     }
 

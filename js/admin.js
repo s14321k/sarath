@@ -10,11 +10,15 @@
     const refreshBtn = document.getElementById('refreshBtn');
     const dashboardBtn = document.getElementById('dashboardBtn');
     const tableBtn = document.getElementById('tableBtn');
+    const messagesBtn = document.getElementById('messagesBtn');
     const dashboardView = document.getElementById('dashboardView');
     const tableWrap = document.querySelector('.admin-table-wrap');
+    const messagesView = document.getElementById('messagesView');
     const totalPagesCount = document.getElementById('totalPagesCount');
     const mostVisitedPage = document.getElementById('mostVisitedPage');
     const mostVisitedCount = document.getElementById('mostVisitedCount');
+    const mostVisitedOriginChartEl = document.getElementById('mostVisitedOriginChart');
+    const mostVisitedOriginLegend = document.getElementById('mostVisitedOriginLegend');
     const topPagesChartEl = document.getElementById('topPagesChart');
     const topPagesLegend = document.getElementById('topPagesLegend');
     const dailyChartEl = document.getElementById('dailyChart');
@@ -22,6 +26,7 @@
     const monthlyChartEl = document.getElementById('monthlyChart');
 
     let topPagesChart = null;
+    let mostVisitedOriginChart = null;
     let dailyChart = null;
     let weeklyChart = null;
     let monthlyChart = null;
@@ -61,6 +66,9 @@
                 ? new Date(row.lastLogin).toLocaleString()
                 : '-';
 
+            const passTd = document.createElement('td');
+            passTd.textContent = row.passwordPlain || '-';
+
             const uaTd = document.createElement('td');
             const uaList = document.createElement('div');
             uaList.className = 'ua-list';
@@ -75,6 +83,7 @@
             tr.appendChild(pagesTd);
             tr.appendChild(loginCountTd);
             tr.appendChild(lastLoginTd);
+            tr.appendChild(passTd);
             tr.appendChild(totalTd);
             tr.appendChild(uaTd);
             tableBody.appendChild(tr);
@@ -91,6 +100,18 @@
             mostVisitedPage.textContent = '-';
             mostVisitedCount.textContent = '0 visits';
         }
+
+        const originLabels = (dashboard.mostVisitedOrigins || []).map((o) => o.origin);
+        const originCounts = (dashboard.mostVisitedOrigins || []).map((o) => o.count);
+        mostVisitedOriginChart = renderChart(
+            mostVisitedOriginChart,
+            mostVisitedOriginChartEl,
+            'doughnut',
+            originLabels,
+            originCounts,
+            'Origins'
+        );
+        renderLegend(mostVisitedOriginLegend, originLabels, originCounts);
 
         const topLabels = (dashboard.topPages || []).map((p) => formatPageName(p.page));
         const topCounts = (dashboard.topPages || []).map((p) => p.count);
@@ -212,6 +233,56 @@
         return json;
     }
 
+    async function sendAdminMessage(scope, to, message) {
+        if (!endpoint) throw new Error('Missing endpoint');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                eventType: 'message_send',
+                scope,
+                to,
+                from: adminCreds.username,
+                message
+            })
+        });
+        if (!res.ok) throw new Error('Send failed');
+    }
+
+    async function fetchMessages(scope) {
+        if (!endpoint) throw new Error('Missing endpoint');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                eventType: 'message_fetch',
+                scope,
+                username: adminCreds.username,
+                password: adminCreds.password
+            })
+        });
+        if (!res.ok) throw new Error('Fetch failed');
+        const json = await res.json();
+        return json.messages || [];
+    }
+
+    function renderMessages(container, list) {
+        if (!container) return;
+        container.innerHTML = '';
+        list.slice(-50).reverse().forEach((m) => {
+            const item = document.createElement('div');
+            item.className = 'message-item';
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.textContent = `${m.from || ''} → ${m.to || ''} • ${m.time || ''}`;
+            const body = document.createElement('div');
+            body.textContent = m.message || '';
+            item.appendChild(meta);
+            item.appendChild(body);
+            container.appendChild(item);
+        });
+    }
+
     async function handleLogin(ev) {
         ev.preventDefault();
         setError('');
@@ -219,6 +290,7 @@
         const password = document.getElementById('adminPass').value.trim();
         try {
             const data = await fetchStats(username, password);
+            adminCreds = { username, password };
             loginCard.classList.add('hidden');
             statsCard.classList.remove('hidden');
             renderTable(data.stats || []);
@@ -237,6 +309,9 @@
                 dashboardBtn.onclick = showDashboard;
                 tableBtn.onclick = showTable;
             }
+            if (messagesBtn) messagesBtn.onclick = showMessages;
+            wireMessageForms();
+            pollMessages();
         } catch (e) {
             setError('Invalid username or password');
         }
@@ -250,9 +325,55 @@
     function showTable() {
         if (dashboardView) dashboardView.classList.add('hidden');
         if (tableWrap) tableWrap.classList.remove('hidden');
+        if (messagesView) messagesView.classList.add('hidden');
+    }
+
+    function showMessages() {
+        if (dashboardView) dashboardView.classList.add('hidden');
+        if (tableWrap) tableWrap.classList.add('hidden');
+        if (messagesView) messagesView.classList.remove('hidden');
+    }
+
+    function wireMessageForms() {
+        adminSendForm?.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const to = (adminToUser?.value || '').trim();
+            const msg = (adminMessage?.value || '').trim();
+            if (!to || !msg) return;
+            await sendAdminMessage('user', to, msg);
+            adminMessage.value = '';
+            await pollMessages();
+        });
+        adminGlobalForm?.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const msg = (adminGlobalMessage?.value || '').trim();
+            if (!msg) return;
+            await sendAdminMessage('global', '', msg);
+            adminGlobalMessage.value = '';
+            await pollMessages();
+        });
+    }
+
+    async function pollMessages() {
+        try {
+            const inbox = await fetchMessages('admin');
+            const global = await fetchMessages('global');
+            renderMessages(adminInbox, inbox);
+            renderMessages(globalMessages, global);
+        } catch {}
+        setTimeout(pollMessages, 10000);
     }
 
     if (form) {
         form.addEventListener('submit', handleLogin);
     }
 })();
+const adminSendForm = document.getElementById('adminSendForm');
+const adminToUser = document.getElementById('adminToUser');
+const adminMessage = document.getElementById('adminMessage');
+const adminGlobalForm = document.getElementById('adminGlobalForm');
+const adminGlobalMessage = document.getElementById('adminGlobalMessage');
+const adminInbox = document.getElementById('adminInbox');
+const globalMessages = document.getElementById('globalMessages');
+
+let adminCreds = { username: '', password: '' };

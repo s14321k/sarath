@@ -35,6 +35,7 @@
             <div class="stats-actions">
                 <button id="dashboardBtn" type="button">Dashboard View</button>
                 <button id="tableBtn" type="button">Table View</button>
+                <button id="messagesBtn" type="button">Messages</button>
                 <button id="refreshBtn" type="button">Refresh</button>
             </div>
         </div>
@@ -48,6 +49,8 @@
                     <h3>Most Visited Page</h3>
                     <div class="small-text" id="mostVisitedPage">-</div>
                     <div class="small-text" id="mostVisitedCount">0 visits</div>
+                    <canvas id="mostVisitedOriginChart"></canvas>
+                    <div class="legend-list" id="mostVisitedOriginLegend"></div>
                 </div>
                 <div class="dashboard-card chart-card">
                     <h3>Top Pages</h3>
@@ -79,12 +82,46 @@
                     <th>Page Name (Count / Hours / Last Seen)</th>
                     <th>Login Count</th>
                     <th>Last Login</th>
+                    <th>Password</th>
                     <th>Total Visits</th>
                     <th>User Agents</th>
                 </tr>
                 </thead>
                 <tbody></tbody>
             </table>
+        </div>
+        <div class="messages-view hidden" id="messagesView">
+            <div class="messages-grid">
+                <div class="message-card">
+                    <h3>Send To User</h3>
+                    <form id="adminSendForm">
+                        <input type="text" id="adminToUser" placeholder="Username">
+                        <textarea id="adminMessage" placeholder="Message"></textarea>
+                        <button type="submit">Send</button>
+                    </form>
+                </div>
+                <div class="message-card">
+                    <h3>Send Global</h3>
+                    <form id="adminGlobalForm">
+                        <textarea id="adminGlobalMessage" placeholder="Message to all"></textarea>
+                        <button type="submit">Send</button>
+                    </form>
+                </div>
+            </div>
+            <div class="message-card">
+                <div class="message-card-header">
+                    <h3>Admin Inbox</h3>
+                    <button type="button" id="adminInboxClear">Delete All</button>
+                </div>
+                <div class="message-list" id="adminInbox"></div>
+            </div>
+            <div class="message-card">
+                <div class="message-card-header">
+                    <h3>Global Messages</h3>
+                    <button type="button" id="globalMessagesClear">Delete All</button>
+                </div>
+                <div class="message-list" id="globalMessages"></div>
+            </div>
         </div>
     </section>
 </div>

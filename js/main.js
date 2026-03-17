@@ -350,3 +350,12 @@
 
 })();
 
+// Chat widget (for content pages)
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.pathname.includes('/pages/')) {
+        const script = document.createElement('script');
+        script.src = '../js/chat.js';
+        document.body.appendChild(script);
+    }
+});
+
