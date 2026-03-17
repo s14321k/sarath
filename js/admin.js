@@ -24,12 +24,22 @@
     const dailyChartEl = document.getElementById('dailyChart');
     const weeklyChartEl = document.getElementById('weeklyChart');
     const monthlyChartEl = document.getElementById('monthlyChart');
+    const adminSendForm = document.getElementById('adminSendForm');
+    const adminToUser = document.getElementById('adminToUser');
+    const adminMessage = document.getElementById('adminMessage');
+    const adminGlobalForm = document.getElementById('adminGlobalForm');
+    const adminGlobalMessage = document.getElementById('adminGlobalMessage');
+    const adminInbox = document.getElementById('adminInbox');
+    const globalMessages = document.getElementById('globalMessages');
+    const adminInboxClear = document.getElementById('adminInboxClear');
+    const globalMessagesClear = document.getElementById('globalMessagesClear');
 
     let topPagesChart = null;
     let mostVisitedOriginChart = null;
     let dailyChart = null;
     let weeklyChart = null;
     let monthlyChart = null;
+    let adminCreds = { username: '', password: '' };
 
     function setError(msg) {
         if (err) err.textContent = msg || '';
@@ -45,8 +55,13 @@
 
             const pagesTd = document.createElement('td');
             const pageList = document.createElement('div');
-            pageList.className = 'page-list';
-            (row.pages || []).forEach((p) => {
+            pageList.className = 'page-list collapsed';
+            const pageToggle = document.createElement('button');
+            pageToggle.type = 'button';
+            pageToggle.className = 'list-toggle';
+            pageToggle.textContent = 'Show more';
+            const sortedPages = (row.pages || []).slice().sort((a, b) => (b.lastSeenMs || 0) - (a.lastSeenMs || 0));
+            sortedPages.forEach((p) => {
                 const item = document.createElement('span');
                 const hours = (Number(p.totalMs || 0) / 3600000).toFixed(2);
                 const lastSeen = p.lastSeenMs ? new Date(p.lastSeenMs).toLocaleString() : '-';
@@ -54,6 +69,9 @@
                 pageList.appendChild(item);
             });
             pagesTd.appendChild(pageList);
+            if (sortedPages.length > 1) {
+                pagesTd.appendChild(pageToggle);
+            }
 
             const totalTd = document.createElement('td');
             totalTd.textContent = String(row.total || 0);
@@ -71,13 +89,20 @@
 
             const uaTd = document.createElement('td');
             const uaList = document.createElement('div');
-            uaList.className = 'ua-list';
+            uaList.className = 'ua-list collapsed';
+            const uaToggle = document.createElement('button');
+            uaToggle.type = 'button';
+            uaToggle.className = 'list-toggle';
+            uaToggle.textContent = 'Show more';
             (row.userAgents || []).forEach((ua) => {
                 const item = document.createElement('span');
                 item.textContent = ua;
                 uaList.appendChild(item);
             });
             uaTd.appendChild(uaList);
+            if ((row.userAgents || []).length > 1) {
+                uaTd.appendChild(uaToggle);
+            }
 
             tr.appendChild(nameTd);
             tr.appendChild(pagesTd);
@@ -87,6 +112,22 @@
             tr.appendChild(totalTd);
             tr.appendChild(uaTd);
             tableBody.appendChild(tr);
+
+            // Toggle visibility for long lists
+            if (sortedPages.length > 1) {
+                pageToggle.addEventListener('click', () => {
+                    const expanded = pageList.classList.toggle('expanded');
+                    pageList.classList.toggle('collapsed', !expanded);
+                    pageToggle.textContent = expanded ? 'Show less' : 'Show more';
+                });
+            }
+            if ((row.userAgents || []).length > 1) {
+                uaToggle.addEventListener('click', () => {
+                    const expanded = uaList.classList.toggle('expanded');
+                    uaList.classList.toggle('collapsed', !expanded);
+                    uaToggle.textContent = expanded ? 'Show less' : 'Show more';
+                });
+            }
         });
     }
 
@@ -442,12 +483,3 @@
         }
     });
 })();
-    const adminSendForm = document.getElementById('adminSendForm');
-    const adminToUser = document.getElementById('adminToUser');
-    const adminMessage = document.getElementById('adminMessage');
-    const adminGlobalForm = document.getElementById('adminGlobalForm');
-    const adminGlobalMessage = document.getElementById('adminGlobalMessage');
-    const adminInbox = document.getElementById('adminInbox');
-    const globalMessages = document.getElementById('globalMessages');
-
-    let adminCreds = { username: '', password: '' };
