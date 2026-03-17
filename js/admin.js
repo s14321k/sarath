@@ -266,19 +266,30 @@
         return json.messages || [];
     }
 
-    function renderMessages(container, list) {
+    function renderMessages(container, list, scope) {
         if (!container) return;
         container.innerHTML = '';
-        list.slice(-50).reverse().forEach((m) => {
+        const items = list.map((m, index) => ({ m, index })).slice(-50).reverse();
+        items.forEach(({ m, index }) => {
             const item = document.createElement('div');
             item.className = 'message-item';
             const meta = document.createElement('div');
             meta.className = 'message-meta';
-            meta.textContent = `${m.from || ''} → ${m.to || ''} • ${m.time || ''}`;
+            meta.textContent = `${m.from || ''} -> ${m.to || ''} * ${m.time || ''}`;
             const body = document.createElement('div');
             body.textContent = m.message || '';
+            const actions = document.createElement('div');
+            actions.className = 'message-actions';
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.textContent = 'Delete';
+            delBtn.dataset.scope = scope;
+            if (m.id) delBtn.dataset.id = String(m.id);
+            delBtn.dataset.index = String(index);
+            actions.appendChild(delBtn);
             item.appendChild(meta);
             item.appendChild(body);
+            item.appendChild(actions);
             container.appendChild(item);
         });
     }
@@ -354,26 +365,89 @@
         });
     }
 
+    let pollTimer = null;
+
+    function schedulePoll(delay) {
+        if (pollTimer) clearTimeout(pollTimer);
+        pollTimer = setTimeout(pollMessages, delay);
+    }
+
     async function pollMessages() {
+        if (document.visibilityState === 'hidden') {
+            schedulePoll(30000);
+            return;
+        }
         try {
             const inbox = await fetchMessages('admin');
             const global = await fetchMessages('global');
-            renderMessages(adminInbox, inbox);
-            renderMessages(globalMessages, global);
+            renderMessages(adminInbox, inbox, 'admin');
+            renderMessages(globalMessages, global, 'global');
         } catch {}
-        setTimeout(pollMessages, 10000);
+        schedulePoll(10000);
     }
+
+    async function deleteMessages(scope, index, deleteAll, id) {
+        if (!endpoint) throw new Error('Missing endpoint');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                eventType: 'message_delete',
+                scope,
+                index,
+                deleteAll,
+                username: adminCreds.username,
+                password: adminCreds.password
+            })
+        });
+        if (!res.ok) throw new Error('Delete failed');
+    }
+
+    adminInbox?.addEventListener('click', async (ev) => {
+        const btn = ev.target?.closest('button[data-index]');
+        if (!btn) return;
+        const idx = Number(btn.dataset.index);
+        const id = btn.dataset.id || '';
+        const scope = btn.dataset.scope || 'admin';
+        await deleteMessages(scope, idx, false, id);
+        await pollMessages();
+    });
+
+    globalMessages?.addEventListener('click', async (ev) => {
+        const btn = ev.target?.closest('button[data-index]');
+        if (!btn) return;
+        const idx = Number(btn.dataset.index);
+        const id = btn.dataset.id || '';
+        const scope = btn.dataset.scope || 'global';
+        await deleteMessages(scope, idx, false, id);
+        await pollMessages();
+    });
+
+    adminInboxClear?.addEventListener('click', async () => {
+        await deleteMessages('admin', 0, true, '');
+        await pollMessages();
+    });
+
+    globalMessagesClear?.addEventListener('click', async () => {
+        await deleteMessages('global', 0, true, '');
+        await pollMessages();
+    });
 
     if (form) {
         form.addEventListener('submit', handleLogin);
     }
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            pollMessages();
+        }
+    });
 })();
-const adminSendForm = document.getElementById('adminSendForm');
-const adminToUser = document.getElementById('adminToUser');
-const adminMessage = document.getElementById('adminMessage');
-const adminGlobalForm = document.getElementById('adminGlobalForm');
-const adminGlobalMessage = document.getElementById('adminGlobalMessage');
-const adminInbox = document.getElementById('adminInbox');
-const globalMessages = document.getElementById('globalMessages');
+    const adminSendForm = document.getElementById('adminSendForm');
+    const adminToUser = document.getElementById('adminToUser');
+    const adminMessage = document.getElementById('adminMessage');
+    const adminGlobalForm = document.getElementById('adminGlobalForm');
+    const adminGlobalMessage = document.getElementById('adminGlobalMessage');
+    const adminInbox = document.getElementById('adminInbox');
+    const globalMessages = document.getElementById('globalMessages');
 
-let adminCreds = { username: '', password: '' };
+    let adminCreds = { username: '', password: '' };
