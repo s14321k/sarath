@@ -7,7 +7,10 @@
     const container = document.createElement('div');
     container.className = 'chat-widget';
     container.innerHTML = `
-        <div class="chat-header">Messages</div>
+        <div class="chat-header">
+            <span>Messages</span>
+            <button type="button" class="chat-min-btn" id="chatMinBtn" aria-label="Minimize">-</button>
+        </div>
         <div class="chat-status hidden" id="chatStatus"></div>
         <div class="chat-tabs">
             <button type="button" class="chat-tab active" data-tab="global">Global</button>
@@ -25,10 +28,102 @@
     const form = container.querySelector('#chatForm');
     const input = container.querySelector('#chatInput');
     const statusEl = container.querySelector('#chatStatus');
+    const minBtn = container.querySelector('#chatMinBtn');
     const tabs = container.querySelectorAll('.chat-tab');
     let current = 'global';
     let networkOk = true;
     let pollTimer = null;
+    let minimized = false;
+
+    const bubble = document.createElement('button');
+    bubble.type = 'button';
+    bubble.className = 'chat-bubble hidden';
+    bubble.textContent = 'Chat';
+    document.body.appendChild(bubble);
+
+    const resizer = document.createElement('div');
+    resizer.className = 'chat-resizer';
+    container.appendChild(resizer);
+
+    function setMinimized(next) {
+        minimized = next;
+        if (minimized) {
+            container.classList.add('chat-minimized');
+            bubble.classList.remove('hidden');
+        } else {
+            container.classList.remove('chat-minimized');
+            bubble.classList.add('hidden');
+        }
+    }
+
+    minBtn?.addEventListener('click', () => setMinimized(true));
+
+    // Draggable bubble
+    let dragActive = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let dragMoved = false;
+
+    bubble.addEventListener('pointerdown', (ev) => {
+        dragActive = true;
+        dragMoved = false;
+        bubble.setPointerCapture(ev.pointerId);
+        const rect = bubble.getBoundingClientRect();
+        dragOffsetX = ev.clientX - rect.left;
+        dragOffsetY = ev.clientY - rect.top;
+    });
+    bubble.addEventListener('pointermove', (ev) => {
+        if (!dragActive) return;
+        dragMoved = true;
+        const x = Math.max(10, Math.min(window.innerWidth - 70, ev.clientX - dragOffsetX));
+        const y = Math.max(10, Math.min(window.innerHeight - 70, ev.clientY - dragOffsetY));
+        bubble.style.left = `${x}px`;
+        bubble.style.top = `${y}px`;
+    });
+    bubble.addEventListener('pointerup', () => {
+        dragActive = false;
+    });
+
+    bubble.addEventListener('click', (ev) => {
+        if (dragMoved) {
+            ev.preventDefault();
+            return;
+        }
+        setMinimized(false);
+    });
+
+    // Resize handle
+    let resizeActive = false;
+    let startW = 0;
+    let startH = 0;
+    let startX = 0;
+    let startY = 0;
+
+    resizer.addEventListener('pointerdown', (ev) => {
+        resizeActive = true;
+        resizer.setPointerCapture(ev.pointerId);
+        const rect = container.getBoundingClientRect();
+        startW = rect.width;
+        startH = rect.height;
+        startX = ev.clientX;
+        startY = ev.clientY;
+        container.style.right = `${window.innerWidth - rect.right}px`;
+        container.style.bottom = `${window.innerHeight - rect.bottom}px`;
+    });
+    resizer.addEventListener('pointermove', (ev) => {
+        if (!resizeActive) return;
+        const dx = startX - ev.clientX;
+        const dy = startY - ev.clientY;
+        const maxW = Math.min(window.innerWidth * 0.95, 1200);
+        const maxH = Math.min(window.innerHeight * 0.95, window.innerHeight - 20);
+        const nextW = Math.min(maxW, Math.max(280, startW + dx));
+        const nextH = Math.min(maxH, Math.max(320, startH + dy));
+        container.style.width = `${nextW}px`;
+        container.style.height = `${nextH}px`;
+    });
+    resizer.addEventListener('pointerup', () => {
+        resizeActive = false;
+    });
 
     tabs.forEach((t) => {
         t.addEventListener('click', () => {
