@@ -17,6 +17,7 @@
     const cache = new Map();
     let indexData = null;
     let indexSource = '';
+    let activeIndex = -1;
 
     function setStatus(msg) {
         if (statusEl) statusEl.textContent = msg || '';
@@ -24,10 +25,13 @@
 
     function clearResults() {
         resultsEl.innerHTML = '';
+        activeIndex = -1;
     }
 
     function addResult(item, snippet) {
         const li = document.createElement('li');
+        li.classList.add('search-result-item');
+        li.dataset.index = String(resultsEl.children.length);
         const a = document.createElement('a');
         a.href = item.href;
         a.textContent = item.title || item.href;
@@ -36,6 +40,18 @@
         li.appendChild(a);
         li.appendChild(p);
         resultsEl.appendChild(li);
+    }
+
+    function updateActiveResult(nextIndex) {
+        const items = Array.from(resultsEl.querySelectorAll('.search-result-item'));
+        items.forEach((el) => el.classList.remove('active'));
+        if (nextIndex >= 0 && items[nextIndex]) {
+            items[nextIndex].classList.add('active');
+            items[nextIndex].scrollIntoView({ block: 'nearest' });
+            activeIndex = nextIndex;
+        } else {
+            activeIndex = -1;
+        }
     }
 
     function extractText(html) {
@@ -128,7 +144,7 @@
             let done = 0;
             for (const item of index) {
                 done += 1;
-                if (matches(item.text || '', qRaw)) {
+                if (matches(item.text || '', qRaw) || matches(item.title || '', qRaw) || matches(item.href || '', qRaw)) {
                     found += 1;
                     addResult({ href: item.href, title: item.title }, makeSnippet(item.text || '', q));
                     if (limit && found >= limit) break;
@@ -143,7 +159,7 @@
             for (const item of links) {
                 const text = await loadPageText(item.href);
                 done += 1;
-                if (matches(text, qRaw)) {
+                if (matches(text, qRaw) || matches(item.title || '', qRaw) || matches(item.href || '', qRaw)) {
                     found += 1;
                     addResult(item, makeSnippet(text, q));
                 }
@@ -174,6 +190,26 @@
     }, 180);
 
     input.addEventListener('input', debouncedSuggest);
+
+    input.addEventListener('keydown', (ev) => {
+        const items = resultsEl.querySelectorAll('.search-result-item');
+        if (!items.length) return;
+        if (ev.key === 'ArrowDown') {
+            ev.preventDefault();
+            const next = (activeIndex + 1) % items.length;
+            updateActiveResult(next);
+        } else if (ev.key === 'ArrowUp') {
+            ev.preventDefault();
+            const next = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+            updateActiveResult(next);
+        } else if (ev.key === 'Enter' && activeIndex >= 0) {
+            ev.preventDefault();
+            const link = items[activeIndex].querySelector('a');
+            if (link && link.href) window.location.href = link.href;
+        } else if (ev.key === 'Escape') {
+            updateActiveResult(-1);
+        }
+    });
 
     function debounce(fn, delay) {
         let timer = null;

@@ -467,6 +467,11 @@ body {
     border-radius: 10px;
 }
 
+.search-results li.active {
+    background: rgba(233, 69, 96, 0.18);
+    border-color: rgba(233, 69, 96, 0.5);
+}
+
 .search-results a {
     color: var(--accent-light);
     text-decoration: none;
