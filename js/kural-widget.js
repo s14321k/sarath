@@ -127,6 +127,20 @@
 
         if (!target.dataset.built) {
             target.innerHTML = `
+                <div class="kural-bubbles" aria-hidden="true">
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                    <span class="kural-bubble"></span>
+                </div>
                 <div class="kural-label" data-kural-label>Aram</div>
                 <button class="kural-next" type="button" data-kural-next aria-label="Next Thirukural">
                     <span class="kural-next-icon">→</span>

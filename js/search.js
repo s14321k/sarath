@@ -12,7 +12,7 @@
             href: a.getAttribute('href'),
             title: (a.querySelector('h2')?.textContent || a.textContent || '').trim()
         }))
-        .filter((x) => x.href && x.href.startsWith('pages/'));
+        .filter((x) => x.href && (x.href.startsWith('pages/') || x.href.startsWith('pages1/')));
 
     const cache = new Map();
     let indexData = null;

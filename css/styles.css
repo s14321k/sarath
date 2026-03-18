@@ -436,6 +436,7 @@ body {
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 14px;
             box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
         }
 
         .kural-banner.kural-floating {
@@ -464,6 +465,60 @@ body {
             letter-spacing: 2px;
             color: var(--highlight);
             text-shadow: 0 0 10px rgba(233, 69, 96, 0.8), 0 0 18px rgba(233, 69, 96, 0.5);
+        }
+
+        .kural-bubbles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .kural-bubble {
+            position: absolute;
+            top: 10%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.12);
+            opacity: 0.2;
+            animation: bubbleFloat 10s ease-in-out infinite;
+        }
+
+        .kural-bubble:nth-child(1) { left: 6%; top: 18%; width: 18px; height: 18px; animation-duration: 9s; animation-delay: 0s; }
+        .kural-bubble:nth-child(2) { left: 14%; top: 55%; width: 28px; height: 28px; animation-duration: 15s; animation-delay: 1.5s; }
+        .kural-bubble:nth-child(3) { left: 22%; top: 30%; width: 14px; height: 14px; animation-duration: 10s; animation-delay: 2s; }
+        .kural-bubble:nth-child(4) { left: 32%; top: 65%; width: 24px; height: 24px; animation-duration: 13s; animation-delay: 0.8s; }
+        .kural-bubble:nth-child(5) { left: 42%; top: 24%; width: 16px; height: 16px; animation-duration: 11s; animation-delay: 2.8s; }
+        .kural-bubble:nth-child(6) { left: 52%; top: 48%; width: 30px; height: 30px; animation-duration: 17s; animation-delay: 0.4s; }
+        .kural-bubble:nth-child(7) { left: 60%; top: 20%; width: 20px; height: 20px; animation-duration: 12s; animation-delay: 3.2s; }
+        .kural-bubble:nth-child(8) { left: 68%; top: 60%; width: 12px; height: 12px; animation-duration: 8s; animation-delay: 1.1s; }
+        .kural-bubble:nth-child(9) { left: 76%; top: 32%; width: 26px; height: 26px; animation-duration: 16s; animation-delay: 2.4s; }
+        .kural-bubble:nth-child(10) { left: 84%; top: 52%; width: 18px; height: 18px; animation-duration: 10.5s; animation-delay: 0.9s; }
+        .kural-bubble:nth-child(11) { left: 90%; top: 26%; width: 22px; height: 22px; animation-duration: 14s; animation-delay: 3.6s; }
+        .kural-bubble:nth-child(12) { left: 94%; top: 70%; width: 14px; height: 14px; animation-duration: 9.5s; animation-delay: 1.8s; }
+
+        .kural-label,
+        .kural-next,
+        .kural-content,
+        .kural-loading {
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes bubbleFloat {
+            0%, 100% { transform: translate(0, 0) scale(0.95); opacity: 0.2; }
+            35% { transform: translate(10px, -8px) scale(1.05); opacity: 0.3; }
+            70% { transform: translate(-6px, 10px) scale(1); opacity: 0.25; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .kural-bubble {
+                animation: none;
+                opacity: 0.35;
+                bottom: 10%;
+            }
         }
 
         .kural-next {
