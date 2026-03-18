@@ -111,10 +111,9 @@
         return indexData;
     }
 
-    form.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-        const qRaw = String(input.value || '').trim();
+    async function performSearch(qRaw, options = {}) {
         const q = qRaw.toLowerCase();
+        const limit = options.limit || 0;
         clearResults();
         if (!q) {
             setStatus('Enter a keyword to search.');
@@ -123,17 +122,22 @@
         const index = await loadIndex();
         let found = 0;
         if (index.length > 0) {
-            setStatus(`Searching ${index.length} pages (index: ${indexSource})...`);
+            if (!options.silent) {
+                setStatus(`Searching ${index.length} pages (index: ${indexSource})...`);
+            }
             let done = 0;
             for (const item of index) {
                 done += 1;
                 if (matches(item.text || '', qRaw)) {
                     found += 1;
                     addResult({ href: item.href, title: item.title }, makeSnippet(item.text || '', q));
+                    if (limit && found >= limit) break;
                 }
-                setStatus(`Searching ${index.length} pages... ${done}/${index.length}`);
+                if (!options.silent && !limit) {
+                    setStatus(`Searching ${index.length} pages... ${done}/${index.length}`);
+                }
             }
-        } else {
+        } else if (!options.live) {
             setStatus(`Searching ${links.length} pages...`);
             let done = 0;
             for (const item of links) {
@@ -147,9 +151,35 @@
             }
         }
         if (found === 0) {
-            setStatus('No matches found.');
+            setStatus(options.live ? 'No suggestions.' : 'No matches found.');
         } else {
-            setStatus(`Found ${found} page(s).`);
+            setStatus(options.live ? `Suggestions: ${found}` : `Found ${found} page(s).`);
         }
+    }
+
+    form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const qRaw = String(input.value || '').trim();
+        await performSearch(qRaw);
     });
+
+    const debouncedSuggest = debounce(async () => {
+        const qRaw = String(input.value || '').trim();
+        if (!qRaw) {
+            clearResults();
+            setStatus('');
+            return;
+        }
+        await performSearch(qRaw, { live: true, limit: 8, silent: true });
+    }, 180);
+
+    input.addEventListener('input', debouncedSuggest);
+
+    function debounce(fn, delay) {
+        let timer = null;
+        return (...args) => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => fn(...args), delay);
+        };
+    }
 })();
