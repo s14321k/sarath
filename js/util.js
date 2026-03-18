@@ -119,7 +119,19 @@
         const banner = $('welcomeBanner');
         if (!banner) return;
         banner.textContent = message;
+        banner.classList.remove('warning');
         banner.classList.remove('hidden');
+    }
+
+    function showNotice(message) {
+        const banner = $('welcomeBanner');
+        if (!banner) return;
+        banner.textContent = message;
+        banner.classList.add('warning');
+        banner.classList.remove('hidden');
+        banner.classList.remove('notice-pop');
+        void banner.offsetHeight;
+        banner.classList.add('notice-pop');
     }
 
     function getStoredGeo() {
@@ -294,7 +306,10 @@
 
         loginTab?.addEventListener('click', showLogin);
         signupTab?.addEventListener('click', showSignup);
-        visitClose?.addEventListener('click', hideModal);
+        visitClose?.addEventListener('click', () => {
+            hideModal();
+            showNotice('Messages and pages can be accessed only after login.');
+        });
 
         // Default to login only
         showLogin();

@@ -694,7 +694,7 @@ body {
     background: #121224;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
-    padding: 28px;
+    padding: 48px 28px 28px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     position: relative;
 }
@@ -777,19 +777,50 @@ body {
 
 .visit-close {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: var(--text);
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 70, 90, 0.18);
+    border: 1px solid rgba(255, 70, 90, 0.6);
+    color: #ffd7dd;
     padding: 6px 10px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
     cursor: pointer;
+    box-shadow: 0 0 16px rgba(255, 70, 90, 0.35);
+    animation: closePulse 1.8s ease-in-out infinite;
 }
 
 .visit-close:hover {
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 70, 90, 0.35);
+    box-shadow: 0 0 22px rgba(255, 70, 90, 0.55);
+}
+
+.visit-close:active {
+    transform: scale(0.96);
+}
+
+@keyframes closePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 12px rgba(255, 70, 90, 0.25); }
+    50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(255, 70, 90, 0.55); }
+}
+
+.welcome-banner.warning {
+    background: rgba(255, 70, 90, 0.16);
+    border-color: rgba(255, 70, 90, 0.5);
+    color: #ffd7dd;
+}
+
+.welcome-banner.notice-pop {
+    animation: bannerPop 0.7s ease-out;
+    transform-origin: center top;
+}
+
+@keyframes bannerPop {
+    0% { transform: translateY(120px) scale(1.2); opacity: 0; }
+    60% { transform: translateY(10px) scale(1.04); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 /* Chat widget (index) */
