@@ -387,12 +387,15 @@
             renderDashboard(data.dashboard || {});
             showTable();
             refreshBtn.onclick = async () => {
+                startRefreshVisual();
                 try {
                     const latest = await fetchStats(username, password);
                     renderTable(latest.stats || []);
                     renderDashboard(latest.dashboard || {});
                 } catch {
                     setError('Failed to refresh');
+                } finally {
+                    stopRefreshVisual();
                 }
             };
             if (dashboardBtn && tableBtn) {
@@ -412,6 +415,7 @@
         if (tableWrap) tableWrap.classList.add('hidden');
         if (messagesView) messagesView.classList.add('hidden');
         messagesActive = false;
+        setActiveTab('dashboard');
     }
 
     function showTable() {
@@ -419,6 +423,7 @@
         if (tableWrap) tableWrap.classList.remove('hidden');
         if (messagesView) messagesView.classList.add('hidden');
         messagesActive = false;
+        setActiveTab('table');
     }
 
     function showMessages() {
@@ -426,7 +431,31 @@
         if (tableWrap) tableWrap.classList.add('hidden');
         if (messagesView) messagesView.classList.remove('hidden');
         messagesActive = true;
+        setActiveTab('messages');
         pollMessages();
+    }
+
+    function setActiveTab(tab) {
+        dashboardBtn?.classList.toggle('active', tab === 'dashboard');
+        tableBtn?.classList.toggle('active', tab === 'table');
+        messagesBtn?.classList.toggle('active', tab === 'messages');
+    }
+
+    function startRefreshVisual() {
+        if (!refreshBtn) return;
+        if (!refreshBtn.dataset.label) {
+            refreshBtn.dataset.label = refreshBtn.textContent || 'Refresh';
+        }
+        refreshBtn.textContent = 'Refreshing...';
+        refreshBtn.classList.add('refreshing');
+        refreshBtn.disabled = true;
+    }
+
+    function stopRefreshVisual() {
+        if (!refreshBtn) return;
+        refreshBtn.textContent = refreshBtn.dataset.label || 'Refresh';
+        refreshBtn.classList.remove('refreshing');
+        refreshBtn.disabled = false;
     }
 
     function wireMessageForms() {

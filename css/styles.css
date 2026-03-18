@@ -427,6 +427,167 @@ body {
             transform: translateX(-50%) translateY(-10px);
         }
 
+        /* Kural banner */
+        .kural-banner {
+            position: relative;
+            padding: 22px 28px 18px;
+            min-height: 120px;
+            background: rgba(15, 52, 96, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .kural-banner.kural-floating {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(980px, calc(100% - 80px));
+            z-index: 1300;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .kural-banner.kural-hidden {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-8px);
+            pointer-events: none;
+        }
+
+        .kural-label {
+            position: absolute;
+            top: 10px;
+            left: 14px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--highlight);
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.8), 0 0 18px rgba(233, 69, 96, 0.5);
+        }
+
+        .kural-next {
+            display: none;
+        }
+
+        .kural-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: center;
+        }
+
+        .kural-number {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+        }
+
+        .kural-tamil {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--text);
+        }
+
+        .kural-tamil span {
+            display: block;
+        }
+
+        .kural-transliteration {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .kural-english {
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .kural-loading {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+            opacity: 0;
+            min-height: 16px;
+            transition: opacity 0.2s ease;
+        }
+
+        .kural-loading.visible {
+            opacity: 1;
+            animation: kuralShimmer 1.4s ease-in-out infinite;
+        }
+
+        @keyframes kuralShimmer {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.9; }
+        }
+
+        .kural-timer {
+            display: none;
+            margin-top: 8px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .kural-banner.kural-floating .kural-timer {
+            display: inline-flex;
+        }
+
+        .kural-timer-value {
+            font-weight: 700;
+            color: var(--highlight);
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.7);
+        }
+
+        .kural-timer-pulse {
+            animation: timerPulse 0.9s ease;
+        }
+
+        .kural-timer-bar {
+            position: relative;
+            width: 120px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.35);
+        }
+
+        .kural-timer-bar span {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(233, 69, 96, 0.9), rgba(255, 107, 157, 0.9));
+            transform-origin: left center;
+            box-shadow: 0 0 12px rgba(233, 69, 96, 0.6);
+        }
+
+        @keyframes timerShrink {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
+
+        @keyframes timerPulse {
+            0% { transform: scale(1); }
+            35% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .kural-banner.kural-floating {
+                width: calc(100% - 30px);
+                top: 84px;
+            }
+
+            .kural-tamil {
+                font-size: 16px;
+            }
+        }
+
         /* Chat widget (content pages) */
 .chat-widget {
     position: fixed;

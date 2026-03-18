@@ -356,6 +356,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const script = document.createElement('script');
         script.src = '../js/chat.js';
         document.body.appendChild(script);
+
+        const kuralScript = document.createElement('script');
+        kuralScript.src = '../js/kural-widget.js';
+        document.body.appendChild(kuralScript);
     }
 });
 
