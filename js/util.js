@@ -6,6 +6,7 @@
     const KNOWN_KEY = 'knownUser';
     const WELCOME_KEY = 'welcomeMessage';
     const ANON_KEY = 'anonRecorded';
+    const INTRO_KEY = 'introSeen';
 
     function $(id) { return document.getElementById(id); }
 
@@ -39,6 +40,67 @@
         const modal = $('visitModal');
         if (!modal) return;
         modal.classList.add('hidden');
+    }
+
+    function getIntroMode() {
+        const raw = String(window.INTRO_MODE || '').trim().toLowerCase();
+        if (raw === 'once' || raw === 'session' || raw === 'always') return raw;
+        return 'always';
+    }
+
+    function hasSeenIntro() {
+        const mode = getIntroMode();
+        if (mode === 'once') {
+            try { return localStorage.getItem(INTRO_KEY) === '1'; } catch {}
+        }
+        if (mode === 'session') {
+            try { return sessionStorage.getItem(INTRO_KEY) === '1'; } catch {}
+        }
+        return false;
+    }
+
+    function markIntroSeen() {
+        const mode = getIntroMode();
+        if (mode === 'once') {
+            try { localStorage.setItem(INTRO_KEY, '1'); } catch {}
+            return;
+        }
+        if (mode === 'session') {
+            try { sessionStorage.setItem(INTRO_KEY, '1'); } catch {}
+        }
+    }
+
+    function showIntroIfNeeded(onDone) {
+        const modal = $('introModal');
+        if (!modal) {
+            if (typeof onDone === 'function') onDone();
+            return;
+        }
+        if (hasSeenIntro()) {
+            if (typeof onDone === 'function') onDone();
+            return;
+        }
+
+        let finished = false;
+        function finish() {
+            if (finished) return;
+            finished = true;
+            modal.classList.add('hidden');
+            markIntroSeen();
+            if (typeof onDone === 'function') onDone();
+        }
+
+        modal.classList.remove('hidden');
+        const continueBtn = $('introContinue');
+        const closeBtn = $('introClose');
+        continueBtn?.addEventListener('click', finish);
+        closeBtn?.addEventListener('click', finish);
+        modal.addEventListener('click', (ev) => {
+            if (ev.target === modal) finish();
+        });
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape') finish();
+        }, { once: true });
     }
 
     function validateName(name) {
@@ -197,7 +259,7 @@
         }
 
         sendAnonymousVisit();
-        showModal();
+        showIntroIfNeeded(showModal);
 
         const loginForm = $('loginForm');
         const loginUser = $('loginUser');
