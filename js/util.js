@@ -274,6 +274,7 @@
         const signupTab = $('signupTab');
         const loginPanel = $('loginPanel');
         const signupPanel = $('signupPanel');
+        const visitClose = $('visitClose');
 
         if (!loginForm || !loginUser || !loginPass) return;
 
@@ -293,6 +294,7 @@
 
         loginTab?.addEventListener('click', showLogin);
         signupTab?.addEventListener('click', showSignup);
+        visitClose?.addEventListener('click', hideModal);
 
         // Default to login only
         showLogin();
