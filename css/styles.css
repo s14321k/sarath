@@ -592,6 +592,7 @@ body {
     box-shadow: 0 12px 30px rgba(233, 69, 96, 0.35);
     cursor: pointer;
     z-index: 2001;
+    transition: left 1.2s ease, top 1.2s ease;
 }
 
 .chat-resizer {
@@ -603,6 +604,15 @@ body {
     border-left: 2px solid rgba(255, 255, 255, 0.35);
     border-top: 2px solid rgba(255, 255, 255, 0.35);
     cursor: nwse-resize;
+}
+
+.chat-bounce {
+    animation: chatBounce 0.6s ease;
+}
+
+@keyframes chatBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-18px); }
 }
 
         .chat-form input {
