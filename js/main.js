@@ -294,37 +294,50 @@
 
     // Active TOC highlighting based on scroll position
     safe(() => {
-        const toc = $('#toc');
-        const content = $('#content');
-        if (!toc || !content) return;
-        const headings = $$('h1, h2, h3, h4', content).filter(h => h.id);
-        if (!headings.length) return;
+        let tocScrollHandler = null;
+        let tocResizeHandler = null;
 
-        const tocItems = $$('a.toc-item', toc).reduce((map, a) => {
-            const key = a.dataset.target || a.getAttribute('href')?.slice(1);
-            if (key) map[key] = a;
-            return map;
-        }, {});
+        function setupActiveToc() {
+            const toc = $('#toc');
+            const content = $('#content');
+            if (!toc || !content) return;
+            const headings = $$('h1, h2, h3, h4', content).filter(h => h.id);
+            if (!headings.length) return;
 
-        function onScroll() {
-            const offset = 120; // how far from top to consider active
-            const scrollPos = window.scrollY + offset;
-            let currentId = headings[0].id;
-            for (let i = 0; i < headings.length; i++) {
-                const h = headings[i];
-                if (h.offsetTop <= scrollPos) currentId = h.id;
-                else break;
+            const tocItems = $$('a.toc-item', toc).reduce((map, a) => {
+                const key = a.dataset.target || a.getAttribute('href')?.slice(1);
+                if (key) map[key] = a;
+                return map;
+            }, {});
+
+            function onScroll() {
+                const offset = 120; // how far from top to consider active
+                const scrollPos = window.scrollY + offset;
+                let currentId = headings[0].id;
+                for (let i = 0; i < headings.length; i++) {
+                    const h = headings[i];
+                    if (h.offsetTop <= scrollPos) currentId = h.id;
+                    else break;
+                }
+                // Clear previous
+                $$('.toc-item', toc).forEach(a => a.classList.remove('active'));
+                const active = tocItems[currentId];
+                if (active) active.classList.add('active');
             }
-            // Clear previous
-            $$('.toc-item', toc).forEach(a => a.classList.remove('active'));
-            const active = tocItems[currentId];
-            if (active) active.classList.add('active');
+
+            if (tocScrollHandler) window.removeEventListener('scroll', tocScrollHandler);
+            if (tocResizeHandler) window.removeEventListener('resize', tocResizeHandler);
+            tocScrollHandler = throttle(onScroll, 100);
+            tocResizeHandler = throttle(onScroll, 200);
+            window.addEventListener('scroll', tocScrollHandler);
+            window.addEventListener('resize', tocResizeHandler);
+            setTimeout(onScroll, 50);
         }
 
-        window.addEventListener('scroll', throttle(onScroll, 100));
-        window.addEventListener('resize', throttle(onScroll, 200));
-        // run at init
-        setTimeout(onScroll, 200);
+        setupActiveToc();
+        window.addEventListener('pageContentLoaded', () => {
+            setTimeout(setupActiveToc, 50);
+        });
     });
 
     // Utility: throttle
