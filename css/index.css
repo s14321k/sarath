@@ -324,15 +324,23 @@ body {
 
 /* Welcome banner */
 .welcome-banner {
-    margin: -30px auto 40px auto;
-    padding: 12px 16px;
-    max-width: 720px;
-    background: rgba(233, 69, 96, 0.12);
-    border: 1px solid rgba(233, 69, 96, 0.35);
+    position: fixed;
+    left: 50%;
+    top: 20px;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 14px 18px;
+    max-width: min(720px, calc(100% - 40px));
+    background: rgba(233, 69, 96, 0.16);
+    border: 1px solid rgba(233, 69, 96, 0.45);
     border-radius: 12px;
     color: var(--text);
     text-align: center;
     font-weight: 600;
+    line-height: 1.5;
+    z-index: 2105;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
 }
 
 .welcome-banner.hidden {
@@ -889,28 +897,30 @@ body {
 }
 
 .welcome-banner.warning {
-    background: rgba(255, 70, 90, 0.16);
-    border-color: rgba(255, 70, 90, 0.5);
+    background: rgba(16, 10, 18, 0.92);
+    border-color: rgba(255, 70, 90, 0.65);
     color: #ffd7dd;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .welcome-banner.notice-pop {
     animation: bannerSpotlight 6.2s ease-in-out;
     transform-origin: center top;
     --banner-center-shift: calc(50vh - 180px);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
 @keyframes bannerSpotlight {
-    0% { transform: translateY(var(--banner-center-shift)) scale(1.25); opacity: 0; }
-    8% { transform: translateY(var(--banner-center-shift)) scale(1.25); opacity: 1; }
+    0% { transform: translateX(-50%) translateY(var(--banner-center-shift)) scale(1.25); opacity: 0; }
+    8% { transform: translateX(-50%) translateY(var(--banner-center-shift)) scale(1.25); opacity: 1; }
     18% { opacity: 0.6; }
     28% { opacity: 1; }
     38% { opacity: 0.6; }
     48% { opacity: 1; }
     58% { opacity: 0.6; }
     68% { opacity: 1; }
-    80% { transform: translateY(var(--banner-center-shift)) scale(1.2); opacity: 1; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
+    80% { transform: translateX(-50%) translateY(var(--banner-center-shift)) scale(1.2); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 }
 
 /* Chat widget (index) */
