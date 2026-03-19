@@ -19,12 +19,64 @@ body {
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+    position: relative;
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 60px 30px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Floating tech background */
+.tech-float {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tech-item {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.18);
+    text-shadow: 0 0 18px rgba(233, 69, 96, 0.45), 0 0 30px rgba(255, 107, 157, 0.25);
+    animation: techDrift 14s ease-in-out infinite;
+    opacity: 0.28;
+}
+
+.tech-item.t1 { left: 4%; top: 12%; font-size: 64px; animation-duration: 16s; }
+.tech-item.t2 { left: 10%; top: 70%; font-size: 42px; animation-duration: 18s; animation-delay: 1s; }
+.tech-item.t3 { left: 16%; top: 38%; font-size: 48px; animation-duration: 15s; animation-delay: 0.4s; }
+.tech-item.t4 { right: 6%; top: 18%; font-size: 44px; animation-duration: 17s; animation-delay: 0.8s; }
+.tech-item.t5 { right: 12%; top: 62%; font-size: 40px; animation-duration: 19s; animation-delay: 1.2s; }
+.tech-item.t6 { right: 18%; top: 36%; font-size: 36px; animation-duration: 13s; animation-delay: 0.2s; }
+.tech-item.t7 { left: 28%; top: 14%; font-size: 28px; animation-duration: 12s; animation-delay: 1.5s; }
+.tech-item.t8 { left: 32%; top: 78%; font-size: 22px; animation-duration: 20s; animation-delay: 0.6s; }
+.tech-item.t9 { right: 28%; top: 12%; font-size: 30px; animation-duration: 16s; animation-delay: 0.9s; }
+.tech-item.t10 { right: 30%; top: 72%; font-size: 26px; animation-duration: 18s; animation-delay: 0.3s; }
+.tech-item.t11 { left: 46%; top: 8%; font-size: 26px; animation-duration: 14s; animation-delay: 1.1s; }
+.tech-item.t12 { right: 44%; top: 82%; font-size: 24px; animation-duration: 21s; animation-delay: 1.4s; }
+
+.tech-laptop {
+    right: 6%;
+    top: 44%;
+    width: 140px;
+    height: 90px;
+    stroke: rgba(255, 107, 157, 0.65);
+    fill: none;
+    stroke-width: 2;
+    opacity: 0.4;
+    filter: drop-shadow(0 0 16px rgba(255, 107, 157, 0.35));
+    animation-duration: 22s;
+}
+
+@keyframes techDrift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.25; }
+    50% { transform: translate(12px, -10px) rotate(2deg); opacity: 0.5; }
 }
 
 /* Header */
