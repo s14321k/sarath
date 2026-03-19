@@ -813,13 +813,21 @@ body {
 }
 
 .welcome-banner.notice-pop {
-    animation: bannerPop 0.7s ease-out;
+    animation: bannerSpotlight 6.2s ease-in-out;
     transform-origin: center top;
+    --banner-center-shift: calc(50vh - 180px);
 }
 
-@keyframes bannerPop {
-    0% { transform: translateY(120px) scale(1.2); opacity: 0; }
-    60% { transform: translateY(10px) scale(1.04); opacity: 1; }
+@keyframes bannerSpotlight {
+    0% { transform: translateY(var(--banner-center-shift)) scale(1.25); opacity: 0; }
+    8% { transform: translateY(var(--banner-center-shift)) scale(1.25); opacity: 1; }
+    18% { opacity: 0.6; }
+    28% { opacity: 1; }
+    38% { opacity: 0.6; }
+    48% { opacity: 1; }
+    58% { opacity: 0.6; }
+    68% { opacity: 1; }
+    80% { transform: translateY(var(--banner-center-shift)) scale(1.2); opacity: 1; }
     100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
