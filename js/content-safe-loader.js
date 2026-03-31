@@ -4,6 +4,13 @@
 (function(){
     'use strict';
 
+    function isLoggedIn() {
+        try { return sessionStorage.getItem('visitRecorded') === '1'; } catch {}
+        return false;
+    }
+
+    if (!isLoggedIn()) return;
+
     function getAttr(script, name) {
         return script ? script.getAttribute(name) : null;
     }

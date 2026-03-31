@@ -4,6 +4,11 @@
 // inside the source file when the browser tries to execute it directly.
 (function(){
     'use strict';
+    function isLoggedIn() {
+        try { return sessionStorage.getItem('visitRecorded') === '1'; } catch {}
+        return false;
+    }
+    if (!isLoggedIn()) return;
     const url = '../js/springboot-content.js';
 
     function extractContent(text) {
