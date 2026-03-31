@@ -23,7 +23,7 @@
         </div>
         <div class="chat-body" id="chatBody"></div>
         <form class="chat-form" id="chatForm">
-            <input type="text" id="chatInput" placeholder="Type a message...">
+            <textarea id="chatInput" placeholder="Type a message..." rows="2"></textarea>
             <button type="submit">Send</button>
         </form>
     `;
@@ -184,6 +184,13 @@
         poll();
         });
 
+        input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' && !ev.shiftKey) {
+                ev.preventDefault();
+                form.requestSubmit();
+            }
+        });
+
         async function sendMessage(scope, message) {
         if (!endpoint || !user) return;
         try {
@@ -274,6 +281,7 @@
             meta.appendChild(name);
             meta.appendChild(time);
             const body = document.createElement('div');
+            body.className = 'chat-message';
             body.textContent = m.message || '';
             row.appendChild(meta);
             row.appendChild(body);
