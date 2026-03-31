@@ -831,7 +831,7 @@ body {
     50% { transform: translateY(-18px); }
 }
 
-        .chat-form input {
+        .chat-form textarea {
             flex: 1;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -839,6 +839,12 @@ body {
             padding: 6px 8px;
             border-radius: 8px;
             font-size: 12px;
+            resize: vertical;
+            min-height: 34px;
+            max-height: 140px;
+            font-family: inherit;
+            line-height: 1.4;
+            overflow-y: hidden;
         }
 
         .chat-form button {
@@ -849,4 +855,9 @@ body {
             border-radius: 8px;
             font-size: 12px;
             cursor: pointer;
+        }
+
+        .chat-message {
+            white-space: pre-wrap;
+            word-break: break-word;
         }

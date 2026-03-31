@@ -171,6 +171,16 @@
         });
     });
 
+        function autosizeInput() {
+            if (!input) return;
+            input.style.height = 'auto';
+            const styles = window.getComputedStyle(input);
+            const max = Number.parseInt(styles.maxHeight || '', 10) || 140;
+            const next = Math.min(input.scrollHeight, max);
+            input.style.height = `${next}px`;
+            input.style.overflowY = input.scrollHeight > max ? 'auto' : 'hidden';
+        }
+
         form.addEventListener('submit', async (ev) => {
         ev.preventDefault();
         if (!endpoint || !user) {
@@ -181,6 +191,7 @@
         if (!msg) return;
         await sendMessage(current, msg);
         input.value = '';
+        autosizeInput();
         poll();
         });
 
@@ -190,6 +201,8 @@
                 form.requestSubmit();
             }
         });
+        input.addEventListener('input', autosizeInput);
+        autosizeInput();
 
         async function sendMessage(scope, message) {
         if (!endpoint || !user) return;

@@ -350,6 +350,7 @@
             const timeText = m.time ? fmtTime(dt) : '';
             meta.textContent = `${m.from || ''} -> ${m.to || ''} * ${timeText}`;
             const body = document.createElement('div');
+            body.className = 'message-body';
             body.textContent = m.message || '';
             const actions = document.createElement('div');
             actions.className = 'message-actions';
