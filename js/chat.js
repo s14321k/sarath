@@ -187,8 +187,9 @@
             showStatus('Chat is unavailable. Please login and allow requests.');
             return;
         }
-        const msg = (input.value || '').trim();
-        if (!msg) return;
+        const raw = input.value || '';
+        if (!raw.trim()) return;
+        const msg = raw;
         await sendMessage(current, msg);
         input.value = '';
         autosizeInput();
@@ -204,9 +205,42 @@
         input.addEventListener('input', autosizeInput);
         autosizeInput();
 
+        async function gzipToBase64(text) {
+        if (!('CompressionStream' in window)) return '';
+        const encoder = new TextEncoder();
+        const stream = new CompressionStream('gzip');
+        const writer = stream.writable.getWriter();
+        writer.write(encoder.encode(text));
+        writer.close();
+        const buffer = await new Response(stream.readable).arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+    }
+
+        async function buildMessagePayload(message) {
+        if (message.length <= 1000) return { message };
+        try {
+            const gz = await gzipToBase64(message);
+            if (!gz) return { message };
+            return {
+                messageGzipBase64: gz,
+                messageEncoding: 'gzip+base64',
+                messageLength: message.length
+            };
+        } catch {
+            return { message };
+        }
+    }
+
         async function sendMessage(scope, message) {
         if (!endpoint || !user) return;
         try {
+            const payload = await buildMessagePayload(message);
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
@@ -215,7 +249,7 @@
                     scope: scope === 'global' ? 'global' : 'admin',
                     from: user,
                     to: scope === 'admin' ? 'admin' : '',
-                    message
+                    ...payload
                 })
             });
             if (!res.ok) throw new Error('Send failed');

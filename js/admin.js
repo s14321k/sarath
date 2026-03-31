@@ -275,8 +275,41 @@
         return json;
     }
 
+    async function gzipToBase64(text) {
+        if (!('CompressionStream' in window)) return '';
+        const encoder = new TextEncoder();
+        const stream = new CompressionStream('gzip');
+        const writer = stream.writable.getWriter();
+        writer.write(encoder.encode(text));
+        writer.close();
+        const buffer = await new Response(stream.readable).arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+    }
+
+    async function buildMessagePayload(message) {
+        if (message.length <= 1000) return { message };
+        try {
+            const gz = await gzipToBase64(message);
+            if (!gz) return { message };
+            return {
+                messageGzipBase64: gz,
+                messageEncoding: 'gzip+base64',
+                messageLength: message.length
+            };
+        } catch {
+            return { message };
+        }
+    }
+
     async function sendAdminMessage(scope, to, message) {
         if (!endpoint) throw new Error('Missing endpoint');
+        const payload = await buildMessagePayload(message);
         const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
@@ -285,7 +318,7 @@
                 scope,
                 to,
                 from: adminCreds.username,
-                message
+                ...payload
             })
         });
         if (!res.ok) throw new Error('Send failed');
@@ -463,17 +496,17 @@
         adminSendForm?.addEventListener('submit', async (ev) => {
             ev.preventDefault();
             const to = (adminToUser?.value || '').trim();
-            const msg = (adminMessage?.value || '').trim();
-            if (!to || !msg) return;
-            await sendAdminMessage('user', to, msg);
+            const raw = adminMessage?.value || '';
+            if (!to || !raw.trim()) return;
+            await sendAdminMessage('user', to, raw);
             adminMessage.value = '';
             await pollMessages();
         });
         adminGlobalForm?.addEventListener('submit', async (ev) => {
             ev.preventDefault();
-            const msg = (adminGlobalMessage?.value || '').trim();
-            if (!msg) return;
-            await sendAdminMessage('global', '', msg);
+            const raw = adminGlobalMessage?.value || '';
+            if (!raw.trim()) return;
+            await sendAdminMessage('global', '', raw);
             adminGlobalMessage.value = '';
             await pollMessages();
         });
