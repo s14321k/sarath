@@ -68,7 +68,7 @@
                 container.classList.add('chat-minimized');
                 bubble.classList.remove('hidden');
                 try { sessionStorage.setItem('chatMinimized', '1'); } catch {}
-                schedulePoll(30000);
+                schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
                 startBubbleEffects();
             } else {
                 container.classList.remove('chat-minimized');
@@ -439,11 +439,11 @@
 
         async function poll() {
         if (minimized) {
-            schedulePoll(30000);
+            schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
             return;
         }
         if (document.visibilityState === 'hidden') {
-            schedulePoll(30000);
+            schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
             return;
         }
         try {
@@ -459,7 +459,7 @@
                 setBadge(globalBadge, otherRes.unseenCount);
             }
         } catch {}
-        schedulePoll(networkOk ? 10000 : 30000);
+        schedulePoll(networkOk ? 30000 : 300000);   //30000 ms = 30 seconds, 300000 ms = 300 seconds = 5 minutes
     }
         if (!endpoint || !user) {
             showStatus('Chat is unavailable until you login.');

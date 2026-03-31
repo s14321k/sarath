@@ -521,11 +521,11 @@
 
     async function pollMessages() {
         if (!messagesActive) {
-            schedulePoll(30000);
+            schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
             return;
         }
         if (document.visibilityState === 'hidden') {
-            schedulePoll(30000);
+            schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
             return;
         }
         try {
