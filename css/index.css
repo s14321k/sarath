@@ -1022,7 +1022,7 @@ body {
     align-self: flex-end;
     background: rgba(233, 69, 96, 0.18);
     border-color: rgba(233, 69, 96, 0.45);
-    text-align: right;
+    text-align: left;
 }
 
 .chat-meta {
@@ -1057,6 +1057,48 @@ body {
     gap: 6px;
     padding: 10px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-tools {
+    display: flex;
+    justify-content: flex-end;
+    padding: 6px 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-tool-btn,
+.chat-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.chat-tool-btn:hover,
+.chat-delete-btn:hover {
+    background: rgba(233, 69, 96, 0.18);
+    border-color: rgba(233, 69, 96, 0.45);
+}
+
+.chat-tool-btn svg,
+.chat-delete-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+.chat-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
 }
 
 .chat-minimized {

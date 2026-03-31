@@ -21,6 +21,13 @@
                 Admin <span class="chat-badge hidden" id="adminBadge"></span>
             </button>
         </div>
+        <div class="chat-tools">
+            <button type="button" class="chat-tool-btn hidden" id="chatDeleteAll" aria-label="Delete all messages" title="Delete all messages">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9zM6 21h12a1 1 0 0 0 1-1V9H5v11a1 1 0 0 0 1 1z"/>
+                </svg>
+            </button>
+        </div>
         <div class="chat-body" id="chatBody"></div>
         <form class="chat-form" id="chatForm">
             <textarea id="chatInput" placeholder="Type a message..." rows="2"></textarea>
@@ -36,6 +43,7 @@
         const minBtn = container.querySelector('#chatMinBtn');
         const globalBadge = container.querySelector('#globalBadge');
         const adminBadge = container.querySelector('#adminBadge');
+        const deleteAllBtn = container.querySelector('#chatDeleteAll');
         const tabs = container.querySelectorAll('.chat-tab');
         let current = 'global';
         let networkOk = true;
@@ -167,6 +175,7 @@
             tabs.forEach((x) => x.classList.remove('active'));
             t.classList.add('active');
             current = t.dataset.tab;
+            updateDeleteAllVisibility();
             poll();
         });
     });
@@ -260,6 +269,29 @@
         }
     }
 
+        async function deleteMessages(scope, id, index, deleteAll) {
+        if (!endpoint || !user) return;
+        const body = {
+            eventType: 'message_delete',
+            scope,
+            deleteAll: Boolean(deleteAll),
+            index: Number.isFinite(index) ? index : 0,
+            requestor: user
+        };
+        if (id) body.id = id;
+        if (scope === 'user') body.user = user;
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error('Delete failed');
+        } catch {
+            showStatus('Delete failed. Try again.');
+        }
+    }
+
         async function fetchMessages(scope, markSeen) {
         if (!endpoint || !user) return { messages: [], unseenCount: 0 };
         try {
@@ -299,13 +331,17 @@
     }
 
         function render(list) {
+        const prevScrollTop = bodyEl.scrollTop;
+        const prevScrollHeight = bodyEl.scrollHeight;
+        const nearBottom = prevScrollTop + bodyEl.clientHeight >= prevScrollHeight - 40;
         bodyEl.innerHTML = '';
-        const items = list.slice(-50).map((m) => {
+        const items = list.map((m, index) => {
             const dt = new Date(m.time || Date.now());
-            return { m, dt, label: dayLabel(dt) };
-        });
+            return { m, dt, label: dayLabel(dt), index };
+        }).slice(-50);
         let currentLabel = '';
-        items.forEach(({ m, dt, label }) => {
+        const userLower = (user || '').toLowerCase();
+        items.forEach(({ m, dt, label, index }) => {
             if (label !== currentLabel) {
                 currentLabel = label;
                 const header = document.createElement('div');
@@ -332,6 +368,26 @@
             body.textContent = m.message || '';
             row.appendChild(meta);
             row.appendChild(body);
+            const isOwn = (m.from || '').toLowerCase() === userLower;
+            const canDelete = current === 'admin' || (current === 'global' && isOwn);
+            if (canDelete) {
+                const actions = document.createElement('div');
+                actions.className = 'chat-actions';
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'chat-delete-btn';
+                del.setAttribute('aria-label', 'Delete message');
+                del.innerHTML = `
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9zM6 21h12a1 1 0 0 0 1-1V9H5v11a1 1 0 0 0 1 1z"/>
+                    </svg>
+                `;
+                del.dataset.scope = current === 'global' ? 'global' : 'user';
+                if (m.id) del.dataset.id = String(m.id);
+                del.dataset.index = String(index);
+                actions.appendChild(del);
+                row.appendChild(actions);
+            }
             if (m.seenAt && (m.from || '').toLowerCase() === (user || '').toLowerCase()) {
                 const seen = document.createElement('div');
                 seen.className = 'chat-seen';
@@ -340,7 +396,12 @@
             }
             bodyEl.appendChild(row);
         });
-        bodyEl.scrollTop = bodyEl.scrollHeight;
+        if (nearBottom) {
+            bodyEl.scrollTop = bodyEl.scrollHeight;
+        } else {
+            const delta = bodyEl.scrollHeight - prevScrollHeight;
+            bodyEl.scrollTop = prevScrollTop + delta;
+        }
     }
 
         function showStatus(text) {
@@ -352,6 +413,12 @@
         }
         statusEl.textContent = text;
         statusEl.classList.remove('hidden');
+    }
+
+        function updateDeleteAllVisibility() {
+        if (!deleteAllBtn) return;
+        const show = current === 'admin';
+        deleteAllBtn.classList.toggle('hidden', !show);
     }
 
     function schedulePoll(delay) {
@@ -397,6 +464,20 @@
         if (!endpoint || !user) {
             showStatus('Chat is unavailable until you login.');
         }
+        deleteAllBtn?.addEventListener('click', async () => {
+            if (current !== 'admin') return;
+            await deleteMessages('user', '', 0, true);
+            poll();
+        });
+        bodyEl?.addEventListener('click', async (ev) => {
+            const btn = ev.target?.closest('.chat-delete-btn');
+            if (!btn) return;
+            const scope = btn.dataset.scope || 'user';
+            const id = btn.dataset.id || '';
+            const index = Number(btn.dataset.index);
+            await deleteMessages(scope, id, index, false);
+            poll();
+        });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 poll();
@@ -406,6 +487,7 @@
             const saved = sessionStorage.getItem('chatMinimized') === '1';
             if (saved) setMinimized(true);
         } catch {}
+        updateDeleteAllVisibility();
         poll();
     }
 
