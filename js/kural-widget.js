@@ -1,8 +1,10 @@
 (() => {
     'use strict';
 
-    const ROTATE_MS = 5 * 60 * 1000;
-    const HIDE_SECONDS = 15;
+    const DEFAULT_ROTATE_MINUTES = 20;
+    const rotateMinutes = Number(window.KURAL_ROTATE_MINUTES);
+    const ROTATE_MS = (Number.isFinite(rotateMinutes) && rotateMinutes > 0 ? rotateMinutes : DEFAULT_ROTATE_MINUTES) * 60 * 1000;
+    const HIDE_SECONDS = 10;
     const basePath = window.location.pathname.includes('/pages/') ? '../' : './';
     const dataUrl = `${basePath}data/kural.json`;
     const isFloating = window.location.pathname.includes('/pages/');
