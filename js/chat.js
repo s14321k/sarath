@@ -330,6 +330,8 @@
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+        const LINE_CLAMP = 5;
+
         function render(list) {
         const prevScrollTop = bodyEl.scrollTop;
         const prevScrollHeight = bodyEl.scrollHeight;
@@ -405,6 +407,20 @@
                 row.appendChild(seen);
             }
             bodyEl.appendChild(row);
+            body.classList.add('clamp');
+            body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
+            if (body.scrollHeight > body.clientHeight + 1) {
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'chat-toggle-btn';
+                toggle.textContent = 'Show more';
+                toggle.addEventListener('click', () => {
+                    const expanded = body.classList.toggle('expanded');
+                    body.classList.toggle('clamp', !expanded);
+                    toggle.textContent = expanded ? 'Show less' : 'Show more';
+                });
+                actions.appendChild(toggle);
+            }
         });
         if (nearBottom) {
             bodyEl.scrollTop = bodyEl.scrollHeight;

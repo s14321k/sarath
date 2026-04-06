@@ -381,6 +381,7 @@
     function renderMessages(container, list, scope) {
         if (!container) return;
         container.innerHTML = '';
+        const LINE_CLAMP = 5;
         const items = list.map((m, index) => {
             const dt = new Date(m.time || Date.now());
             return { m, index, dt, label: dayLabel(dt) };
@@ -443,6 +444,20 @@
             }
             item.appendChild(actions);
             container.appendChild(item);
+            body.classList.add('clamp');
+            body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
+            if (body.scrollHeight > body.clientHeight + 1) {
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'message-action-btn message-toggle-btn';
+                toggle.textContent = 'Show more';
+                toggle.addEventListener('click', () => {
+                    const expanded = body.classList.toggle('expanded');
+                    body.classList.toggle('clamp', !expanded);
+                    toggle.textContent = expanded ? 'Show less' : 'Show more';
+                });
+                actions.appendChild(toggle);
+            }
         });
     }
 

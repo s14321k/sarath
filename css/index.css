@@ -1177,6 +1177,22 @@ body {
     word-break: break-word;
 }
 
+.chat-message.clamp {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--chat-line-clamp, 5);
+    overflow: hidden;
+}
+
+.chat-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-light);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
 /* Animations */
 @keyframes fadeInDown {
     from {
