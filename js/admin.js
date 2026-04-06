@@ -46,6 +46,29 @@
         if (err) err.textContent = msg || '';
     }
 
+    function copyText(text) {
+        if (!text) return;
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            textarea.remove();
+        } catch {}
+    }
+
     function renderTable(rows) {
         tableBody.innerHTML = '';
         rows.forEach((row) => {
@@ -387,12 +410,28 @@
             body.textContent = m.message || '';
             const actions = document.createElement('div');
             actions.className = 'message-actions';
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'message-action-btn message-copy-btn';
+            copyBtn.setAttribute('aria-label', 'Copy message');
+            copyBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm2 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h8v14z"/>
+                </svg>
+            `;
             const delBtn = document.createElement('button');
             delBtn.type = 'button';
-            delBtn.textContent = 'Delete';
+            delBtn.className = 'message-action-btn message-delete-btn';
+            delBtn.setAttribute('aria-label', 'Delete message');
+            delBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9zM6 21h12a1 1 0 0 0 1-1V9H5v11a1 1 0 0 0 1 1z"/>
+                </svg>
+            `;
             delBtn.dataset.scope = scope;
             if (m.id) delBtn.dataset.id = String(m.id);
             delBtn.dataset.index = String(index);
+            actions.appendChild(copyBtn);
             actions.appendChild(delBtn);
             item.appendChild(meta);
             item.appendChild(body);
@@ -555,6 +594,13 @@
     }
 
     adminInbox?.addEventListener('click', async (ev) => {
+        const copyBtn = ev.target?.closest('.message-copy-btn');
+        if (copyBtn) {
+            const item = copyBtn.closest('.message-item');
+            const msg = item?.querySelector('.message-body')?.textContent || '';
+            copyText(msg);
+            return;
+        }
         const btn = ev.target?.closest('button[data-index]');
         if (!btn) return;
         const idx = Number(btn.dataset.index);
@@ -565,6 +611,13 @@
     });
 
     globalMessages?.addEventListener('click', async (ev) => {
+        const copyBtn = ev.target?.closest('.message-copy-btn');
+        if (copyBtn) {
+            const item = copyBtn.closest('.message-item');
+            const msg = item?.querySelector('.message-body')?.textContent || '';
+            copyText(msg);
+            return;
+        }
         const btn = ev.target?.closest('button[data-index]');
         if (!btn) return;
         const idx = Number(btn.dataset.index);

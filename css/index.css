@@ -1068,7 +1068,8 @@ body {
 }
 
 .chat-tool-btn,
-.chat-delete-btn {
+.chat-delete-btn,
+.chat-copy-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1083,13 +1084,15 @@ body {
 }
 
 .chat-tool-btn:hover,
-.chat-delete-btn:hover {
+.chat-delete-btn:hover,
+.chat-copy-btn:hover {
     background: rgba(233, 69, 96, 0.18);
     border-color: rgba(233, 69, 96, 0.45);
 }
 
 .chat-tool-btn svg,
-.chat-delete-btn svg {
+.chat-delete-btn svg,
+.chat-copy-btn svg {
     width: 14px;
     height: 14px;
     fill: currentColor;
@@ -1098,6 +1101,7 @@ body {
 .chat-actions {
     display: flex;
     justify-content: flex-end;
+    gap: 6px;
     margin-top: 6px;
 }
 

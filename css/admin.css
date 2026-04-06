@@ -458,15 +458,33 @@ body {
 .message-actions {
     display: flex;
     justify-content: flex-end;
+    gap: 6px;
     margin-top: 6px;
 }
 
 .message-actions button {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--text-dim);
-    padding: 4px 8px;
+    color: var(--text);
+    padding: 4px;
     border-radius: 8px;
     font-size: 11px;
     cursor: pointer;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.message-actions button:hover {
+    background: rgba(233, 69, 96, 0.18);
+    border-color: rgba(233, 69, 96, 0.45);
+}
+
+.message-actions svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
 }

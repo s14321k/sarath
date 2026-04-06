@@ -370,9 +370,19 @@
             row.appendChild(body);
             const isOwn = (m.from || '').toLowerCase() === userLower;
             const canDelete = current === 'admin' || (current === 'global' && isOwn);
+            const actions = document.createElement('div');
+            actions.className = 'chat-actions';
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'chat-copy-btn';
+            copyBtn.setAttribute('aria-label', 'Copy message');
+            copyBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm2 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h8v14z"/>
+                </svg>
+            `;
+            actions.appendChild(copyBtn);
             if (canDelete) {
-                const actions = document.createElement('div');
-                actions.className = 'chat-actions';
                 const del = document.createElement('button');
                 del.type = 'button';
                 del.className = 'chat-delete-btn';
@@ -386,8 +396,8 @@
                 if (m.id) del.dataset.id = String(m.id);
                 del.dataset.index = String(index);
                 actions.appendChild(del);
-                row.appendChild(actions);
             }
+            row.appendChild(actions);
             if (m.seenAt && (m.from || '').toLowerCase() === (user || '').toLowerCase()) {
                 const seen = document.createElement('div');
                 seen.className = 'chat-seen';
@@ -469,7 +479,44 @@
             await deleteMessages('user', '', 0, true);
             poll();
         });
+        function copyText(text) {
+            if (!text) return;
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showStatus('Copied message.');
+                    setTimeout(() => showStatus(''), 1500);
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                textarea.remove();
+                showStatus('Copied message.');
+                setTimeout(() => showStatus(''), 1500);
+            } catch {}
+        }
+
         bodyEl?.addEventListener('click', async (ev) => {
+            const copyBtn = ev.target?.closest('.chat-copy-btn');
+            if (copyBtn) {
+                const item = copyBtn.closest('.chat-item');
+                const msg = item?.querySelector('.chat-message')?.textContent || '';
+                copyText(msg);
+                return;
+            }
             const btn = ev.target?.closest('.chat-delete-btn');
             if (!btn) return;
             const scope = btn.dataset.scope || 'user';
