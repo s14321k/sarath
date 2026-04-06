@@ -322,7 +322,19 @@
                 // Clear previous
                 $$('.toc-item', toc).forEach(a => a.classList.remove('active'));
                 const active = tocItems[currentId];
-                if (active) active.classList.add('active');
+                if (active) {
+                    active.classList.add('active');
+                    const scrollHost = active.closest('.sidebar') || toc;
+                    const hostRect = scrollHost.getBoundingClientRect();
+                    const itemRect = active.getBoundingClientRect();
+                    const topPadding = 20;
+                    const bottomPadding = 20;
+                    if (itemRect.top < hostRect.top + topPadding) {
+                        scrollHost.scrollTop -= (hostRect.top + topPadding - itemRect.top);
+                    } else if (itemRect.bottom > hostRect.bottom - bottomPadding) {
+                        scrollHost.scrollTop += (itemRect.bottom - (hostRect.bottom - bottomPadding));
+                    }
+                }
             }
 
             if (tocScrollHandler) window.removeEventListener('scroll', tocScrollHandler);
