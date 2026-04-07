@@ -426,6 +426,34 @@ body {
     word-break: break-word;
 }
 
+.message-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.message-table th,
+.message-table td {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 4px 6px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.message-table th {
+    background: rgba(233, 69, 96, 0.18);
+    color: var(--text);
+    font-weight: 600;
+}
+
+.message-table-row-hidden {
+    display: none;
+}
+
 .message-body.clamp {
     display: -webkit-box;
     -webkit-box-orient: vertical;

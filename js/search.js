@@ -28,12 +28,17 @@
         activeIndex = -1;
     }
 
-    function addResult(item, snippet) {
+    function addResult(item, snippet, query) {
         const li = document.createElement('li');
         li.classList.add('search-result-item');
         li.dataset.index = String(resultsEl.children.length);
         const a = document.createElement('a');
-        a.href = item.href;
+        if (query) {
+            const joiner = item.href.includes('?') ? '&' : '?';
+            a.href = `${item.href}${joiner}q=${encodeURIComponent(query)}`;
+        } else {
+            a.href = item.href;
+        }
         a.textContent = item.title || item.href;
         const p = document.createElement('p');
         p.textContent = snippet || '';
@@ -146,7 +151,7 @@
                 done += 1;
                 if (matches(item.text || '', qRaw) || matches(item.title || '', qRaw) || matches(item.href || '', qRaw)) {
                     found += 1;
-                    addResult({ href: item.href, title: item.title }, makeSnippet(item.text || '', q));
+                    addResult({ href: item.href, title: item.title }, makeSnippet(item.text || '', q), qRaw);
                     if (limit && found >= limit) break;
                 }
                 if (!options.silent && !limit) {
@@ -161,7 +166,7 @@
                 done += 1;
                 if (matches(text, qRaw) || matches(item.title || '', qRaw) || matches(item.href || '', qRaw)) {
                     found += 1;
-                    addResult(item, makeSnippet(text, q));
+                    addResult(item, makeSnippet(text, q), qRaw);
                 }
                 setStatus(`Searching ${links.length} pages... ${done}/${links.length}`);
             }

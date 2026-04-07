@@ -296,6 +296,11 @@
     safe(() => {
         let tocScrollHandler = null;
         let tocResizeHandler = null;
+        let searchScrolled = false;
+        const searchQuery = (() => {
+            try { return new URLSearchParams(window.location.search).get('q') || ''; } catch {}
+            return '';
+        })();
 
         function setupActiveToc() {
             const toc = $('#toc');
@@ -346,10 +351,39 @@
             setTimeout(onScroll, 50);
         }
 
+        function elementMatches(el, query) {
+            const text = (el.textContent || '').toLowerCase();
+            const q = String(query || '').trim().toLowerCase();
+            if (!q) return false;
+            if (text.includes(q)) return true;
+            const terms = q.split(/\s+/).filter(Boolean);
+            if (terms.length > 1) return terms.every((t) => text.includes(t));
+            return false;
+        }
+
+        function scrollToSearchMatch() {
+            if (!searchQuery || searchScrolled) return;
+            const content = $('#content');
+            if (!content) return;
+            const candidates = $$('.content h1, .content h2, .content h3, .content h4, .content p, .content li, .content blockquote, .content pre');
+            const match = candidates.find((el) => elementMatches(el, searchQuery));
+            if (!match) return;
+            searchScrolled = true;
+            const top = window.scrollY + match.getBoundingClientRect().top - 20;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+
         setupActiveToc();
+        setTimeout(scrollToSearchMatch, 80);
         window.addEventListener('pageContentLoaded', () => {
             setTimeout(setupActiveToc, 50);
+            setTimeout(scrollToSearchMatch, 80);
         });
+        const content = $('#content');
+        if (content) {
+            const observer = new MutationObserver(() => scrollToSearchMatch());
+            observer.observe(content, { childList: true, subtree: true });
+        }
     });
 
     // Utility: throttle

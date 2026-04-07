@@ -190,6 +190,68 @@
             input.style.overflowY = input.scrollHeight > max ? 'auto' : 'hidden';
         }
 
+        function insertAtCursor(el, text) {
+            const start = el.selectionStart ?? el.value.length;
+            const end = el.selectionEnd ?? el.value.length;
+            const value = el.value || '';
+            el.value = value.slice(0, start) + text + value.slice(end);
+            const pos = start + text.length;
+            el.selectionStart = pos;
+            el.selectionEnd = pos;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function htmlToTextWithTables(html) {
+            try {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const body = doc.body;
+                if (!body) return '';
+                const isBlock = (tag) => [
+                    'P', 'DIV', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER',
+                    'BLOCKQUOTE', 'PRE', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI'
+                ].includes(tag);
+                const tableToTsv = (table) => {
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    return rows.map((row) => {
+                        const cells = Array.from(row.querySelectorAll('th, td'));
+                        return cells.map((cell) => String(cell.textContent || '').replace(/\s+/g, ' ').trim()).join('\t');
+                    }).join('\n');
+                };
+                const nodeToText = (node) => {
+                    if (node.nodeType === Node.TEXT_NODE) return node.nodeValue || '';
+                    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+                    const tag = node.tagName;
+                    if (tag === 'BR') return '\n';
+                    if (tag === 'TABLE') {
+                        const tsv = tableToTsv(node);
+                        return tsv ? `\n${tsv}\n` : '';
+                    }
+                    let text = '';
+                    node.childNodes.forEach((child) => { text += nodeToText(child); });
+                    if (tag === 'LI') {
+                        const trimmed = text.trim();
+                        if (trimmed && !/^[•\-\*]\s/.test(trimmed)) {
+                            text = `• ${trimmed}`;
+                        } else {
+                            text = trimmed;
+                        }
+                        text += '\n';
+                        return text;
+                    }
+                    if (isBlock(tag)) {
+                        if (!text.endsWith('\n')) text += '\n';
+                    }
+                    return text;
+                };
+                let out = nodeToText(body);
+                out = out.split('\n').map((l) => l.trimEnd()).join('\n');
+                out = out.replace(/\n{3,}/g, '\n\n').trim();
+                return out;
+            } catch {
+                return '';
+            }
+        }
+
         form.addEventListener('submit', async (ev) => {
         ev.preventDefault();
         if (!endpoint || !user) {
@@ -210,6 +272,19 @@
                 ev.preventDefault();
                 form.requestSubmit();
             }
+        });
+        input.addEventListener('paste', (ev) => {
+            const clipboard = ev.clipboardData;
+            if (!clipboard) return;
+            const html = clipboard.getData('text/html');
+            if (!html) return;
+            const looksLikeWord = /class="?Mso|urn:schemas-microsoft-com|<meta name=generator[^>]*Word/i.test(html);
+            const hasTable = /<table[\s>]/i.test(html);
+            if (!looksLikeWord && !hasTable) return;
+            const text = htmlToTextWithTables(html);
+            if (!text) return;
+            ev.preventDefault();
+            insertAtCursor(input, text);
         });
         input.addEventListener('input', autosizeInput);
         autosizeInput();
@@ -331,6 +406,50 @@
     }
 
         const LINE_CLAMP = 5;
+        const TABLE_ROW_CLAMP = 6;
+
+        function parseTable(message) {
+        const lines = String(message || '').split(/\r?\n/).filter(l => l.trim().length > 0);
+        if (lines.length < 2) return null;
+        const hasTabs = lines.some(l => l.includes('\t'));
+        if (!hasTabs) return null;
+        const rows = lines.map(l => l.split('\t'));
+        const colCount = Math.max(...rows.map(r => r.length));
+        if (colCount < 2) return null;
+        rows.forEach((r) => {
+            while (r.length < colCount) r.push('');
+        });
+        return rows;
+    }
+
+        function renderTable(bodyEl, rows) {
+        const table = document.createElement('table');
+        table.className = 'chat-table';
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+        rows[0].forEach((cell) => {
+            const th = document.createElement('th');
+            th.textContent = cell;
+            headRow.appendChild(th);
+        });
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        rows.slice(1).forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            if (idx >= TABLE_ROW_CLAMP) tr.classList.add('chat-table-row-hidden');
+            row.forEach((cell) => {
+                const td = document.createElement('td');
+                td.textContent = cell;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        bodyEl.textContent = '';
+        bodyEl.appendChild(table);
+        return rows.length - 1 > TABLE_ROW_CLAMP;
+    }
 
         function render(list) {
         const prevScrollTop = bodyEl.scrollTop;
@@ -367,7 +486,15 @@
             meta.appendChild(time);
             const body = document.createElement('div');
             body.className = 'chat-message';
-            body.textContent = m.message || '';
+            const rawMessage = m.message || '';
+            body.dataset.raw = rawMessage;
+            const tableRows = parseTable(rawMessage);
+            let hasHiddenRows = false;
+            if (tableRows) {
+                hasHiddenRows = renderTable(body, tableRows);
+            } else {
+                body.textContent = rawMessage;
+            }
             row.appendChild(meta);
             row.appendChild(body);
             const isOwn = (m.from || '').toLowerCase() === userLower;
@@ -407,19 +534,41 @@
                 row.appendChild(seen);
             }
             bodyEl.appendChild(row);
-            body.classList.add('clamp');
-            body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
-            if (body.scrollHeight > body.clientHeight + 1) {
-                const toggle = document.createElement('button');
-                toggle.type = 'button';
-                toggle.className = 'chat-toggle-btn';
-                toggle.textContent = 'Show more';
-                toggle.addEventListener('click', () => {
-                    const expanded = body.classList.toggle('expanded');
-                    body.classList.toggle('clamp', !expanded);
-                    toggle.textContent = expanded ? 'Show less' : 'Show more';
-                });
-                actions.appendChild(toggle);
+            if (tableRows) {
+                if (hasHiddenRows) {
+                    const toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'chat-toggle-btn';
+                    toggle.dataset.expanded = '0';
+                    toggle.textContent = 'Show more';
+                    toggle.addEventListener('click', () => {
+                        const expanded = toggle.dataset.expanded === '1';
+                        const rows = body.querySelectorAll('tbody tr');
+                        rows.forEach((tr, idx) => {
+                            if (idx >= TABLE_ROW_CLAMP) {
+                                tr.classList.toggle('chat-table-row-hidden', expanded);
+                            }
+                        });
+                        toggle.dataset.expanded = expanded ? '0' : '1';
+                        toggle.textContent = expanded ? 'Show more' : 'Show less';
+                    });
+                    actions.appendChild(toggle);
+                }
+            } else {
+                body.classList.add('clamp');
+                body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
+                if (body.scrollHeight > body.clientHeight + 1) {
+                    const toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'chat-toggle-btn';
+                    toggle.textContent = 'Show more';
+                    toggle.addEventListener('click', () => {
+                        const expanded = body.classList.toggle('expanded');
+                        body.classList.toggle('clamp', !expanded);
+                        toggle.textContent = expanded ? 'Show less' : 'Show more';
+                    });
+                    actions.appendChild(toggle);
+                }
             }
         });
         if (nearBottom) {
@@ -529,7 +678,8 @@
             const copyBtn = ev.target?.closest('.chat-copy-btn');
             if (copyBtn) {
                 const item = copyBtn.closest('.chat-item');
-                const msg = item?.querySelector('.chat-message')?.textContent || '';
+                const msgEl = item?.querySelector('.chat-message');
+                const msg = msgEl?.dataset.raw || msgEl?.textContent || '';
                 copyText(msg);
                 return;
             }
