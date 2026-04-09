@@ -220,36 +220,36 @@
             <span class="entity">┌─────────┐</span>                              <span class="entity">┌─────────┐</span>
             <span class="entity">│ Browser │</span>                              <span class="entity">│  Server │</span>
             <span class="entity">└────┬────┘</span>                              <span class="entity">└────┬────┘</span>
-                 │                                        │
-                 │ <span class="step">1. User enters credentials</span>             │
-                 │    (username + password)               │
-                 │                                        │
-                 │<span class="arrow">────────────────────────────────────▶</span>  │
-                 │      POST /login                       │
-                 │      {user: "john", pass: "***"}       │
-                 │                                        │
-                 │                                   <span class="step">2. Validate</span>
-                 │                                   credentials
-                 │                                   against DB
-                 │                                        │
-                 │                                   <span class="step">3. Create</span>
-                 │                                   session &
-                 │                                   session ID
-                 │                                        │
-                 │ <span class="arrow">◀────────────────────────────────────</span>  │
-                 │   Set-Cookie: <span class="token">sessionId=abc123</span>         │
-                 │   Redirect to /dashboard               │
-                 │                                        │
-                 │ <span class="step">4. Subsequent requests include cookie</span>  │
-                 │ <span class="arrow">────────────────────────────────────▶</span>  │
-                 │   Cookie: <span class="token">sessionId=abc123</span>             │
-                 │                                        │
-                 │                                   <span class="step">5. Verify</span>
-                 │                                   session
-                 │                                        │
-                 │ <span class="arrow">◀────────────────────────────────────</span>  │
-                 │   200 OK + Protected Resource          │
-                 └────────────────────────────────────────┘</div>
+            │                                        │
+            │ <span class="step">1. User enters credentials</span>             │
+            │    (username + password)               │
+            │                                        │
+            │<span class="arrow">────────────────────────────────────▶</span>  │
+            │      POST /login                       │
+            │      {user: "john", pass: "***"}       │
+            │                                        │
+            │                                   <span class="step">2. Validate</span>
+            │                                   credentials
+            │                                   against DB
+            │                                        │
+            │                                   <span class="step">3. Create</span>
+            │                                   session &
+            │                                   session ID
+            │                                        │
+            │ <span class="arrow">◀────────────────────────────────────</span>  │
+            │   Set-Cookie: <span class="token">sessionId=abc123</span>         │
+            │   Redirect to /dashboard               │
+            │                                        │
+            │ <span class="step">4. Subsequent requests include cookie</span>  │
+            │ <span class="arrow">────────────────────────────────────▶</span>  │
+            │   Cookie: <span class="token">sessionId=abc123</span>             │
+            │                                        │
+            │                                   <span class="step">5. Verify</span>
+            │                                   session
+            │                                        │
+            │ <span class="arrow">◀────────────────────────────────────</span>  │
+            │   200 OK + Protected Resource          │
+            └────────────────────────────────────────┘</div>
 
         <div class="key-points">
             <h4>Key Points:</h4>
@@ -273,38 +273,38 @@
             <span class="entity">┌─────────┐</span>      <span class="entity">┌─────────┐</span>      <span class="entity">┌──────────┐</span>
             <span class="entity">│ Browser │</span>      <span class="entity">│  Server │</span>      <span class="entity">│ Database │</span>
             <span class="entity">└────┬────┘</span>      <span class="entity">└────┬────┘</span>      <span class="entity">└────┬─────┘</span>
-                │                 │                │
-                │ <span class="step">LOGIN</span>          │                 │
-                │<span class="arrow">───────────────▶</span>│                 │
-                │                 │<span class="arrow">───────────────▶</span>│
-                │                 │ <span class="step">Check user/pass</span> │
-                │                 │<span class="arrow">◀───────────────</span>│
-                │                 │   ✓ Valid       │
-                │                 │                 │
-                │                 │<span class="arrow">───────────────▶</span>│
-                │                 │ <span class="step">Store session</span>  │
-                │                 │ <span class="token">ID: xyz789</span>      │
-                │<span class="arrow">◀───────────────</span>│ <span class="token">User: john</span>     │
-                │ <span class="token">Cookie: xyz789</span> │ <span class="token">Expires: 1hr</span>   │
-                │                 │                 │
-                │ <span class="step">ACCESS RESOURCE</span>│                 │
-                │<span class="arrow">───────────────▶</span>│                 │
-                │ <span class="token">Cookie: xyz789</span> │                 │
-                │                 │<span class="arrow">───────────────▶</span>│
-                │                 │ <span class="step">Validate session</span>│
-                │                 │<span class="arrow">◀───────────────</span>│
-                │                 │   ✓ Valid       │
-                │<span class="arrow">◀───────────────</span>│                 │
-                │   200 OK        │                 │
-                │   + Data        │                 │
-                │                 │                 │
-                │ <span class="step">LOGOUT</span>         │                 │
-                │<span class="arrow">───────────────▶</span>│                 │
-                │                 │<span class="arrow">───────────────▶</span>│
-                │                 │ <span class="step">Delete session</span>  │
-                │<span class="arrow">◀───────────────</span>│                 │
-                │ Clear cookie    │                 │
-                └                 └                 ┘</div>
+            │                 │                │
+            │ <span class="step">LOGIN</span>          │                 │
+            │<span class="arrow">───────────────▶</span>│                 │
+            │                 │<span class="arrow">───────────────▶</span>│
+            │                 │ <span class="step">Check user/pass</span> │
+            │                 │<span class="arrow">◀───────────────</span>│
+            │                 │   ✓ Valid       │
+            │                 │                 │
+            │                 │<span class="arrow">───────────────▶</span>│
+            │                 │ <span class="step">Store session</span>  │
+            │                 │ <span class="token">ID: xyz789</span>      │
+            │<span class="arrow">◀───────────────</span>│ <span class="token">User: john</span>     │
+            │ <span class="token">Cookie: xyz789</span> │ <span class="token">Expires: 1hr</span>   │
+            │                 │                 │
+            │ <span class="step">ACCESS RESOURCE</span>│                 │
+            │<span class="arrow">───────────────▶</span>│                 │
+            │ <span class="token">Cookie: xyz789</span> │                 │
+            │                 │<span class="arrow">───────────────▶</span>│
+            │                 │ <span class="step">Validate session</span>│
+            │                 │<span class="arrow">◀───────────────</span>│
+            │                 │   ✓ Valid       │
+            │<span class="arrow">◀───────────────</span>│                 │
+            │   200 OK        │                 │
+            │   + Data        │                 │
+            │                 │                 │
+            │ <span class="step">LOGOUT</span>         │                 │
+            │<span class="arrow">───────────────▶</span>│                 │
+            │                 │<span class="arrow">───────────────▶</span>│
+            │                 │ <span class="step">Delete session</span>  │
+            │<span class="arrow">◀───────────────</span>│                 │
+            │ Clear cookie    │                 │
+            └                 └                 ┘</div>
 
         <div class="key-points">
             <h4>Key Points:</h4>
@@ -329,47 +329,47 @@
             <span class="entity">│  User   │</span>  <span class="entity">│ Client App  │</span>  <span class="entity">│ Auth Server  │</span>  <span class="entity">│Resource Srv  │</span>
             <span class="entity">│(Browser)│</span>  <span class="entity">│(Your Site)  │</span>  <span class="entity">│  (Google)    │</span>  <span class="entity">│(Google API)  │</span>
             <span class="entity">└────┬────┘</span>  <span class="entity">└──────┬──────┘</span>  <span class="entity">└──────┬───────┘</span>  <span class="entity">└──────┬───────┘</span>
-                 │              │                │                 │
-                 │ <span class="step">1. Click</span>   │               │                 │
-                 │ "Sign in   │               │                 │
-                 │ w/ Google" │               │                 │
-                 │<span class="arrow">──────────▶</span>│               │                 │
-                 │            │               │                 │
-                 │            │ <span class="step">2. Redirect to auth</span>  │                 │
-                 │<span class="arrow">◀──────────</span>│<span class="arrow">─────────────▶</span>│                 │
-                 │   <span class="token">client_id=123</span>            │                 │
-                 │   <span class="token">redirect_uri=mysite.com/callback</span>            │
-                 │   <span class="token">scope=profile email</span>       │                 │
-                 │                            │                 │
-                 │ <span class="step">3. User logs in & approves</span>  │                 │
-                 │<span class="arrow">───────────────────────────▶</span>│                 │
-                 │   (username/password)      │                 │
-                 │                            │                 │
-                 │ <span class="step">4. Redirect back with code</span>  │                 │
-                 │<span class="arrow">◀───────────────────────────</span>│                 │
-                 │ mysite.com/callback?<span class="token">code=AUTH_CODE</span>            │
-                 │            │               │                 │
-                 │<span class="arrow">──────────▶</span>│               │                 │
-                 │  (browser  │               │                 │
-                 │   follows) │               │                 │
-                 │            │               │                 │
-                 │            │ <span class="step">5. Exchange code for token</span>        │
-                 │            │<span class="arrow">─────────────▶</span>│                 │
-                 │            │  <span class="token">code=AUTH_CODE</span>                  │
-                 │            │  <span class="token">client_secret=</span>│                 │
-                 │            │<span class="arrow">◀─────────────</span>│                 │
-                 │            │  <span class="token">access_token</span> │                 │
-                 │            │  <span class="token">refresh_token</span>│                 │
-                 │            │               │                 │
-                 │            │ <span class="step">6. Use token to access resources</span>  │
-                 │            │<span class="arrow">─────────────────────────────────▶</span>│
-                 │            │   <span class="token">Authorization: Bearer ACCESS_TOKEN</span>
-                 │            │<span class="arrow">◀─────────────────────────────────</span>│
-                 │            │   User profile data             │
-                 │            │               │                 │
-                 │<span class="arrow">◀──────────</span>│               │                 │
-                 │ Logged in! │               │                 │
-                 └            └               └                 ┘</div>
+            │              │                │                 │
+            │ <span class="step">1. Click</span>   │               │                 │
+            │ "Sign in   │               │                 │
+            │ w/ Google" │               │                 │
+            │<span class="arrow">──────────▶</span>│               │                 │
+            │            │               │                 │
+            │            │ <span class="step">2. Redirect to auth</span>  │                 │
+            │<span class="arrow">◀──────────</span>│<span class="arrow">─────────────▶</span>│                 │
+            │   <span class="token">client_id=123</span>            │                 │
+            │   <span class="token">redirect_uri=mysite.com/callback</span>            │
+            │   <span class="token">scope=profile email</span>       │                 │
+            │                            │                 │
+            │ <span class="step">3. User logs in & approves</span>  │                 │
+            │<span class="arrow">───────────────────────────▶</span>│                 │
+            │   (username/password)      │                 │
+            │                            │                 │
+            │ <span class="step">4. Redirect back with code</span>  │                 │
+            │<span class="arrow">◀───────────────────────────</span>│                 │
+            │ mysite.com/callback?<span class="token">code=AUTH_CODE</span>            │
+            │            │               │                 │
+            │<span class="arrow">──────────▶</span>│               │                 │
+            │  (browser  │               │                 │
+            │   follows) │               │                 │
+            │            │               │                 │
+            │            │ <span class="step">5. Exchange code for token</span>        │
+            │            │<span class="arrow">─────────────▶</span>│                 │
+            │            │  <span class="token">code=AUTH_CODE</span>                  │
+            │            │  <span class="token">client_secret=</span>│                 │
+            │            │<span class="arrow">◀─────────────</span>│                 │
+            │            │  <span class="token">access_token</span> │                 │
+            │            │  <span class="token">refresh_token</span>│                 │
+            │            │               │                 │
+            │            │ <span class="step">6. Use token to access resources</span>  │
+            │            │<span class="arrow">─────────────────────────────────▶</span>│
+            │            │   <span class="token">Authorization: Bearer ACCESS_TOKEN</span>
+            │            │<span class="arrow">◀─────────────────────────────────</span>│
+            │            │   User profile data             │
+            │            │               │                 │
+            │<span class="arrow">◀──────────</span>│               │                 │
+            │ Logged in! │               │                 │
+            └            └               └                 ┘</div>
 
         <div class="key-points">
             <h4>Key Points:</h4>

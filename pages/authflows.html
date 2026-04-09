@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth Flows - Interactive Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Playfair+Display:wght@700;900&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+    
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+</head>
+<body>
+    <button class="menu-toggle" id="menuToggle">☰</button>
+    
+    <div class="container">
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>Auth Flows</h1>
+                <p>Interactive Guide</p>
+                <a href="../index.html" class="home-button">
+                    <span>🏠</span>
+                    <span>Home</span>
+                </a>
+            </div>
+            <div class="toc" id="toc"></div>
+        </nav>
+
+        <main class="content">
+            <div class="content-header">
+                <h1>Auth Flows</h1>
+                <p>Guide to Auth Flows.</p>
+            </div>
+            
+            <div id="content"></div>
+        </main>
+    </div>
+
+    <button class="scroll-top" id="scrollTop">↑</button>
+
+    <!-- Highlight.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <script src="../js/visit-config.js"></script>
+    <!-- Use the combined safe loader to inject TOC and Content safely -->
+    <script src="../js/safe-loader.js" data-page="authflows" data-load="toc,content"></script>
+    <script src="../js/main.js"></script>
+    
+    <!-- Initialize syntax highlighting after content is loaded -->
+    <script>
+        // Wait for content to be injected, then highlight
+        const observer = new MutationObserver(() => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        });
+        observer.observe(document.getElementById('content'), { childList: true, subtree: true });
+        
+        // Also highlight on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>
