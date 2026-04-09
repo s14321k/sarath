@@ -49,8 +49,9 @@
         let networkOk = true;
         let pollTimer = null;
         let minimized = false;
-        let bounceTimer = null;
-        let driftTimer = null;
+        let lastUnseen = { global: 0, admin: 0 };
+        let lastLengths = { global: 0, admin: 0 };
+        let bubbleStatePrimed = false;
 
         const bubble = document.createElement('button');
         bubble.type = 'button';
@@ -68,13 +69,11 @@
                 container.classList.add('chat-minimized');
                 bubble.classList.remove('hidden');
                 try { sessionStorage.setItem('chatMinimized', '1'); } catch {}
-                schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
-                startBubbleEffects();
+                schedulePoll(30000);
             } else {
                 container.classList.remove('chat-minimized');
                 bubble.classList.add('hidden');
                 try { sessionStorage.setItem('chatMinimized', '0'); } catch {}
-                stopBubbleEffects();
                 poll();
             }
         }
@@ -148,26 +147,24 @@
             resizeActive = false;
         });
 
-        function startBubbleEffects() {
-            if (bounceTimer || driftTimer) return;
-            bounceTimer = setInterval(() => {
-                bubble.classList.add('chat-bounce');
-                setTimeout(() => bubble.classList.remove('chat-bounce'), 600);
-            }, 5000);
-            driftTimer = setInterval(() => {
-                const x = Math.max(10, Math.min(window.innerWidth - 70, Math.random() * (window.innerWidth - 70)));
-                const y = Math.max(10, Math.min(window.innerHeight - 70, Math.random() * (window.innerHeight - 70)));
-                bubble.style.left = `${x}px`;
-                bubble.style.top = `${y}px`;
-            }, 30000);
+        function triggerBubbleNotification() {
+            bubble.classList.remove('chat-bounce');
+            bubble.style.right = '20px';
+            bubble.style.bottom = window.innerWidth <= 768 ? '136px' : '148px';
+            bubble.style.left = '';
+            bubble.style.top = '';
+            void bubble.offsetHeight;
+            bubble.classList.add('chat-bounce');
+            setTimeout(() => bubble.classList.remove('chat-bounce'), 650);
         }
 
-        function stopBubbleEffects() {
-            if (bounceTimer) clearInterval(bounceTimer);
-            if (driftTimer) clearInterval(driftTimer);
-            bounceTimer = null;
-            driftTimer = null;
-            bubble.classList.remove('chat-bounce');
+        function hasNewActivity(scope, result) {
+            const nextUnseen = Number(result?.unseenCount || 0);
+            const nextLength = Array.isArray(result?.messages) ? result.messages.length : 0;
+            const increased = bubbleStatePrimed && (nextUnseen > (lastUnseen[scope] || 0) || nextLength > (lastLengths[scope] || 0));
+            lastUnseen[scope] = nextUnseen;
+            lastLengths[scope] = nextLength;
+            return increased;
         }
 
     tabs.forEach((t) => {
@@ -614,7 +611,17 @@
 
         async function poll() {
         if (minimized) {
-            schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
+            try {
+                const globalRes = await fetchMessages('global', false);
+                const adminRes = await fetchMessages('admin', false);
+                setBadge(globalBadge, globalRes.unseenCount);
+                setBadge(adminBadge, adminRes.unseenCount);
+                if (hasNewActivity('global', globalRes) || hasNewActivity('admin', adminRes)) {
+                    triggerBubbleNotification();
+                }
+                bubbleStatePrimed = true;
+            } catch {}
+            schedulePoll(networkOk ? 30000 : 300000);
             return;
         }
         if (document.visibilityState === 'hidden') {
@@ -623,9 +630,11 @@
         }
         try {
             const currentRes = await fetchMessages(current, true);
+            hasNewActivity(current, currentRes);
             render(currentRes.messages);
             const other = current === 'global' ? 'admin' : 'global';
             const otherRes = await fetchMessages(other, false);
+            hasNewActivity(other, otherRes);
             if (current === 'global') {
                 setBadge(globalBadge, 0);
                 setBadge(adminBadge, otherRes.unseenCount);

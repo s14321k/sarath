@@ -2,6 +2,7 @@
     'use strict';
 
     const DEFAULT_ROTATE_MINUTES = 20;
+    const STORAGE_KEY = 'kuralEnabled';
     const rotateMinutes = Number(window.KURAL_ROTATE_MINUTES);
     const ROTATE_MS = (Number.isFinite(rotateMinutes) && rotateMinutes > 0 ? rotateMinutes : DEFAULT_ROTATE_MINUTES) * 60 * 1000;
     const HIDE_SECONDS = 10;
@@ -19,9 +20,11 @@
     const englishEl = banner.querySelector('[data-kural-english]');
     const nextBtn = banner.querySelector('[data-kural-next]');
     const loadingEl = banner.querySelector('[data-kural-loading]');
+    const toggleBtn = ensureToggleButton();
 
     let items = [];
     let currentIndex = 0;
+    let enabled = getStoredEnabled();
 
     function render(item) {
         if (!item) return;
@@ -51,6 +54,10 @@
     }
 
     async function loadData() {
+        if (!enabled) {
+            applyEnabledState();
+            return;
+        }
         let json = null;
         try {
             setLoading(true, 'Loading...');
@@ -84,6 +91,7 @@
 
     loadData();
     setInterval(() => {
+        if (!enabled) return;
         advanceKural();
         loadData();
     }, ROTATE_MS);
@@ -167,8 +175,62 @@
         return target;
     }
 
+    function ensureToggleButton() {
+        let button = document.getElementById('kuralToggle');
+        if (!button) {
+            button = document.createElement('button');
+            button.id = 'kuralToggle';
+            button.type = 'button';
+            button.className = 'kural-toggle';
+            button.setAttribute('aria-pressed', 'true');
+            document.body.appendChild(button);
+        }
+        return button;
+    }
+
+    function getStoredEnabled() {
+        try {
+            const value = localStorage.getItem(STORAGE_KEY);
+            return value !== '0';
+        } catch {
+            return true;
+        }
+    }
+
+    function storeEnabled(value) {
+        try {
+            localStorage.setItem(STORAGE_KEY, value ? '1' : '0');
+        } catch {}
+    }
+
+    function updateToggleUi() {
+        if (!toggleBtn) return;
+        toggleBtn.textContent = enabled ? 'Kural On' : 'Kural Off';
+        toggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        toggleBtn.classList.toggle('is-off', !enabled);
+        toggleBtn.title = enabled ? 'Turn off Thirukural banner' : 'Turn on Thirukural banner';
+    }
+
+    function applyEnabledState() {
+        updateToggleUi();
+        if (!banner) return;
+        if (enabled) {
+            banner.hidden = false;
+            renderNow();
+            startAutoHide();
+            return;
+        }
+        clearTimeout(hideTimeout);
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+        banner.classList.add('kural-hidden');
+        banner.hidden = true;
+    }
+
     function advanceKural() {
-        if (!items.length) return;
+        if (!enabled || !items.length) return;
         currentIndex = (currentIndex + 1) % items.length;
         renderNow();
         startAutoHide();
@@ -178,10 +240,11 @@
     let countdownInterval = null;
 
     function startAutoHide() {
-        if (!isFloating) return;
+        if (!isFloating || !enabled) return;
         clearTimeout(hideTimeout);
         if (countdownInterval) clearInterval(countdownInterval);
 
+        banner.hidden = false;
         banner.classList.remove('kural-hidden');
 
         const timerValue = banner.querySelector('[data-kural-timer-value]');
@@ -238,4 +301,17 @@
             nextBtn.classList.add('kural-rotate');
         });
     }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            enabled = !enabled;
+            storeEnabled(enabled);
+            if (enabled && !items.length) {
+                loadData();
+            }
+            applyEnabledState();
+        });
+    }
+
+    applyEnabledState();
 })();

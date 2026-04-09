@@ -169,6 +169,7 @@
     // Expand/Collapse all <details>
     safe(() => {
         let toggleBtn = null;
+        let initializedOpen = false;
 
         function getDetails() {
             return $$('details');
@@ -201,6 +202,12 @@
             const details = getDetails();
             if (!details.length) return;
             const btn = ensureButton();
+
+            if (!initializedOpen) {
+                details.forEach((d) => d.setAttribute('open', ''));
+                initializedOpen = true;
+            }
+
             updateLabel(details);
 
             if (!btn.dataset.bound) {
