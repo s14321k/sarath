@@ -492,10 +492,16 @@
         function fitInline(node) {
             const svg = node.querySelector('svg');
             if (!svg) return;
+            const shell = node.closest('.mermaid-shell');
+            const stage = shell?.querySelector('.mermaid-inline-stage');
+            const metrics = getSvgMetrics(svg);
+            const availableWidth = Math.max((stage?.clientWidth || node.clientWidth || metrics.width) - 4, 240);
+            const maxPreviewHeight = Math.max(Math.min(window.innerHeight * 0.5, 520), 220);
+            const scale = Math.min(1, availableWidth / metrics.width, maxPreviewHeight / metrics.height);
             svg.style.display = 'block';
-            svg.style.width = '100%';
+            svg.style.width = `${Math.max(1, metrics.width * scale)}px`;
+            svg.style.height = `${Math.max(1, metrics.height * scale)}px`;
             svg.style.maxWidth = '100%';
-            svg.style.height = 'auto';
         }
 
         function enhanceRenderedNodes() {

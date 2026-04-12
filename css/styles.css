@@ -224,13 +224,13 @@ body {
 
         .mermaid-inline-stage .mermaid {
             cursor: zoom-in;
+            display: flex;
+            justify-content: center;
         }
 
         .mermaid-inline-stage .mermaid svg {
             display: block;
-            width: 100%;
             max-width: 100%;
-            height: auto;
         }
 
         .mermaid-open-btn {
