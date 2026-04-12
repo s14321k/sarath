@@ -279,17 +279,247 @@
             });
         }
 
+        let modal = null;
+        let modalViewport = null;
+        let modalStage = null;
+        let modalTitle = null;
+        const modalState = { scale: 1, index: 0, baseWidth: 1, baseHeight: 1 };
+
+        function clampScale(value) {
+            return Math.max(0.4, Math.min(3, value));
+        }
+
+        function getSvgMetrics(svg) {
+            if (!svg) return { width: 1, height: 1 };
+            const width = svg.viewBox?.baseVal?.width || svg.width?.baseVal?.value || svg.getBoundingClientRect().width || 1;
+            const height = svg.viewBox?.baseVal?.height || svg.height?.baseVal?.value || svg.getBoundingClientRect().height || 1;
+            return { width, height };
+        }
+
+        function ensureModal() {
+            if (modal) return;
+            modal = document.createElement('div');
+            modal.className = 'mermaid-modal hidden';
+            modal.innerHTML = `
+                <div class="mermaid-modal-backdrop" data-mermaid-close="1"></div>
+                <section class="mermaid-modal-panel" role="dialog" aria-modal="true" aria-label="Mermaid diagram viewer">
+                    <div class="mermaid-modal-toolbar">
+                        <span class="mermaid-modal-title" data-mermaid-title>Diagram</span>
+                        <div class="mermaid-modal-actions">
+                            <button type="button" class="mermaid-tool-btn" data-action="zoom-out" aria-label="Zoom out">-</button>
+                            <button type="button" class="mermaid-tool-btn" data-action="zoom-in" aria-label="Zoom in">+</button>
+                            <button type="button" class="mermaid-tool-btn" data-action="fit" aria-label="Fit diagram">Fit</button>
+                            <button type="button" class="mermaid-tool-btn" data-action="reset" aria-label="Reset zoom">Reset</button>
+                            <button type="button" class="mermaid-tool-btn" data-action="download" aria-label="Download SVG">SVG</button>
+                            <button type="button" class="mermaid-tool-btn mermaid-close-btn" data-mermaid-close="1" aria-label="Close diagram">Close</button>
+                        </div>
+                    </div>
+                    <div class="mermaid-modal-viewport">
+                        <div class="mermaid-modal-stage"></div>
+                    </div>
+                </section>
+            `;
+            document.body.appendChild(modal);
+            modalViewport = modal.querySelector('.mermaid-modal-viewport');
+            modalStage = modal.querySelector('.mermaid-modal-stage');
+            modalTitle = modal.querySelector('[data-mermaid-title]');
+
+            modal.addEventListener('click', (ev) => {
+                const action = ev.target.closest('[data-action]')?.dataset.action;
+                if (action === 'zoom-in') return zoomModal(0.15);
+                if (action === 'zoom-out') return zoomModal(-0.15);
+                if (action === 'fit') return fitModal();
+                if (action === 'reset') return resetModal();
+                if (action === 'download') return downloadModal();
+                if (ev.target.closest('[data-mermaid-close="1"]')) closeModal();
+            });
+
+            modalViewport.addEventListener('wheel', (ev) => {
+                if (!ev.ctrlKey) return;
+                ev.preventDefault();
+                zoomModal(ev.deltaY < 0 ? 0.1 : -0.1);
+            }, { passive: false });
+
+            let dragActive = false;
+            let startX = 0;
+            let startY = 0;
+            let startLeft = 0;
+            let startTop = 0;
+
+            modalViewport.addEventListener('pointerdown', (ev) => {
+                if (ev.button !== 0) return;
+                if (!ev.target.closest('svg')) return;
+                dragActive = true;
+                startX = ev.clientX;
+                startY = ev.clientY;
+                startLeft = modalViewport.scrollLeft;
+                startTop = modalViewport.scrollTop;
+                modalViewport.classList.add('is-dragging');
+                modalViewport.setPointerCapture(ev.pointerId);
+                ev.preventDefault();
+            });
+
+            modalViewport.addEventListener('pointermove', (ev) => {
+                if (!dragActive) return;
+                modalViewport.scrollLeft = startLeft - (ev.clientX - startX);
+                modalViewport.scrollTop = startTop - (ev.clientY - startY);
+            });
+
+            function stopDrag(ev) {
+                if (!dragActive) return;
+                dragActive = false;
+                modalViewport.classList.remove('is-dragging');
+                try { modalViewport.releasePointerCapture(ev.pointerId); } catch {}
+            }
+
+            modalViewport.addEventListener('pointerup', stopDrag);
+            modalViewport.addEventListener('pointercancel', stopDrag);
+
+            document.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+        }
+
+        function getModalDiagram() {
+            return modalStage?.querySelector('.mermaid-modal-diagram') || null;
+        }
+
+        function updateModalScale() {
+            const diagram = getModalDiagram();
+            const svg = diagram?.querySelector('svg');
+            if (!diagram || !svg) return;
+            svg.style.width = `${modalState.baseWidth * modalState.scale}px`;
+            svg.style.height = `${modalState.baseHeight * modalState.scale}px`;
+        }
+
+        function fitModal() {
+            const diagram = getModalDiagram();
+            const svg = diagram?.querySelector('svg');
+            if (!diagram || !svg || !modalViewport) return;
+            const metrics = getSvgMetrics(svg);
+            const viewportWidth = Math.max(modalViewport.clientWidth - 36, 320);
+            modalState.baseWidth = metrics.width;
+            modalState.baseHeight = metrics.height;
+            modalState.scale = clampScale(viewportWidth / metrics.width);
+            updateModalScale();
+            modalViewport.scrollLeft = 0;
+            modalViewport.scrollTop = 0;
+        }
+
+        function resetModal() {
+            modalState.scale = 1;
+            updateModalScale();
+            if (modalViewport) {
+                modalViewport.scrollLeft = 0;
+                modalViewport.scrollTop = 0;
+            }
+        }
+
+        function zoomModal(delta) {
+            modalState.scale = clampScale(modalState.scale + delta);
+            updateModalScale();
+        }
+
+        function downloadModal() {
+            const svg = modalStage?.querySelector('svg');
+            if (!svg) return;
+            const serializer = new XMLSerializer();
+            let source = serializer.serializeToString(svg);
+            if (!source.includes('xmlns=')) {
+                source = source.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `mermaid-diagram-${modalState.index + 1}.svg`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        function closeModal() {
+            if (!modal) return;
+            modal.classList.add('hidden');
+            document.body.classList.remove('mermaid-modal-open');
+            if (modalStage) modalStage.innerHTML = '';
+        }
+
+        function openModal(node, index) {
+            ensureModal();
+            const svg = node.querySelector('svg');
+            if (!svg) return;
+            modalState.index = index;
+            const metrics = getSvgMetrics(svg);
+            modalState.baseWidth = metrics.width;
+            modalState.baseHeight = metrics.height;
+            if (modalTitle) modalTitle.textContent = `Diagram ${index + 1}`;
+            modalStage.innerHTML = '';
+            const diagram = document.createElement('div');
+            diagram.className = 'mermaid-modal-diagram';
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute('style');
+            clone.style.width = `${modalState.baseWidth}px`;
+            clone.style.height = `${modalState.baseHeight}px`;
+            diagram.appendChild(clone);
+            modalStage.appendChild(diagram);
+            modal.classList.remove('hidden');
+            document.body.classList.add('mermaid-modal-open');
+            requestAnimationFrame(() => fitModal());
+        }
+
+        function wrapInlineNode(node, index) {
+            if (node.closest('.mermaid-shell')) return;
+            const shell = document.createElement('section');
+            shell.className = 'mermaid-shell';
+            shell.innerHTML = `
+                <button type="button" class="mermaid-open-btn" aria-label="Open Mermaid diagram">Open</button>
+                <div class="mermaid-inline-stage"></div>
+                <div class="mermaid-inline-hint">Click diagram to expand</div>
+            `;
+            const parent = node.parentNode;
+            parent.replaceChild(shell, node);
+            shell.querySelector('.mermaid-inline-stage').appendChild(node);
+            shell.addEventListener('click', (ev) => {
+                if (!ev.target.closest('.mermaid-open-btn') && !ev.target.closest('.mermaid') && !ev.target.closest('svg')) return;
+                openModal(node, index);
+            });
+        }
+
+        function fitInline(node) {
+            const svg = node.querySelector('svg');
+            if (!svg) return;
+            svg.style.display = 'block';
+            svg.style.width = '100%';
+            svg.style.maxWidth = '100%';
+            svg.style.height = 'auto';
+        }
+
+        function enhanceRenderedNodes() {
+            const nodes = $$('.mermaid', content);
+            nodes.forEach((node, index) => {
+                if (!node.querySelector('svg')) return;
+                wrapInlineNode(node, index);
+                fitInline(node);
+            });
+        }
+
         function renderMermaid() {
             normalizeMermaidBlocks();
             const nodes = $$('.mermaid', content);
             if (!nodes.length) return;
             ensureMermaid(() => {
                 if (!window.mermaid) return;
+                let renderResult = null;
                 if (typeof window.mermaid.run === 'function') {
-                    window.mermaid.run({ nodes });
+                    renderResult = window.mermaid.run({ nodes });
                 } else if (typeof window.mermaid.init === 'function') {
-                    window.mermaid.init(undefined, nodes);
+                    renderResult = window.mermaid.init(undefined, nodes);
                 }
+                Promise.resolve(renderResult).finally(() => enhanceRenderedNodes());
             });
         }
 
@@ -428,4 +658,3 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(kuralScript);
     }
 });
-

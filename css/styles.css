@@ -211,6 +211,186 @@ body {
             border-radius: 8px;
         }
 
+        .mermaid-shell {
+            position: relative;
+            margin: 18px 0;
+            padding: 14px 14px 36px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+            overflow: hidden;
+        }
+
+        .mermaid-inline-stage .mermaid {
+            cursor: zoom-in;
+        }
+
+        .mermaid-inline-stage .mermaid svg {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .mermaid-open-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            min-width: 56px;
+            height: 30px;
+            padding: 0 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mermaid-inline-hint {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: right;
+        }
+
+        .mermaid-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .mermaid-modal.hidden {
+            display: none;
+        }
+
+        .mermaid-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(5, 6, 12, 0.72);
+            backdrop-filter: blur(6px);
+        }
+
+        .mermaid-modal-panel {
+            position: relative;
+            width: min(1200px, calc(100vw - 48px));
+            height: min(88vh, 860px);
+            background: #121224;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .mermaid-modal-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .mermaid-modal-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .mermaid-modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .mermaid-tool-btn {
+            min-width: 44px;
+            height: 34px;
+            padding: 0 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mermaid-tool-btn:hover {
+            background: rgba(233, 69, 96, 0.16);
+            border-color: rgba(233, 69, 96, 0.34);
+        }
+
+        .mermaid-modal-viewport {
+            height: calc(100% - 60px);
+            overflow: auto;
+            padding: 18px;
+            background: rgba(10, 10, 21, 0.26);
+            cursor: grab;
+            user-select: none;
+        }
+
+        .mermaid-modal-viewport.is-dragging {
+            cursor: grabbing;
+        }
+
+        .mermaid-modal-stage {
+            display: grid;
+            justify-items: center;
+            align-items: start;
+            width: max-content;
+            min-width: 100%;
+            min-height: 100%;
+        }
+
+        .mermaid-modal-diagram {
+            display: inline-block;
+        }
+
+        .mermaid-modal-diagram svg {
+            display: block;
+            max-width: none;
+            width: auto;
+            height: auto;
+        }
+
+        body.mermaid-modal-open {
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .mermaid-modal {
+                padding: 12px;
+            }
+
+            .mermaid-modal-panel {
+                width: calc(100vw - 24px);
+                height: 86vh;
+            }
+
+            .mermaid-modal-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .mermaid-modal-actions {
+                width: 100%;
+            }
+
+            .mermaid-tool-btn {
+                flex: 1 1 auto;
+            }
+        }
+
         p {
             margin: 8px 0;
             font-size: 16px;
