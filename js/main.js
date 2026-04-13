@@ -10,6 +10,15 @@
         try { fn(); } catch (e) { console.error('main.js error:', e); }
     }
 
+    function scrollToAnchorId(id) {
+        if (!id) return false;
+        const target = document.getElementById(id);
+        if (!target) return false;
+        const top = window.scrollY + target.getBoundingClientRect().top - 20;
+        window.scrollTo({ top, behavior: 'smooth' });
+        return true;
+    }
+
     // Gate access if name was not provided on index page
     safe(() => {
         if (sessionStorage.getItem('visitRecorded')) return;
@@ -133,10 +142,7 @@
             if (!href || !href.startsWith('#')) return; // external links can be normal
             ev.preventDefault();
             const id = href.slice(1);
-            const target = document.getElementById(id);
-            if (target) {
-                const top = window.scrollY + target.getBoundingClientRect().top - 20; // small offset
-                window.scrollTo({ top, behavior: 'smooth' });
+            if (scrollToAnchorId(id)) {
                 // close sidebar on small screens
                 const sidebar = $('#sidebar');
                 const menuToggle = $('#menuToggle');
@@ -150,6 +156,311 @@
                 if (hrefFull) window.location.href = hrefFull;
             }
         });
+    });
+
+    // Open cross-page and external content links in a new tab
+    safe(() => {
+        const content = $('#content');
+        if (!content) return;
+
+        function normalizeContentLinks() {
+            $$('a[href]', content).forEach((link) => {
+                const href = (link.getAttribute('href') || '').trim();
+                if (!href || href.startsWith('#') || href.toLowerCase().startsWith('javascript:')) {
+                    link.removeAttribute('target');
+                    const rel = (link.getAttribute('rel') || '')
+                        .split(/\s+/)
+                        .filter((part) => part && part !== 'noopener' && part !== 'noreferrer')
+                        .join(' ');
+                    if (rel) link.setAttribute('rel', rel);
+                    else link.removeAttribute('rel');
+                    return;
+                }
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            });
+        }
+
+        normalizeContentLinks();
+        const observer = new MutationObserver(() => normalizeContentLinks());
+        observer.observe(content, { childList: true, subtree: true });
+        window.addEventListener('pageContentLoaded', () => normalizeContentLinks());
+    });
+
+    // Preview same-page and cross-page section links on hover
+    safe(() => {
+        const content = $('#content');
+        if (!content) return;
+
+        let preview = null;
+        let previewBody = null;
+        let previewTitle = null;
+        let activeLink = null;
+        let hideTimer = null;
+        let previewRequestId = 0;
+        const remotePreviewCache = new Map();
+
+        function ensurePreview() {
+            if (preview) return;
+            preview = document.createElement('aside');
+            preview.className = 'anchor-preview hidden';
+            preview.innerHTML = `
+                <div class="anchor-preview-title"></div>
+                <div class="anchor-preview-body"></div>
+            `;
+            document.body.appendChild(preview);
+            previewTitle = preview.querySelector('.anchor-preview-title');
+            previewBody = preview.querySelector('.anchor-preview-body');
+
+            preview.addEventListener('mouseenter', () => {
+                if (hideTimer) {
+                    clearTimeout(hideTimer);
+                    hideTimer = null;
+                }
+            });
+
+            preview.addEventListener('mouseleave', () => scheduleHide());
+        }
+
+        function isSectionHeading(node) {
+            return Boolean(node?.tagName && /^H[1-6]$/.test(node.tagName));
+        }
+
+        function getHeadingLevel(node) {
+            return isSectionHeading(node) ? Number(node.tagName.slice(1)) : 7;
+        }
+
+        function stripCloneIds(root) {
+            if (!root?.querySelectorAll) return;
+            if (root.id) root.removeAttribute('id');
+            root.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+        }
+
+        function buildSectionFragment(target) {
+            const fragment = document.createDocumentFragment();
+            const startLevel = getHeadingLevel(target);
+            let node = target;
+            while (node) {
+                if (node !== target && isSectionHeading(node) && getHeadingLevel(node) <= startLevel) break;
+                const clone = node.cloneNode(true);
+                stripCloneIds(clone);
+                fragment.appendChild(clone);
+                node = node.nextElementSibling;
+            }
+            return fragment;
+        }
+
+        function positionPreview(link) {
+            if (!preview) return;
+            const rect = link.getBoundingClientRect();
+            const viewportPad = 16;
+            const preferredWidth = Math.min(520, Math.max(360, Math.floor(window.innerWidth * 0.34)));
+            preview.style.width = `${preferredWidth}px`;
+            preview.style.maxWidth = `calc(100vw - ${viewportPad * 2}px)`;
+            preview.style.visibility = 'hidden';
+            preview.classList.remove('hidden');
+
+            const box = preview.getBoundingClientRect();
+            let left = rect.right + 14;
+            if (left + box.width > window.innerWidth - viewportPad) {
+                left = rect.left - box.width - 14;
+            }
+            if (left < viewportPad) {
+                left = Math.max(viewportPad, window.innerWidth - box.width - viewportPad);
+            }
+
+            let top = rect.top;
+            if (top + box.height > window.innerHeight - viewportPad) {
+                top = window.innerHeight - box.height - viewportPad;
+            }
+            top = Math.max(viewportPad, top);
+
+            preview.style.left = `${left}px`;
+            preview.style.top = `${top}px`;
+            preview.style.visibility = 'visible';
+        }
+
+        function hidePreview() {
+            activeLink = null;
+            if (!preview) return;
+            preview.classList.add('hidden');
+            preview.style.visibility = '';
+        }
+
+        function scheduleHide() {
+            if (hideTimer) clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => hidePreview(), 120);
+        }
+
+        function parseRemoteRoot(html) {
+            const root = document.createElement('div');
+            root.innerHTML = html || '';
+            return root;
+        }
+
+        function getSectionTarget(root, id) {
+            if (!root) return null;
+            if (id) return root.querySelector(`#${CSS.escape(id)}`);
+            return root.querySelector('h1, h2, h3, h4, h5, h6');
+        }
+
+        function resolvePreviewLink(link) {
+            const href = (link.getAttribute('href') || '').trim();
+            if (!href || href.toLowerCase().startsWith('javascript:')) return null;
+            if (href.startsWith('#')) {
+                const id = href.slice(1);
+                if (!id) return null;
+                return { type: 'local', id };
+            }
+            try {
+                const url = new URL(href, window.location.href);
+                if (url.origin !== window.location.origin) return null;
+                if (!url.pathname.toLowerCase().endsWith('.html')) return null;
+                const fileName = url.pathname.split('/').pop() || '';
+                const pageName = fileName.replace(/\.html$/i, '');
+                if (!pageName) return null;
+                return {
+                    type: 'remote',
+                    page: pageName,
+                    id: url.hash ? decodeURIComponent(url.hash.slice(1)) : ''
+                };
+            } catch {
+                return null;
+            }
+        }
+
+        function fetchRemotePreviewHtml(page) {
+            if (remotePreviewCache.has(page)) {
+                return Promise.resolve(remotePreviewCache.get(page));
+            }
+            const endpoint = window.VISIT_ENDPOINT || '';
+            if (!endpoint) return Promise.resolve('');
+            return fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    eventType: 'page_content',
+                    page,
+                    kind: 'content'
+                })
+            }).then((resp) => {
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                return resp.json();
+            }).then((data) => {
+                const html = data && data.html ? data.html : '';
+                remotePreviewCache.set(page, html);
+                return html;
+            }).catch(() => '');
+        }
+
+        function renderPreview(link, title, fragment) {
+            ensurePreview();
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+            activeLink = link;
+            previewTitle.textContent = title || 'Preview';
+            previewBody.innerHTML = '';
+            if (fragment) previewBody.appendChild(fragment);
+            positionPreview(link);
+        }
+
+        async function showPreview(link) {
+            const target = resolvePreviewLink(link);
+            if (!target) return;
+            const requestId = ++previewRequestId;
+
+            if (target.type === 'local') {
+                const localTarget = document.getElementById(target.id);
+                if (!localTarget) return;
+                renderPreview(link, localTarget.textContent.trim() || target.id, buildSectionFragment(localTarget));
+                return;
+            }
+
+            ensurePreview();
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+            activeLink = link;
+            previewTitle.textContent = 'Loading preview...';
+            previewBody.innerHTML = '<p>Loading linked section...</p>';
+            positionPreview(link);
+
+            const html = await fetchRemotePreviewHtml(target.page);
+            if (requestId !== previewRequestId || activeLink !== link) return;
+            if (!html) {
+                previewTitle.textContent = 'Preview unavailable';
+                previewBody.innerHTML = '<p>Unable to load the linked page preview.</p>';
+                positionPreview(link);
+                return;
+            }
+
+            const root = parseRemoteRoot(html);
+            const remoteTarget = getSectionTarget(root, target.id);
+            if (!remoteTarget) {
+                previewTitle.textContent = 'Preview unavailable';
+                previewBody.innerHTML = '<p>The linked section was not found.</p>';
+                positionPreview(link);
+                return;
+            }
+
+            renderPreview(link, remoteTarget.textContent.trim() || target.page, buildSectionFragment(remoteTarget));
+        }
+
+        function getPreviewableContentLink(source) {
+            const link = source?.closest?.('#content a[href]');
+            if (!link) return null;
+            return resolvePreviewLink(link) ? link : null;
+        }
+
+        content.addEventListener('mouseover', (ev) => {
+            const link = getPreviewableContentLink(ev.target);
+            if (!link) return;
+            showPreview(link);
+        });
+
+        content.addEventListener('mouseout', (ev) => {
+            const link = getPreviewableContentLink(ev.target);
+            if (!link || link !== activeLink) return;
+            const next = ev.relatedTarget;
+            if (preview?.contains(next)) return;
+            scheduleHide();
+        });
+
+        content.addEventListener('focusin', (ev) => {
+            const link = getPreviewableContentLink(ev.target);
+            if (!link) return;
+            showPreview(link);
+        });
+
+        content.addEventListener('focusout', (ev) => {
+            const link = getPreviewableContentLink(ev.target);
+            if (!link || link !== activeLink) return;
+            const next = ev.relatedTarget;
+            if (preview?.contains(next)) return;
+            scheduleHide();
+        });
+
+        content.addEventListener('click', (ev) => {
+            const link = getPreviewableContentLink(ev.target);
+            if (!link) return;
+            const target = resolvePreviewLink(link);
+            if (!target || target.type !== 'local') return;
+            const didScroll = scrollToAnchorId(target.id);
+            if (!didScroll) return;
+            ev.preventDefault();
+            try {
+                history.pushState(null, '', `#${target.id}`);
+            } catch {
+                window.location.hash = target.id;
+            }
+            hidePreview();
+        });
+
+        window.addEventListener('scroll', () => hidePreview(), { passive: true });
+        window.addEventListener('resize', () => hidePreview());
     });
 
     // Scroll-to-top button
