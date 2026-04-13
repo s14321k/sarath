@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Patterns Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --border: #1e1e2e;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --accent: #f0c040;
+    --accent2: #60d0ff;
+    --accent3: #ff6080;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* Subtle grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  header .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  header h1 {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #fff 40%, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--muted);
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+  }
+
+  /* Category tabs */
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    animation: fadeDown 0.6s 0.1s ease both;
+  }
+
+  .tab {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.4rem 1rem;
+    border-radius: 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--accent); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
+
+  /* Pattern grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-color, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--card-color, var(--accent)); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .card:hover::before { opacity: 1; }
+  .card.hidden { display: none; }
+
+  .card-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .card-icon { font-size: 1.5rem; line-height: 1; }
+  .card-title { font-weight: 700; font-size: 1rem; }
+  .card-category {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--card-color, var(--accent));
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .card-tagline { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+  .card-arrow {
+    position: absolute;
+    top: 1.1rem; right: 1.1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    transition: transform 0.3s, color 0.2s;
+  }
+  .card:hover .card-arrow { transform: translateX(3px); color: var(--card-color, var(--accent)); }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.9rem 0;
+  }
+
+  .detail-section { margin-bottom: 0.75rem; }
+  .detail-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .detail-text { font-size: 0.875rem; line-height: 1.6; color: #c8c8e0; }
+
+  .use-when {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--card-color, var(--accent));
+    padding: 0.5rem 0.75rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  pre {
+    background: #0d0d15;
+    border: 1px solid #1a1a2a;
+    border-radius: 8px;
+    padding: 0.9rem;
+    overflow-x: auto;
+    margin-top: 0.3rem;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.7;
+    color: #a0d8ff;
+  }
+  .kw { color: #c792ea; }
+  .cl { color: #ffcb6b; }
+  .cm { color: #546e7a; font-style: italic; }
+  .st { color: #c3e88d; }
+
+  /* Analogies */
+  .analogy {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    background: rgba(240,192,64,0.06);
+    border-radius: 8px;
+    padding: 0.6rem 0.8rem;
+  }
+  .analogy-icon { font-size: 1rem; margin-top: 0.1rem; }
+  .analogy-text { font-size: 0.83rem; line-height: 1.55; color: #d0d0e8; }
+
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(14px);  } to { opacity:1; transform:translateY(0); } }
+
+  .count-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 1.25rem;
+  }
+  .count-badge span { color: var(--accent); font-weight: 700; }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(4, 4, 10, 0.82);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 30;
+  }
+  .modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-panel {
+    width: min(920px, 100%);
+    max-height: min(88vh, 900px);
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgba(19,19,26,0.98), rgba(10,10,15,0.98));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+    padding: 1.5rem;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+  .modal-close:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-right: 3rem;
+    margin-bottom: 1rem;
+  }
+  .modal-icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+  .modal-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.35rem;
+  }
+  .modal-tagline {
+    color: #c8c8e0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+  }
+  .meta-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: #d8d8ea;
+  }
+  body.modal-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 640px) {
+    .modal {
+      padding: 0.75rem;
+    }
+    .modal-panel {
+      padding: 1.1rem;
+      max-height: 92vh;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="label">// Software Engineering</div>
+    <h1>Design Patterns</h1>
+    <p>Click any card to explore — simple explanations, real analogies, code snippets</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-filter="all">All Patterns</button>
+    <button class="tab" data-filter="creational">Creational</button>
+    <button class="tab" data-filter="structural">Structural</button>
+    <button class="tab" data-filter="behavioral">Behavioral</button>
+    <button class="tab" data-filter="architectural">Architectural</button>
+    <button class="tab" data-filter="microservice">☁️ Microservices</button>
+  </div>
+
+  <div class="count-badge">Showing <span id="count">30</span> patterns</div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="modal" id="patternModal" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" id="modalClose" type="button" aria-label="Close pattern details">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const patterns = [
+  {
+    icon: "🔒",
+    title: "Singleton",
+    category: "creational",
+    categoryLabel: "Creational",
+    color: "#f0c040",
+    tagline: "Ensures a class has only one instance and provides a global access point to it.",
+    simple: "One and only one object of this class will ever exist. No matter how many times you ask for it, you always get back the exact same one.",
+    analogy: "Like the President of a country — there's exactly one at a time, and everyone refers to the same person when they say 'the President'.",
+    useWhen: "Managing shared resources that must not be duplicated: database connection pools, logging services, configuration managers, or caches.",
+    code: `<span class="kw">class</span> <span class="cl">Singleton</span> {
+  <span class="kw">private static</span> <span class="cl">Singleton</span> instance;
+
+  <span class="kw">private</span> Singleton() {} <span class="cm">// no public constructor</span>
+
+  <span class="kw">public static</span> <span class="cl">Singleton</span> getInstance() {
+    <span class="kw">if</span> (instance == <span class="kw">null</span>)
+      instance = <span class="kw">new</span> <span class="cl">Singleton</span>();
+    <span class="kw">return</span> instance; <span class="cm">// always the same one</span>
+  }
+}`
+  },
+  {
+    icon: "🏭",
+    title: "Factory",
+    category: "creational",
+    categoryLabel: "Creational",
+    color: "#f0c040",
+    tagline: "Creates objects without the caller needing to know the exact class being instantiated.",
+    simple: "Instead of writing <code>new SomeClass()</code> all over your code, you ask a factory method to create the object. The factory decides what to build.",
+    analogy: "Like ordering from a bakery: you say 'one cake' — you don't care if it's a chef or a machine that bakes it. You just get your cake.",
+    useWhen: "You want to abstract complex object creation, or when the type of object to create may vary based on conditions (e.g. different DB drivers, parsers, or renderers).",
+    code: `<span class="kw">interface</span> <span class="cl">Product</span> { <span class="kw">void</span> create(); }
+
+<span class="kw">class</span> <span class="cl">ConcreteProduct</span> <span class="kw">implements</span> <span class="cl">Product</span> {
+  <span class="kw">public void</span> create() {
+    System.out.println(<span class="st">"Product created."</span>);
+  }
+}
+
+<span class="kw">class</span> <span class="cl">ProductFactory</span> {
+  <span class="kw">public static</span> <span class="cl">Product</span> createProduct() {
+    <span class="kw">return new</span> <span class="cl">ConcreteProduct</span>(); <span class="cm">// caller doesn't know this</span>
+  }
+}`
+  },
+  {
+    icon: "🏭",
+    title: "Abstract Factory",
+    category: "creational",
+    categoryLabel: "Creational",
+    color: "#f0c040",
+    tagline: "Creates families of related objects without specifying their concrete classes.",
+    simple: "Think of it as a factory of factories — a single interface that produces a whole set of related things that belong together.",
+    analogy: "Like ordering a 'furniture set' — you get a matching sofa, chair, and table in one style, without picking each piece separately.",
+    useWhen: "You need different families of related objects — e.g., a UI library that can produce Windows-style buttons OR Mac-style buttons, but never mix them.",
+    code: `<span class="kw">interface</span> <span class="cl">AbstractFactory</span> {
+  <span class="cl">Product</span> createProduct();
+  <span class="cl">AnotherProduct</span> createAnotherProduct();
+}
+
+<span class="kw">class</span> <span class="cl">DarkThemeFactory</span> <span class="kw">implements</span> <span class="cl">AbstractFactory</span> {
+  <span class="kw">public</span> <span class="cl">Product</span> createProduct() {
+    <span class="kw">return new</span> <span class="cl">DarkButton</span>();
+  }
+}`
+  },
+  {
+    icon: "🏗️",
+    title: "Builder",
+    category: "creational",
+    categoryLabel: "Creational",
+    color: "#f0c040",
+    tagline: "Separates object construction from its representation step by step.",
+    simple: "Instead of a messy constructor with 10 parameters, you build the object piece by piece — only setting what you need.",
+    analogy: "Like a custom sandwich order: bread first, then fillings, then sauces — you chain your choices and get exactly what you want.",
+    useWhen: "An object has many optional fields or complex configuration — e.g., building an HTTP request with optional headers, body, timeout, auth...",
+    code: `<span class="kw">class</span> <span class="cl">ProductBuilder</span> {
+  <span class="kw">private</span> <span class="cl">Product</span> product = <span class="kw">new</span> <span class="cl">Product</span>();
+
+  <span class="kw">public</span> <span class="cl">ProductBuilder</span> withName(<span class="cl">String</span> name) {
+    product.setName(name);
+    <span class="kw">return this</span>; <span class="cm">// enables chaining</span>
+  }
+
+  <span class="kw">public</span> <span class="cl">Product</span> build() { <span class="kw">return</span> product; }
+}
+<span class="cm">// Usage: new ProductBuilder().withName("X").build()</span>`
+  },
+  {
+    icon: "🔌",
+    title: "Adapter",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Makes two incompatible interfaces work together.",
+    simple: "It's a translator — it wraps an old/incompatible class and makes it look like the interface your code expects.",
+    analogy: "Like a travel plug adapter: your Indian plug still works, but the adapter makes it fit into a European socket.",
+    useWhen: "Integrating a legacy system or third-party library whose interface doesn't match what your code expects.",
+    code: `<span class="kw">class</span> <span class="cl">Adapter</span> <span class="kw">implements</span> <span class="cl">Target</span> {
+  <span class="kw">private</span> <span class="cl">LegacyService</span> adaptee;
+
+  <span class="kw">public void</span> request() {
+    <span class="cm">// translate the call</span>
+    adaptee.specificLegacyRequest();
+  }
+}`
+  },
+  {
+    icon: "🎨",
+    title: "Decorator",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Dynamically adds responsibilities to objects without changing their class.",
+    simple: "You wrap an object with another object that adds extra behavior — like layers of an onion, each layer adds a feature.",
+    analogy: "Like adding toppings to a coffee: start with espresso, wrap it with milk (latte), wrap that with whipped cream — each wrapper adds to it.",
+    useWhen: "You want to add features (logging, caching, validation) to objects at runtime without subclassing everything.",
+    code: `<span class="kw">class</span> <span class="cl">LoggingDecorator</span> <span class="kw">implements</span> <span class="cl">Component</span> {
+  <span class="kw">private</span> <span class="cl">Component</span> wrapped;
+
+  <span class="kw">public void</span> operation() {
+    System.out.println(<span class="st">"Before..."</span>);
+    wrapped.operation(); <span class="cm">// delegate</span>
+    System.out.println(<span class="st">"After..."</span>);
+  }
+}`
+  },
+  {
+    icon: "👀",
+    title: "Observer",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "One-to-many dependency: when one object changes, all dependents are notified.",
+    simple: "A subject keeps a list of listeners. When something happens, it shouts to all of them. The listeners decide what to do.",
+    analogy: "Like a YouTube channel: you (the subscriber) get notified whenever the creator (subject) posts something new. The creator doesn't know or care who you are.",
+    useWhen: "Event systems, pub/sub, UI state changes, Kafka consumers, or Saga patterns where many components react to one event.",
+    code: `<span class="kw">interface</span> <span class="cl">Observer</span> { <span class="kw">void</span> update(<span class="cl">String</span> msg); }
+
+<span class="kw">class</span> <span class="cl">Subject</span> {
+  <span class="cl">List</span>&lt;<span class="cl">Observer</span>&gt; observers = <span class="kw">new</span> <span class="cl">ArrayList</span>&lt;&gt;();
+
+  <span class="kw">void</span> notify(<span class="cl">String</span> msg) {
+    <span class="kw">for</span> (<span class="cl">Observer</span> o : observers)
+      o.update(msg); <span class="cm">// broadcast</span>
+  }
+}`
+  },
+  {
+    icon: "🧠",
+    title: "Strategy",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Encapsulates algorithms and makes them swappable at runtime.",
+    simple: "Instead of hardcoding how to do something, you inject the 'how' from outside. The context doesn't care which strategy is used — it just runs it.",
+    analogy: "Like a GPS: you choose 'fastest route', 'avoid tolls', or 'scenic route' — the app swaps the algorithm, but the drive still happens.",
+    useWhen: "You have multiple ways to do the same thing (sort algorithms, payment methods, compression formats) and want to switch without changing core logic.",
+    code: `<span class="kw">interface</span> <span class="cl">SortStrategy</span> { <span class="kw">void</span> sort(<span class="cl">int</span>[] data); }
+
+<span class="kw">class</span> <span class="cl">Context</span> {
+  <span class="kw">private</span> <span class="cl">SortStrategy</span> strategy;
+
+  <span class="kw">void</span> setStrategy(<span class="cl">SortStrategy</span> s) {
+    <span class="kw">this</span>.strategy = s;
+  }
+  <span class="kw">void</span> execute(<span class="kw">int</span>[] data) { strategy.sort(data); }
+}`
+  },
+  {
+    icon: "🕹️",
+    title: "Command",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Encapsulates a request as an object — enabling undo, queue, and logging.",
+    simple: "You wrap an action (and its data) into an object. This object can be stored, queued, delayed, or reversed.",
+    analogy: "Like a restaurant order slip: the waiter writes the order (command object), hands it to the kitchen. The order can be delayed, cancelled, or replayed.",
+    useWhen: "Undo/redo systems, task queues, macro recording, or any time you want to decouple who triggers an action from who executes it.",
+    code: `<span class="kw">interface</span> <span class="cl">Command</span> { <span class="kw">void</span> execute(); }
+
+<span class="kw">class</span> <span class="cl">SaveCommand</span> <span class="kw">implements</span> <span class="cl">Command</span> {
+  <span class="kw">public void</span> execute() {
+    System.out.println(<span class="st">"Saving..."</span>);
+  }
+}
+
+<span class="kw">class</span> <span class="cl">Invoker</span> {
+  <span class="cl">Queue</span>&lt;<span class="cl">Command</span>&gt; queue = <span class="kw">new</span> <span class="cl">LinkedList</span>&lt;&gt;();
+  <span class="kw">void</span> run() { queue.forEach(<span class="cl">Command</span>::execute); }
+}`
+  },
+  {
+    icon: "📐",
+    title: "MVC",
+    category: "architectural",
+    categoryLabel: "Architectural",
+    color: "#a0e0a0",
+    tagline: "Separates an application into Model, View, and Controller concerns.",
+    simple: "Split your app into three lanes: data (Model), display (View), and logic (Controller). Each lane minds its own business.",
+    analogy: "Like a restaurant: the kitchen (Model) prepares food, the waiter (Controller) takes orders and relays them, the table presentation (View) is what the customer sees.",
+    useWhen: "Building UI-heavy applications where you want clean separation — web apps, mobile apps, desktop GUIs.",
+    code: `<span class="cm">// Model — data & business logic</span>
+<span class="kw">class</span> <span class="cl">UserModel</span> { <span class="cl">String</span> name; }
+
+<span class="cm">// View — only renders</span>
+<span class="kw">class</span> <span class="cl">UserView</span> {
+  <span class="kw">void</span> render(<span class="cl">String</span> name) {
+    System.out.println(<span class="st">"User: "</span> + name);
+  }
+}
+
+<span class="cm">// Controller — connects them</span>
+<span class="kw">class</span> <span class="cl">UserController</span> {
+  <span class="kw">void</span> updateName(<span class="cl">String</span> n) { model.name = n; view.render(n); }
+}`
+  },
+
+  // ── Missing GoF: Creational ──────────────────────────────────────
+  {
+    icon: "🧬",
+    title: "Prototype",
+    category: "creational",
+    categoryLabel: "Creational",
+    color: "#f0c040",
+    tagline: "Creates new objects by cloning an existing instance.",
+    simple: "Instead of constructing a new object from scratch, you copy an existing one and tweak only what's different. Cheap and fast.",
+    analogy: "Like photocopying a form: you don't rewrite every field — you copy the original and fill in just the parts that differ.",
+    useWhen: "Object creation is expensive (DB calls, deep config) and most new objects are nearly identical to an existing one.",
+    code: `<span class="kw">interface</span> <span class="cl">Prototype</span> { <span class="cl">Prototype</span> clone(); }
+
+<span class="kw">class</span> <span class="cl">Config</span> <span class="kw">implements</span> <span class="cl">Prototype</span> {
+  <span class="cl">String</span> host; <span class="kw">int</span> port;
+
+  <span class="kw">public</span> <span class="cl">Config</span> clone() {
+    <span class="cl">Config</span> c = <span class="kw">new</span> <span class="cl">Config</span>();
+    c.host = <span class="kw">this</span>.host;
+    c.port = <span class="kw">this</span>.port;
+    <span class="kw">return</span> c;
+  }
+}`
+  },
+
+  // ── Missing GoF: Structural ──────────────────────────────────────
+  {
+    icon: "🏢",
+    title: "Facade",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Provides a simplified interface to a complex subsystem.",
+    simple: "You hide a messy set of classes behind one clean, simple interface. Callers don't need to know about the complexity underneath.",
+    analogy: "Like a hotel concierge: you say 'book me a car and a table for dinner' — one person coordinates the whole thing so you don't have to call every service yourself.",
+    useWhen: "A subsystem has many classes and interactions; you want to expose a simple API and hide the internals.",
+    code: `<span class="kw">class</span> <span class="cl">HomeTheaterFacade</span> {
+  <span class="kw">private</span> <span class="cl">Amplifier</span> amp;
+  <span class="kw">private</span> <span class="cl">Projector</span> proj;
+  <span class="kw">private</span> <span class="cl">StreamingPlayer</span> player;
+
+  <span class="kw">void</span> watchMovie(<span class="cl">String</span> movie) {
+    amp.on(); proj.on();    <span class="cm">// complex setup</span>
+    player.play(movie);     <span class="cm">// hidden from caller</span>
+  }
+}`
+  },
+  {
+    icon: "🌳",
+    title: "Composite",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Treats individual objects and groups of objects uniformly.",
+    simple: "You build tree structures where leaves and branches share the same interface. You can call the same method on a single item or an entire group.",
+    analogy: "Like a file system: a single file and a folder full of files both support 'delete' and 'get size' — you treat them the same way.",
+    useWhen: "You have hierarchical data (file trees, org charts, UI components) and want to operate uniformly on parts and wholes.",
+    code: `<span class="kw">interface</span> <span class="cl">Component</span> { <span class="kw">void</span> render(); }
+
+<span class="kw">class</span> <span class="cl">Leaf</span> <span class="kw">implements</span> <span class="cl">Component</span> {
+  <span class="kw">public void</span> render() { System.out.println(<span class="st">"Leaf"</span>); }
+}
+
+<span class="kw">class</span> <span class="cl">Composite</span> <span class="kw">implements</span> <span class="cl">Component</span> {
+  <span class="cl">List</span>&lt;<span class="cl">Component</span>&gt; children = <span class="kw">new</span> <span class="cl">ArrayList</span>&lt;&gt;();
+  <span class="kw">public void</span> render() {
+    children.forEach(<span class="cl">Component</span>::render); <span class="cm">// delegates down</span>
+  }
+}`
+  },
+  {
+    icon: "🪞",
+    title: "Proxy",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Provides a surrogate or placeholder that controls access to another object.",
+    simple: "A proxy sits in front of the real object and intercepts calls to add access control, logging, caching, or lazy initialization.",
+    analogy: "Like a celebrity's manager: all requests go through the manager first, who decides what reaches the celebrity and what gets blocked.",
+    useWhen: "You need lazy loading, access control, logging, or caching without modifying the real object. Common in Spring AOP and ORM lazy proxies.",
+    code: `<span class="kw">class</span> <span class="cl">CachingProxy</span> <span class="kw">implements</span> <span class="cl">DataService</span> {
+  <span class="kw">private</span> <span class="cl">RealDataService</span> real;
+  <span class="kw">private</span> <span class="cl">Map</span>&lt;<span class="cl">String</span>, <span class="cl">String</span>&gt; cache = <span class="kw">new</span> <span class="cl">HashMap</span>&lt;&gt;();
+
+  <span class="kw">public</span> <span class="cl">String</span> getData(<span class="cl">String</span> key) {
+    <span class="kw">return</span> cache.computeIfAbsent(key, real::getData);
+  }
+}`
+  },
+  {
+    icon: "🌉",
+    title: "Bridge",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Decouples an abstraction from its implementation so both can vary independently.",
+    simple: "Instead of one giant class hierarchy, you split it into two: the 'what' (abstraction) and the 'how' (implementation), connected by composition.",
+    analogy: "Like a remote control (abstraction) and a TV brand (implementation): any remote can work with any TV because the interface is consistent.",
+    useWhen: "You want to avoid an explosion of subclasses when combining multiple dimensions of variation — e.g., shapes × colors, devices × platforms.",
+    code: `<span class="kw">interface</span> <span class="cl">Renderer</span> { <span class="kw">void</span> render(<span class="cl">String</span> shape); }
+
+<span class="kw">abstract class</span> <span class="cl">Shape</span> {
+  <span class="kw">protected</span> <span class="cl">Renderer</span> renderer; <span class="cm">// bridge</span>
+  <span class="kw">abstract void</span> draw();
+}
+
+<span class="kw">class</span> <span class="cl">Circle</span> <span class="kw">extends</span> <span class="cl">Shape</span> {
+  <span class="kw">void</span> draw() { renderer.render(<span class="st">"circle"</span>); }
+}`
+  },
+  {
+    icon: "🪰",
+    title: "Flyweight",
+    category: "structural",
+    categoryLabel: "Structural",
+    color: "#60d0ff",
+    tagline: "Shares common state between many fine-grained objects to save memory.",
+    simple: "When you have thousands of similar objects, extract the shared (intrinsic) state into a shared pool and only store the unique (extrinsic) parts per object.",
+    analogy: "Like a font renderer: the letter 'A' glyph is stored once, shared by every word on screen — only position and color differ per instance.",
+    useWhen: "You have a huge number of objects with mostly identical data consuming too much memory — game tiles, particle systems, text rendering.",
+    code: `<span class="kw">class</span> <span class="cl">TreeType</span> { <span class="cm">// shared flyweight</span>
+  <span class="cl">String</span> name, texture;
+}
+
+<span class="kw">class</span> <span class="cl">Tree</span> {
+  <span class="kw">int</span> x, y;           <span class="cm">// unique per tree</span>
+  <span class="cl">TreeType</span> type;     <span class="cm">// shared reference</span>
+
+  <span class="kw">void</span> draw() { type.texture; <span class="cm">/* render at x,y */</span> }
+}`
+  },
+
+  // ── Missing GoF: Behavioral ──────────────────────────────────────
+  {
+    icon: "📝",
+    title: "Template Method",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Defines a skeleton algorithm in a base class, letting subclasses fill in specific steps.",
+    simple: "The parent class says 'here's the overall recipe' and delegates specific steps to subclasses. The structure stays fixed; the details vary.",
+    analogy: "Like a job application process: every company has the same steps (apply → interview → offer) but each company's interview is different.",
+    useWhen: "Multiple classes share the same algorithm structure but differ in specific steps — report generators, data parsers, game AI routines.",
+    code: `<span class="kw">abstract class</span> <span class="cl">DataParser</span> {
+  <span class="kw">final void</span> parse() {   <span class="cm">// template method</span>
+    readFile();
+    processData();  <span class="cm">// subclass fills this in</span>
+    writeOutput();
+  }
+  <span class="kw">abstract void</span> processData();
+}`
+  },
+  {
+    icon: "🔁",
+    title: "Iterator",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Provides a standard way to traverse a collection without exposing its structure.",
+    simple: "You get a cursor that walks through a collection one item at a time. You don't need to know if it's an array, tree, or linked list underneath.",
+    analogy: "Like a TV remote's 'next channel' button: you step through channels one by one without knowing how the channel list is stored.",
+    useWhen: "You want to traverse different types of collections (lists, trees, graphs) using uniform <code>hasNext()</code> / <code>next()</code> logic.",
+    code: `<span class="kw">interface</span> <span class="cl">Iterator</span>&lt;T&gt; {
+  <span class="kw">boolean</span> hasNext();
+  T next();
+}
+
+<span class="kw">class</span> <span class="cl">NameIterator</span> <span class="kw">implements</span> <span class="cl">Iterator</span>&lt;<span class="cl">String</span>&gt; {
+  <span class="kw">private int</span> index = <span class="st">0</span>;
+  <span class="kw">private</span> <span class="cl">String</span>[] names;
+  <span class="kw">public boolean</span> hasNext() { <span class="kw">return</span> index &lt; names.length; }
+  <span class="kw">public</span> <span class="cl">String</span> next()    { <span class="kw">return</span> names[index++]; }
+}`
+  },
+  {
+    icon: "⛓️",
+    title: "Chain of Responsibility",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Passes a request along a chain of handlers until one processes it.",
+    simple: "Each handler in the chain either handles the request or passes it to the next one. The sender doesn't know who will ultimately handle it.",
+    analogy: "Like a customer support escalation: your ticket goes to Level 1 → Level 2 → Level 3 until someone with the right authority resolves it.",
+    useWhen: "Middleware pipelines, filter chains, logging levels, auth checks — anywhere a request should pass through a flexible sequence of handlers.",
+    code: `<span class="kw">abstract class</span> <span class="cl">Handler</span> {
+  <span class="kw">protected</span> <span class="cl">Handler</span> next;
+  <span class="kw">void</span> setNext(<span class="cl">Handler</span> h) { next = h; }
+
+  <span class="kw">abstract void</span> handle(<span class="kw">int</span> level);
+  <span class="kw">void</span> passToNext(<span class="kw">int</span> l) {
+    <span class="kw">if</span> (next != <span class="kw">null</span>) next.handle(l);
+  }
+}`
+  },
+  {
+    icon: "🎭",
+    title: "State",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Allows an object to alter its behavior when its internal state changes.",
+    simple: "Instead of giant if/else blocks checking state, you move each state's behavior into its own class. The object delegates to the current state object.",
+    analogy: "Like a traffic light: the same 'signal' event causes completely different behavior depending on whether the light is red, yellow, or green.",
+    useWhen: "An object has many states with complex transitions — vending machines, order lifecycles, connection states, game characters.",
+    code: `<span class="kw">interface</span> <span class="cl">State</span> { <span class="kw">void</span> handle(<span class="cl">Context</span> ctx); }
+
+<span class="kw">class</span> <span class="cl">LockedState</span> <span class="kw">implements</span> <span class="cl">State</span> {
+  <span class="kw">public void</span> handle(<span class="cl">Context</span> ctx) {
+    System.out.println(<span class="st">"Insert coin first"</span>);
+  }
+}
+
+<span class="kw">class</span> <span class="cl">Context</span> {
+  <span class="kw">private</span> <span class="cl">State</span> state = <span class="kw">new</span> <span class="cl">LockedState</span>();
+  <span class="kw">void</span> request() { state.handle(<span class="kw">this</span>); }
+}`
+  },
+  {
+    icon: "🗺️",
+    title: "Mediator",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Defines an object that encapsulates how a set of objects interact.",
+    simple: "Instead of every object talking directly to every other object (a tangled mess), they all talk through a central mediator. Reduces coupling dramatically.",
+    analogy: "Like an air traffic controller: planes don't talk to each other — they all communicate through the tower, which coordinates everything.",
+    useWhen: "Many components are tightly coupled and communicate in complex ways — chat rooms, UI form coordination, event buses.",
+    code: `<span class="kw">interface</span> <span class="cl">Mediator</span> { <span class="kw">void</span> notify(<span class="cl">String</span> sender, <span class="cl">String</span> event); }
+
+<span class="kw">class</span> <span class="cl">ChatRoom</span> <span class="kw">implements</span> <span class="cl">Mediator</span> {
+  <span class="cl">List</span>&lt;<span class="cl">User</span>&gt; users;
+  <span class="kw">public void</span> notify(<span class="cl">String</span> sender, <span class="cl">String</span> msg) {
+    users.stream()
+      .filter(u -> !u.name.equals(sender))
+      .forEach(u -> u.receive(msg));
+  }
+}`
+  },
+  {
+    icon: "↩️",
+    title: "Memento",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Captures and restores an object's internal state without violating encapsulation.",
+    simple: "You take a snapshot of an object's state, store it externally, and restore it later. The object doesn't expose its internals to do this.",
+    analogy: "Like Ctrl+Z (undo): your editor saves a snapshot of the document at each step, and you can rewind to any past state.",
+    useWhen: "Undo/redo, game save states, transaction rollback, or any scenario where you need to restore a previous state.",
+    code: `<span class="kw">class</span> <span class="cl">Memento</span> {
+  <span class="kw">final</span> <span class="cl">String</span> state;
+  <span class="cl">Memento</span>(<span class="cl">String</span> s) { state = s; }
+}
+
+<span class="kw">class</span> <span class="cl">Editor</span> {
+  <span class="kw">private</span> <span class="cl">String</span> content;
+  <span class="cl">Memento</span> save()    { <span class="kw">return new</span> <span class="cl">Memento</span>(content); }
+  <span class="kw">void</span> restore(<span class="cl">Memento</span> m) { content = m.state; }
+}`
+  },
+  {
+    icon: "🧳",
+    title: "Visitor",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Lets you add new operations to existing objects without modifying their classes.",
+    simple: "Instead of adding a new method to every class in a hierarchy, you create a Visitor that knows how to operate on each class. The classes accept the visitor.",
+    analogy: "Like a tax auditor visiting different types of businesses: each business type has a different audit procedure, but the auditor brings the logic — the businesses just let them in.",
+    useWhen: "You need to perform many unrelated operations on an object structure (AST traversal, serialization, reporting) without polluting the classes.",
+    code: `<span class="kw">interface</span> <span class="cl">Visitor</span> {
+  <span class="kw">void</span> visit(<span class="cl">Circle</span> c);
+  <span class="kw">void</span> visit(<span class="cl">Rectangle</span> r);
+}
+
+<span class="kw">class</span> <span class="cl">AreaCalculator</span> <span class="kw">implements</span> <span class="cl">Visitor</span> {
+  <span class="kw">public void</span> visit(<span class="cl">Circle</span> c)    { <span class="cm">/* π r² */</span> }
+  <span class="kw">public void</span> visit(<span class="cl">Rectangle</span> r) { <span class="cm">/* w × h */</span> }
+}`
+  },
+
+  // ── Microservice Patterns ────────────────────────────────────────
+  {
+    icon: "🚪",
+    title: "API Gateway",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "A single entry point for all client requests, routing them to the right microservice.",
+    simple: "Instead of clients calling 10 different services directly, they all hit one gateway. The gateway handles routing, auth, rate limiting, and response aggregation.",
+    analogy: "Like a hotel reception desk: you don't go directly to housekeeping, kitchen, or concierge — you tell reception and they route your request.",
+    useWhen: "You have many microservices and want to centralize cross-cutting concerns like authentication, logging, SSL termination, and rate limiting. (e.g., AWS API Gateway, Kong, Nginx)",
+    code: `<span class="cm">// Gateway routes + applies cross-cutting concerns</span>
+<span class="kw">class</span> <span class="cl">ApiGateway</span> {
+  <span class="kw">void</span> route(<span class="cl">Request</span> req) {
+    authenticate(req);        <span class="cm">// central auth</span>
+    rateLimit(req);           <span class="cm">// throttle</span>
+    <span class="kw">if</span> (req.path.startsWith(<span class="st">"/orders"</span>))
+      orderService.handle(req);
+    <span class="kw">else if</span> (req.path.startsWith(<span class="st">"/users"</span>))
+      userService.handle(req);
+  }
+}`
+  },
+  {
+    icon: "⚡",
+    title: "Circuit Breaker",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Stops calling a failing service and returns a fallback to prevent cascading failures.",
+    simple: "When a downstream service keeps failing, the circuit 'trips open' — further calls return a fast fallback instead of waiting for timeouts. After a cooldown, it tests again.",
+    analogy: "Like an electrical circuit breaker: instead of letting a short circuit burn the whole house, the breaker trips and cuts power to just that circuit.",
+    useWhen: "Calling external services or databases that may be slow or down. Prevents one failing service from taking down your entire system. (e.g., Resilience4j, Hystrix)",
+    code: `<span class="cm">// Three states: CLOSED → OPEN → HALF_OPEN</span>
+<span class="kw">class</span> <span class="cl">CircuitBreaker</span> {
+  <span class="kw">private</span> <span class="cl">State</span> state = CLOSED;
+  <span class="kw">private int</span> failures = <span class="st">0</span>;
+
+  <span class="cl">String</span> call(<span class="cl">Supplier</span>&lt;<span class="cl">String</span>&gt; fn) {
+    <span class="kw">if</span> (state == OPEN) <span class="kw">return</span> fallback();
+    <span class="kw">try</span> { <span class="kw">return</span> fn.get(); }
+    <span class="kw">catch</span> (<span class="cl">Exception</span> e) { <span class="kw">if</span> (++failures > 3) state = OPEN; }
+  }
+}`
+  },
+  {
+    icon: "📖",
+    title: "Saga",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Manages distributed transactions across microservices using a sequence of local transactions with compensating rollbacks.",
+    simple: "Since you can't do a single DB transaction across services, a saga chains local transactions. If any step fails, it runs compensating actions to undo previous steps.",
+    analogy: "Like booking a holiday: book flight → book hotel → book car. If the car booking fails, the saga cancels the hotel and flight (compensating transactions).",
+    useWhen: "You need ACID-like consistency across multiple microservices. Two variants: Choreography (events) and Orchestration (a central coordinator).",
+    code: `<span class="cm">// Orchestration Saga</span>
+<span class="kw">class</span> <span class="cl">OrderSaga</span> {
+  <span class="kw">void</span> execute() {
+    <span class="kw">try</span> {
+      paymentService.charge();     <span class="cm">// step 1</span>
+      inventoryService.reserve();  <span class="cm">// step 2</span>
+      shippingService.dispatch();  <span class="cm">// step 3</span>
+    } <span class="kw">catch</span> (<span class="cl">Exception</span> e) {
+      inventoryService.release();  <span class="cm">// compensate</span>
+      paymentService.refund();     <span class="cm">// compensate</span>
+    }
+  }
+}`
+  },
+  {
+    icon: "🗺️",
+    title: "Service Discovery",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Services automatically register themselves and discover other services at runtime.",
+    simple: "In a dynamic cloud environment, service instances come and go. A registry (like Eureka or Consul) keeps a live list of what's running and where, so services can find each other.",
+    analogy: "Like a phone book that updates itself in real time: when a new restaurant opens, it appears immediately; when one closes, it's removed automatically.",
+    useWhen: "Running multiple dynamic service instances on Kubernetes, AWS ECS, or any environment where IPs change. Two variants: client-side discovery and server-side discovery.",
+    code: `<span class="cm">// Services register on startup</span>
+<span class="kw">class</span> <span class="cl">OrderService</span> {
+  <span class="kw">void</span> onStart() {
+    registry.register(<span class="st">"order-service"</span>, host, port);
+  }
+}
+
+<span class="cm">// Callers look up by name, not IP</span>
+<span class="kw">class</span> <span class="cl">PaymentService</span> {
+  <span class="kw">void</span> callOrders() {
+    <span class="cl">URL</span> url = registry.lookup(<span class="st">"order-service"</span>);
+    httpClient.post(url, payload);
+  }
+}`
+  },
+  {
+    icon: "🛡️",
+    title: "Sidecar",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Attaches a helper container alongside a service to handle cross-cutting concerns.",
+    simple: "Instead of putting logging, metrics, or service mesh logic into your service code, you deploy a sidecar container next to it that handles all that automatically.",
+    analogy: "Like a motorcycle sidecar: the sidecar travels with the main vehicle and handles cargo, but the bike doesn't need to change — it just keeps riding.",
+    useWhen: "You want to add observability, TLS, or network policies to services without code changes. Core to Kubernetes service meshes like Istio and Linkerd.",
+    code: `<span class="cm">// In Kubernetes pod spec:</span>
+<span class="cm">// containers:</span>
+<span class="cm">//  - name: my-service     ← main app</span>
+<span class="cm">//  - name: envoy-proxy    ← sidecar</span>
+<span class="cm">//      handles: mTLS, retries,</span>
+<span class="cm">//               circuit breaking,</span>
+<span class="cm">//               metrics collection</span>
+<span class="cm">// Both share network namespace</span>`
+  },
+  {
+    icon: "🌱",
+    title: "Strangler Fig",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Gradually replaces a legacy monolith by routing traffic to new microservices one feature at a time.",
+    simple: "You don't rewrite the whole monolith at once. Instead, you build new services alongside it and redirect specific routes to them. Over time, the monolith shrinks until it's gone.",
+    analogy: "Like the strangler fig tree: it grows around an existing tree, taking over piece by piece, until eventually the original tree is fully replaced.",
+    useWhen: "Migrating a large legacy monolith to microservices without a risky big-bang rewrite. The API Gateway or a proxy handles the traffic splitting.",
+    code: `<span class="cm">// Router intercepts requests</span>
+<span class="kw">class</span> <span class="cl">StranglerRouter</span> {
+  <span class="kw">void</span> route(<span class="cl">Request</span> req) {
+    <span class="kw">if</span> (isNewlyMigrated(req.path))
+      newMicroservice.handle(req); <span class="cm">// new service</span>
+    <span class="kw">else</span>
+      legacyMonolith.handle(req);  <span class="cm">// still monolith</span>
+  }
+}`
+  },
+  {
+    icon: "✂️",
+    title: "CQRS",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Separates the read model (Query) from the write model (Command) for independent scaling.",
+    simple: "Writes and reads have very different patterns — CQRS splits them into separate models, optimized independently. Writes go to a normalized write store; reads come from a denormalized read store.",
+    analogy: "Like a library: you write new books (Commands) through a strict cataloguing process, but reading the catalogue (Queries) uses an optimized search index — totally separate systems.",
+    useWhen: "High-read/high-write systems where read and write workloads need separate optimization. Often combined with Event Sourcing.",
+    code: `<span class="cm">// Command side — normalized write model</span>
+<span class="kw">class</span> <span class="cl">PlaceOrderCommand</span> {
+  <span class="kw">void</span> execute(<span class="cl">Order</span> order) { writeDB.save(order); }
+}
+
+<span class="cm">// Query side — denormalized read model</span>
+<span class="kw">class</span> <span class="cl">OrderSummaryQuery</span> {
+  <span class="cl">List</span>&lt;<span class="cl">OrderView</span>&gt; findByUser(<span class="cl">String</span> userId) {
+    <span class="kw">return</span> readDB.query(userId); <span class="cm">// optimized projection</span>
+  }
+}`
+  },
+  {
+    icon: "📜",
+    title: "Event Sourcing",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Stores all changes as an immutable sequence of events instead of just current state.",
+    simple: "Instead of overwriting data, you append every change as an event. Current state is derived by replaying all events. You get full history and easy time-travel.",
+    analogy: "Like a bank ledger: it never crosses out old entries — every debit and credit is recorded. Your balance is computed by adding everything up.",
+    useWhen: "You need a full audit trail, time-travel queries, or event replay. Often paired with CQRS. Used in financial systems, order management, and Kafka-based architectures.",
+    code: `<span class="kw">class</span> <span class="cl">EventStore</span> {
+  <span class="cl">List</span>&lt;<span class="cl">Event</span>&gt; log = <span class="kw">new</span> <span class="cl">ArrayList</span>&lt;&gt;();
+
+  <span class="kw">void</span> append(<span class="cl">Event</span> e)  { log.add(e); }
+
+  <span class="cl">Account</span> rebuild() {
+    <span class="cl">Account</span> a = <span class="kw">new</span> <span class="cl">Account</span>();
+    log.forEach(a::apply); <span class="cm">// replay all events</span>
+    <span class="kw">return</span> a;
+  }
+}`
+  },
+  {
+    icon: "🚧",
+    title: "Bulkhead",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Isolates components into separate resource pools so a failure in one doesn't sink the whole ship.",
+    simple: "You allocate dedicated thread pools or connection pools per downstream service. If one service is slow and exhausts its pool, other services are unaffected.",
+    analogy: "Like watertight compartments in a ship: if one section floods, the bulkheads contain the damage — the rest of the ship stays afloat.",
+    useWhen: "A slow or failing downstream service should not cascade and exhaust shared resources. Critical in resilient microservice architectures using Resilience4j or Hystrix.",
+    code: `<span class="cm">// Separate thread pools per service</span>
+<span class="cl">ThreadPoolBulkhead</span> paymentPool =
+  <span class="cl">ThreadPoolBulkhead</span>.of(<span class="st">"payment"</span>,
+    config.maxThreads(<span class="st">10</span>));
+
+<span class="cl">ThreadPoolBulkhead</span> inventoryPool =
+  <span class="cl">ThreadPoolBulkhead</span>.of(<span class="st">"inventory"</span>,
+    config.maxThreads(<span class="st">5</span>));
+<span class="cm">// payment slowness can't starve inventory</span>`
+  },
+  {
+    icon: "🔄",
+    title: "Outbox Pattern",
+    category: "microservice",
+    categoryLabel: "Microservices",
+    color: "#c084fc",
+    tagline: "Reliably publishes events to a message broker as part of a database transaction.",
+    simple: "Instead of writing to DB and publishing to Kafka in two separate steps (which can fail inconsistently), you write the event to an 'outbox' table in the same DB transaction, then a poller publishes it reliably.",
+    analogy: "Like dropping a letter in your office outbox tray: it's committed to being sent when you place it. A mail runner picks it up later — you don't have to hand it to the postman yourself.",
+    useWhen: "You need guaranteed at-least-once event delivery alongside a DB write, with no dual-write inconsistency. Common with Debezium CDC or scheduled pollers.",
+    code: `<span class="cm">// In one DB transaction:</span>
+<span class="kw">void</span> placeOrder(<span class="cl">Order</span> order) {
+  db.save(order);              <span class="cm">// save entity</span>
+  db.save(<span class="kw">new</span> <span class="cl">OutboxEvent</span>(    <span class="cm">// save event</span>
+    <span class="st">"ORDER_PLACED"</span>, toJson(order)
+  ));
+  <span class="cm">// A poller reads outbox → publishes to Kafka</span>
+}`
+  },
+];
+
+const javaPatternDetails = {
+  "Singleton": {
+    tag: "Simple",
+    example: "getInstance()",
+    tip: "Use volatile plus double-checked locking for thread safety, or prefer an enum singleton for simpler serialization-safe usage."
+  },
+  "Factory": {
+    tag: "Polymorphic creation",
+    example: "createTransport()",
+    tip: "Treat this as Factory Method in Java terms: extend creation logic without modifying existing client code."
+  },
+  "Abstract Factory": {
+    tag: "Families of factories",
+    example: "GUIFactory -> WinFactory / MacFactory",
+    tip: "Think of it as a factory of factories, where each concrete factory returns a full matching product family."
+  },
+  "Builder": {
+    tag: "Complex construction",
+    example: "new Pizza.Builder().size(L).cheese().build()",
+    tip: "Best when constructors have many optional parameters and you want fluent, self-documenting call sites."
+  },
+  "Prototype": {
+    tag: "Cloning",
+    example: "Cloneable / clone()",
+    tip: "Be explicit about shallow versus deep copy. In Java, Cloneable is only a hook, not a full copying strategy."
+  },
+  "Adapter": {
+    tag: "Interface compatibility",
+    example: "MediaPlayer -> AdvancedMediaPlayer",
+    tip: "Prefer object adapters built with composition over inheritance-heavy class adapters."
+  },
+  "Facade": {
+    tag: "Simplified API",
+    example: "HomeTheaterFacade.watchMovie()",
+    tip: "A facade should simplify access, not add new behavior. It is mainly a coupling-reduction tool."
+  },
+  "Bridge": {
+    tag: "Decouple abstraction/impl",
+    example: "Shape + DrawAPI as separate hierarchies",
+    tip: "Use it when both abstraction and implementation need to evolve independently and subclass combinations would explode."
+  },
+  "Decorator": {
+    tag: "Add responsibilities",
+    example: "BufferedReader wraps FileReader",
+    tip: "Decorators implement the same interface as the wrapped object so you can layer behavior dynamically."
+  },
+  "Composite": {
+    tag: "Tree structures",
+    example: "File and Directory share Component interface",
+    tip: "The shared component contract is the key decision because it lets clients treat leaf and composite nodes uniformly."
+  },
+  "Proxy": {
+    tag: "Access control",
+    example: "Virtual proxy for heavy image loading",
+    tip: "Know the common proxy variants: virtual, protection, and remote. Spring AOP relies heavily on dynamic proxies."
+  },
+  "Flyweight": {
+    tag: "Memory sharing",
+    example: "Character objects in a text editor",
+    tip: "Separate intrinsic shared state from extrinsic contextual state. Java's string pool is a familiar flyweight example."
+  },
+  "Strategy": {
+    tag: "Encapsulate algorithms",
+    example: "Sorter uses SortStrategy interface",
+    tip: "It removes branching by injecting the algorithm. This pattern pairs naturally with dependency injection."
+  },
+  "Template Method": {
+    tag: "Skeleton algorithm",
+    example: "AbstractGame.play() calls abstract steps",
+    tip: "Use it when the algorithm shape is fixed. If you need runtime flexibility, Strategy is usually the better fit."
+  },
+  "Observer": {
+    tag: "Publish / subscribe",
+    example: "EventListener / PropertyChangeListener",
+    tip: "Java's old Observer/Observable APIs are deprecated; prefer PropertyChangeSupport or reactive libraries."
+  },
+  "Iterator": {
+    tag: "Traversal abstraction",
+    example: "java.util.Iterator<T>",
+    tip: "Java's Iterable and Iterator are the canonical form, and they power the enhanced for-loop."
+  },
+  "Command": {
+    tag: "Encapsulate requests",
+    example: "Button.setCommand(new SaveCommand())",
+    tip: "The classic roles are Command, Receiver, Invoker, and Client. Undo usually means preserving prior state."
+  },
+  "Chain of Responsibility": {
+    tag: "Pass along handlers",
+    example: "Logger chain: DEBUG -> INFO -> ERROR",
+    tip: "It decouples sender and receiver and shows up often in servlet filters and Spring Security pipelines."
+  },
+  "State": {
+    tag: "Object state changes",
+    example: "TrafficLight with Red / Yellow / Green states",
+    tip: "A state object owns behavior for one state and its transitions, which removes bulky switch logic."
+  },
+  "Mediator": {
+    tag: "Centralize interactions",
+    example: "ChatRoom mediates between Users",
+    tip: "It replaces many-to-many dependencies with one-to-many coordination through a central object."
+  },
+  "Memento": {
+    tag: "Save / restore state",
+    example: "TextEditor saves Memento before each edit",
+    tip: "Keep state opaque to the caretaker. The usual roles are Originator, Memento, and Caretaker."
+  },
+  "Visitor": {
+    tag: "Separate ops from objects",
+    example: "ShoppingCart.accept(DiscountVisitor)",
+    tip: "Visitor is strongest when the object structure is stable but you expect to add many new operations."
+  },
+  "Interpreter": {
+    tag: "Grammar evaluation",
+    example: "MathExpression.interpret(context)",
+    tip: "Use it only for small grammars. For complex languages, parser generators such as ANTLR are more practical."
+  }
+};
+
+const missingJavaPatterns = [
+  {
+    icon: "🧩",
+    title: "Interpreter",
+    category: "behavioral",
+    categoryLabel: "Behavioral",
+    color: "#ff6080",
+    tagline: "Defines a grammar for a language and evaluates sentences in that language.",
+    simple: "You model grammar rules as classes, then combine them to evaluate expressions. Each rule knows how to interpret part of the language.",
+    analogy: "Like a tourist phrasebook: each phrase has a meaning, and by combining small translated pieces you can understand a larger sentence.",
+    useWhen: "Small expression languages, query filters, rule engines, or simple DSLs where the grammar is stable and limited.",
+    code: `<span class="kw">interface</span> <span class="cl">Expression</span> {
+  <span class="kw">int</span> interpret(<span class="cl">Context</span> context);
+}
+
+<span class="kw">class</span> <span class="cl">AddExpression</span> <span class="kw">implements</span> <span class="cl">Expression</span> {
+  <span class="kw">private final</span> <span class="cl">Expression</span> left, right;
+
+  <span class="kw">public int</span> interpret(<span class="cl">Context</span> context) {
+    <span class="kw">return</span> left.interpret(context) + right.interpret(context);
+  }
+}`
+  }
+];
+
+const allPatterns = [
+  ...patterns,
+  ...missingJavaPatterns.filter(extra => !patterns.some(pattern => pattern.title === extra.title))
+].map(pattern => ({
+  ...pattern,
+  ...javaPatternDetails[pattern.title]
+}));
+
+
+const grid = document.getElementById('grid');
+const countEl = document.getElementById('count');
+const modal = document.getElementById('patternModal');
+const modalContent = document.getElementById('modalContent');
+const modalClose = document.getElementById('modalClose');
+
+function openModal(pattern) {
+  modalContent.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-icon">${pattern.icon}</div>
+      <div>
+        <div class="card-category">${pattern.categoryLabel}</div>
+        <h2 class="modal-title" id="modalTitle">${pattern.title}</h2>
+        <div class="modal-tagline">${pattern.tagline}</div>
+      </div>
+    </div>
+    <div class="meta-row">
+      ${pattern.tag ? `<div class="meta-pill">${pattern.tag}</div>` : ''}
+      ${pattern.example ? `<div class="meta-pill">${pattern.example}</div>` : ''}
+    </div>
+    <hr class="divider">
+    <div class="detail-section">
+      <div class="detail-label">Simply put</div>
+      <div class="detail-text">${pattern.simple}</div>
+    </div>
+    <div class="detail-section">
+      <div class="analogy">
+        <div class="analogy-icon">💡</div>
+        <div class="analogy-text"><strong>Real-world analogy:</strong> ${pattern.analogy}</div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Use when</div>
+      <div class="use-when">${pattern.useWhen}</div>
+    </div>
+    ${pattern.tip ? `
+    <div class="detail-section">
+      <div class="detail-label">Key tip</div>
+      <div class="detail-text">${pattern.tip}</div>
+    </div>` : ''}
+    <div class="detail-section">
+      <div class="detail-label">Code sketch</div>
+      <pre><code>${pattern.code}</code></pre>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  modalClose.focus();
+}
+
+function closeModal() {
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+}
+
+function renderCards(filter) {
+  const visible = filter === 'all' ? allPatterns : allPatterns.filter(p => p.category === filter);
+  countEl.textContent = visible.length;
+
+  grid.innerHTML = '';
+  visible.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `Open details for ${p.title}`);
+    card.style.setProperty('--card-color', p.color);
+    card.style.animationDelay = `${i * 0.05}s`;
+
+    card.innerHTML = `
+      <div class="card-category">${p.categoryLabel}</div>
+      <div class="card-header">
+        <div class="card-icon">${p.icon}</div>
+        <div class="card-title">${p.title}</div>
+      </div>
+      <div class="card-tagline">${p.tagline}</div>
+      <div class="card-arrow">&rarr;</div>
+    `;
+
+    card.addEventListener('click', () => openModal(p));
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openModal(p);
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    closeModal();
+    renderCards(tab.dataset.filter);
+  });
+});
+
+modalClose.addEventListener('click', closeModal);
+modal.addEventListener('click', (event) => {
+  if (event.target === modal) closeModal();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+});
+
+renderCards('all');
+</script>
+</body>
+</html>

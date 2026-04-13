@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microservice Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --bg2: #080f18;
+    --panel: #0a1624;
+    --border: #0d2137;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --accent4: #bd00ff;
+    --warn: #ffcc00;
+    --text: #c8e4f0;
+    --text-dim: #4a7a96;
+    --glow: 0 0 20px rgba(0,212,255,0.4);
+    --glow2: 0 0 20px rgba(0,255,157,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: fadeDown 0.8s ease forwards;
+  }
+
+  .header-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  .header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(28px, 4vw, 52px);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .header p {
+    font-size: 16px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    font-weight: 300;
+  }
+
+  /* Section titles */
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.3;
+  }
+
+  /* ====== MAIN FLOW DIAGRAM ====== */
+  .flow-section {
+    margin-bottom: 60px;
+    animation: fadeUp 0.8s ease 0.2s both;
+  }
+
+  .flow-diagram {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Row layouts */
+  .flow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    padding: 12px 0;
+  }
+
+  .flow-row.three { justify-content: center; }
+  .flow-row.five { justify-content: center; flex-wrap: wrap; }
+
+  /* Connector lines between rows */
+  .flow-connector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    position: relative;
+  }
+
+  .flow-connector::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--accent) 0%, transparent 100%);
+    animation: pulse-line 2s ease-in-out infinite;
+  }
+
+  .connector-arrow {
+    font-size: 20px;
+    color: var(--accent);
+    z-index: 1;
+    animation: bounce 1.5s ease-in-out infinite;
+    text-shadow: var(--glow);
+  }
+
+  /* Multi-branch connectors */
+  .branch-connector {
+    display: flex;
+    justify-content: center;
+    height: 50px;
+    position: relative;
+    overflow: visible;
+  }
+
+  .branch-connector svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* ====== SERVICE CARDS ====== */
+  .service-card {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    min-width: 160px;
+    max-width: 200px;
+    flex: 0 0 auto;
+    cursor: default;
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-color, var(--accent));
+    box-shadow: 0 0 12px var(--card-color, var(--accent));
+  }
+
+  .service-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.05) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .service-card:hover {
+    border-color: var(--card-color, var(--accent));
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 0 20px color-mix(in srgb, var(--card-color, var(--accent)) 20%, transparent);
+  }
+
+  .service-card:hover::after { opacity: 1; }
+
+  .card-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+    line-height: 1;
+  }
+
+  .card-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--card-color, var(--accent));
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-dim);
+    border: 1px solid rgba(255,255,255,0.07);
+    letter-spacing: 0.5px;
+  }
+
+  /* Card color variants */
+  .card-client { --card-color: #00d4ff; }
+  .card-gateway { --card-color: #00ff9d; }
+  .card-auth { --card-color: #ffcc00; }
+  .card-service { --card-color: #bd00ff; }
+  .card-data { --card-color: #ff6b35; }
+  .card-infra { --card-color: #0099ff; }
+  .card-monitor { --card-color: #ff3d71; }
+
+  /* Wide card */
+  .service-card.wide {
+    min-width: 220px;
+    max-width: 280px;
+  }
+
+  .service-card.full {
+    min-width: 280px;
+    max-width: 360px;
+  }
+
+  /* ====== MESSAGE BROKER SECTION ====== */
+  .broker-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+
+  .broker-card {
+    background: linear-gradient(135deg, rgba(189,0,255,0.1), rgba(0,153,255,0.1));
+    border: 1px solid rgba(189,0,255,0.4);
+    border-radius: 8px;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 160px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .broker-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(189,0,255,0.03) 10px,
+      rgba(189,0,255,0.03) 20px
+    );
+  }
+
+  .broker-card:hover {
+    border-color: rgba(189,0,255,0.8);
+    box-shadow: 0 0 30px rgba(189,0,255,0.3);
+    transform: scale(1.02);
+  }
+
+  .broker-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--accent4);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .broker-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+  }
+
+  /* ====== INFRA STRIP ====== */
+  .infra-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    padding: 20px;
+    background: rgba(0,153,255,0.05);
+    border: 1px solid rgba(0,153,255,0.15);
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+
+  .infra-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,153,255,0.2);
+    border-radius: 4px;
+    transition: all 0.3s;
+  }
+
+  .infra-item:hover {
+    border-color: rgba(0,153,255,0.6);
+    background: rgba(0,153,255,0.1);
+  }
+
+  .infra-icon { font-size: 20px; }
+
+  .infra-info {}
+  .infra-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #99ccff;
+    margin-bottom: 2px;
+  }
+  .infra-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  /* ====== DATA STORES ====== */
+  .datastores-row {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .db-card {
+    background: rgba(255,107,53,0.08);
+    border: 1px solid rgba(255,107,53,0.25);
+    border-radius: 6px;
+    padding: 14px 18px;
+    min-width: 140px;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .db-card::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent3);
+    border-radius: 0 0 6px 6px;
+    opacity: 0.5;
+  }
+
+  .db-card:hover {
+    border-color: var(--accent3);
+    box-shadow: 0 0 20px rgba(255,107,53,0.2);
+    transform: translateY(-2px);
+  }
+
+  .db-icon { font-size: 24px; margin-bottom: 8px; }
+  .db-type {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--accent3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .db-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .db-tech {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* ====== LEGEND + PRINCIPLES ====== */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 60px;
+    animation: fadeUp 0.8s ease 0.6s both;
+  }
+
+  @media (max-width: 768px) {
+    .bottom-grid { grid-template-columns: 1fr; }
+  }
+
+  .panel-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+  }
+
+  .panel-box h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .legend-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  .legend-text { color: var(--text); font-weight: 500; }
+  .legend-sub { color: var(--text-dim); font-size: 12px; }
+
+  .principles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .principle {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.2);
+    border-left: 2px solid var(--accent2);
+    border-radius: 0 4px 4px 0;
+    font-size: 13px;
+  }
+
+  .principle-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .principle-text { color: var(--text); line-height: 1.5; }
+  .principle-text strong { color: var(--accent2); display: block; font-size: 12px; letter-spacing: 1px; margin-bottom: 2px; }
+
+  /* ====== DATA FLOW TABLE ====== */
+  .flow-table-section {
+    margin-top: 48px;
+    animation: fadeUp 0.8s ease 0.4s both;
+  }
+
+  .flow-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .flow-table th {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,212,255,0.04);
+  }
+
+  .flow-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .flow-table tr:hover td {
+    background: rgba(0,212,255,0.03);
+  }
+
+  .flow-table .method {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+
+  .method-get { background: rgba(0,255,157,0.15); color: var(--accent2); border: 1px solid rgba(0,255,157,0.3); }
+  .method-post { background: rgba(0,212,255,0.15); color: var(--accent); border: 1px solid rgba(0,212,255,0.3); }
+  .method-pub { background: rgba(189,0,255,0.15); color: var(--accent4); border: 1px solid rgba(189,0,255,0.3); }
+  .method-async { background: rgba(255,204,0,0.15); color: var(--warn); border: 1px solid rgba(255,204,0,0.3); }
+
+  .flow-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 700;
+  }
+
+  /* ====== STATUS INDICATORS ====== */
+  .status-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 30px 0;
+    flex-wrap: wrap;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  .dot-green { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .dot-blue { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation-delay: 0.5s; }
+  .dot-yellow { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation-delay: 1s; }
+
+  /* ====== ANIMATIONS ====== */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse-line {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  /* Scanline effect */
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.1), transparent);
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .flow-row { flex-wrap: wrap; }
+    .service-card { min-width: 140px; }
+  }
+
+  @media (max-width: 600px) {
+    .service-card { min-width: 120px; padding: 12px 14px; }
+    .card-name { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-label">// System Design — v2.4.1</div>
+    <h1>Microservice<br>Architecture</h1>
+    <p>Distributed Systems · Event-Driven · Cloud-Native</p>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-row">
+    <div class="status-badge"><span class="status-dot dot-green"></span> All Services Operational</div>
+    <div class="status-badge"><span class="status-dot dot-blue"></span> Message Bus Active</div>
+    <div class="status-badge"><span class="status-dot dot-yellow"></span> Monitoring Enabled</div>
+    <div class="status-badge"><span class="status-dot dot-green"></span> Auto-scaling On</div>
+  </div>
+
+  <!-- ===== MAIN FLOW DIAGRAM ===== -->
+  <div class="flow-section">
+    <div class="section-title">Architecture Flow Diagram</div>
+
+    <div class="flow-diagram">
+
+      <!-- Layer 1: Clients -->
+      <div class="flow-row">
+        <div class="service-card card-client">
+          <span class="card-icon">🌐</span>
+          <div class="card-title">Client</div>
+          <div class="card-name">Web App</div>
+          <div class="card-tags"><span class="tag">React</span><span class="tag">SPA</span></div>
+        </div>
+        <div class="service-card card-client">
+          <span class="card-icon">📱</span>
+          <div class="card-title">Client</div>
+          <div class="card-name">Mobile App</div>
+          <div class="card-tags"><span class="tag">iOS</span><span class="tag">Android</span></div>
+        </div>
+        <div class="service-card card-client">
+          <span class="card-icon">🔌</span>
+          <div class="card-title">Client</div>
+          <div class="card-name">3rd Party API</div>
+          <div class="card-tags"><span class="tag">REST</span><span class="tag">Webhook</span></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 2: CDN + Load Balancer -->
+      <div class="flow-row">
+        <div class="service-card card-infra wide">
+          <span class="card-icon">🌩️</span>
+          <div class="card-title">Edge Layer</div>
+          <div class="card-name">CDN + Load Balancer</div>
+          <div class="card-tags"><span class="tag">CloudFront</span><span class="tag">Nginx</span><span class="tag">TLS</span></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 3: API Gateway -->
+      <div class="flow-row">
+        <div class="service-card card-gateway full">
+          <span class="card-icon">🚀</span>
+          <div class="card-title">Entry Point</div>
+          <div class="card-name">API Gateway</div>
+          <div class="card-tags">
+            <span class="tag">Rate Limit</span>
+            <span class="tag">Routing</span>
+            <span class="tag">SSL</span>
+            <span class="tag">Cache</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 4: Auth Service -->
+      <div class="flow-row">
+        <div class="service-card card-auth wide">
+          <span class="card-icon">🔐</span>
+          <div class="card-title">Security</div>
+          <div class="card-name">Auth Service</div>
+          <div class="card-tags"><span class="tag">JWT</span><span class="tag">OAuth2</span><span class="tag">RBAC</span></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 5: Core Services -->
+      <div class="flow-row five">
+        <div class="service-card card-service">
+          <span class="card-icon">👤</span>
+          <div class="card-title">Service</div>
+          <div class="card-name">User Service</div>
+          <div class="card-tags"><span class="tag">gRPC</span><span class="tag">REST</span></div>
+        </div>
+        <div class="service-card card-service">
+          <span class="card-icon">📦</span>
+          <div class="card-title">Service</div>
+          <div class="card-name">Product Service</div>
+          <div class="card-tags"><span class="tag">REST</span><span class="tag">Cache</span></div>
+        </div>
+        <div class="service-card card-service">
+          <span class="card-icon">🛒</span>
+          <div class="card-title">Service</div>
+          <div class="card-name">Order Service</div>
+          <div class="card-tags"><span class="tag">REST</span><span class="tag">SAGA</span></div>
+        </div>
+        <div class="service-card card-service">
+          <span class="card-icon">💳</span>
+          <div class="card-title">Service</div>
+          <div class="card-name">Payment Service</div>
+          <div class="card-tags"><span class="tag">Stripe</span><span class="tag">PCI</span></div>
+        </div>
+        <div class="service-card card-service">
+          <span class="card-icon">🔔</span>
+          <div class="card-title">Service</div>
+          <div class="card-name">Notification Svc</div>
+          <div class="card-tags"><span class="tag">Email</span><span class="tag">Push</span></div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 6: Message Broker -->
+      <div style="text-align:center; margin: 4px 0 8px;">
+        <div style="font-family:'Orbitron',monospace; font-size:10px; color:var(--accent4); letter-spacing:3px; margin-bottom:12px;">── ASYNC EVENT BUS ──</div>
+        <div class="broker-row">
+          <div class="broker-card">
+            <div class="broker-label">Message Queue</div>
+            <div class="broker-name">🐰 RabbitMQ</div>
+            <div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-dim);">AMQP · Pub/Sub</div>
+          </div>
+          <div class="broker-card">
+            <div class="broker-label">Event Streaming</div>
+            <div class="broker-name">⚡ Apache Kafka</div>
+            <div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-dim);">Topics · Partitions</div>
+          </div>
+          <div class="broker-card">
+            <div class="broker-label">Cache / Pub-Sub</div>
+            <div class="broker-name">🔴 Redis</div>
+            <div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-dim);">In-Memory · Fast</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 7: Data Stores -->
+      <div style="margin: 8px 0;">
+        <div style="font-family:'Orbitron',monospace; font-size:10px; color:var(--accent3); letter-spacing:3px; text-align:center; margin-bottom:14px;">── DATA PERSISTENCE LAYER ──</div>
+        <div class="datastores-row">
+          <div class="db-card">
+            <div class="db-icon">🐘</div>
+            <div class="db-type">Relational</div>
+            <div class="db-name">PostgreSQL</div>
+            <div class="db-tech">Users · Orders</div>
+          </div>
+          <div class="db-card">
+            <div class="db-icon">🍃</div>
+            <div class="db-type">Document</div>
+            <div class="db-name">MongoDB</div>
+            <div class="db-tech">Products · Catalog</div>
+          </div>
+          <div class="db-card">
+            <div class="db-icon">🔴</div>
+            <div class="db-type">Cache</div>
+            <div class="db-name">Redis</div>
+            <div class="db-tech">Sessions · Hot Data</div>
+          </div>
+          <div class="db-card">
+            <div class="db-icon">🔍</div>
+            <div class="db-type">Search</div>
+            <div class="db-name">Elasticsearch</div>
+            <div class="db-tech">Full-text Search</div>
+          </div>
+          <div class="db-card">
+            <div class="db-icon">📊</div>
+            <div class="db-type">Time-Series</div>
+            <div class="db-name">InfluxDB</div>
+            <div class="db-tech">Metrics · Events</div>
+          </div>
+          <div class="db-card">
+            <div class="db-icon">☁️</div>
+            <div class="db-type">Object Store</div>
+            <div class="db-name">AWS S3</div>
+            <div class="db-tech">Files · Assets</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="flow-connector"><span class="connector-arrow">▼</span></div>
+
+      <!-- Layer 8: Infrastructure -->
+      <div>
+        <div style="font-family:'Orbitron',monospace; font-size:10px; color:#0099ff; letter-spacing:3px; text-align:center; margin-bottom:14px;">── INFRASTRUCTURE & OBSERVABILITY ──</div>
+        <div class="infra-strip">
+          <div class="infra-item">
+            <span class="infra-icon">☸️</span>
+            <div class="infra-info">
+              <div class="infra-name">Kubernetes</div>
+              <div class="infra-sub">Container Orchestration</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">🐳</span>
+            <div class="infra-info">
+              <div class="infra-name">Docker</div>
+              <div class="infra-sub">Containerization</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">🔁</span>
+            <div class="infra-info">
+              <div class="infra-name">CI / CD Pipeline</div>
+              <div class="infra-sub">GitHub Actions · Jenkins</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">📈</span>
+            <div class="infra-info">
+              <div class="infra-name">Prometheus + Grafana</div>
+              <div class="infra-sub">Metrics · Dashboards</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">🔎</span>
+            <div class="infra-info">
+              <div class="infra-name">Jaeger / Zipkin</div>
+              <div class="infra-sub">Distributed Tracing</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">📋</span>
+            <div class="infra-info">
+              <div class="infra-name">ELK Stack</div>
+              <div class="infra-sub">Centralized Logging</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">🔐</span>
+            <div class="infra-info">
+              <div class="infra-name">Vault / Secrets</div>
+              <div class="infra-sub">HashiCorp Vault</div>
+            </div>
+          </div>
+          <div class="infra-item">
+            <span class="infra-icon">🌐</span>
+            <div class="infra-info">
+              <div class="infra-name">Service Mesh</div>
+              <div class="infra-sub">Istio · mTLS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== REQUEST FLOW TABLE ===== -->
+  <div class="flow-table-section">
+    <div class="section-title">Request Flow Sequence</div>
+    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+      <table class="flow-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>From</th>
+            <th>To</th>
+            <th>Protocol</th>
+            <th>Action</th>
+            <th>Pattern</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="flow-num">01</span></td>
+            <td>Client (Browser/App)</td>
+            <td>CDN / Load Balancer</td>
+            <td><span class="method method-get">HTTPS</span></td>
+            <td>Route request to nearest edge node</td>
+            <td>Edge Caching</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">02</span></td>
+            <td>Load Balancer</td>
+            <td>API Gateway</td>
+            <td><span class="method method-post">HTTP/2</span></td>
+            <td>Forward after SSL termination</td>
+            <td>Reverse Proxy</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">03</span></td>
+            <td>API Gateway</td>
+            <td>Auth Service</td>
+            <td><span class="method method-get">gRPC</span></td>
+            <td>Validate JWT / OAuth2 token</td>
+            <td>Middleware</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">04</span></td>
+            <td>API Gateway</td>
+            <td>Core Services</td>
+            <td><span class="method method-post">REST</span></td>
+            <td>Route to appropriate microservice</td>
+            <td>Service Discovery</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">05</span></td>
+            <td>Order Service</td>
+            <td>Kafka / RabbitMQ</td>
+            <td><span class="method method-pub">PUBLISH</span></td>
+            <td>Emit <code style="font-size:11px; color:var(--accent)">order.created</code> event</td>
+            <td>Event-Driven</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">06</span></td>
+            <td>Kafka / RabbitMQ</td>
+            <td>Payment + Notification</td>
+            <td><span class="method method-async">ASYNC</span></td>
+            <td>Consume events & process independently</td>
+            <td>Pub/Sub</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">07</span></td>
+            <td>Services</td>
+            <td>PostgreSQL / MongoDB</td>
+            <td><span class="method method-post">SQL/ODM</span></td>
+            <td>Persist domain data (DB per service)</td>
+            <td>Database-per-Service</td>
+          </tr>
+          <tr>
+            <td><span class="flow-num">08</span></td>
+            <td>All Services</td>
+            <td>Prometheus + Jaeger</td>
+            <td><span class="method method-async">PUSH</span></td>
+            <td>Emit metrics, traces, and logs</td>
+            <td>Observability</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== BOTTOM GRID ===== -->
+  <div class="bottom-grid">
+
+    <!-- Legend -->
+    <div class="panel-box">
+      <h3>Component Legend</h3>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#00d4ff; color:#00d4ff;"></div>
+          <div><div class="legend-text">Client Layer</div><div class="legend-sub">Web, Mobile, and External Consumers</div></div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#00ff9d; color:#00ff9d;"></div>
+          <div><div class="legend-text">API Gateway</div><div class="legend-sub">Single entry point, rate limiting, routing</div></div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ffcc00; color:#ffcc00;"></div>
+          <div><div class="legend-text">Auth Service</div><div class="legend-sub">JWT, OAuth2, RBAC, session management</div></div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#bd00ff; color:#bd00ff;"></div>
+          <div><div class="legend-text">Core Services</div><div class="legend-sub">Bounded context microservices</div></div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#ff6b35; color:#ff6b35;"></div>
+          <div><div class="legend-text">Data Stores</div><div class="legend-sub">Polyglot persistence per domain</div></div>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#0099ff; color:#0099ff;"></div>
+          <div><div class="legend-text">Infrastructure</div><div class="legend-sub">K8s, Docker, CI/CD, observability</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Principles -->
+    <div class="panel-box">
+      <h3>Design Principles</h3>
+      <div class="principles-list">
+        <div class="principle">
+          <span class="principle-icon">🔒</span>
+          <div class="principle-text"><strong>Single Responsibility</strong>Each service owns one bounded context with its own data store</div>
+        </div>
+        <div class="principle">
+          <span class="principle-icon">📡</span>
+          <div class="principle-text"><strong>Event-Driven Communication</strong>Async events via Kafka decouple producer & consumer services</div>
+        </div>
+        <div class="principle">
+          <span class="principle-icon">🔁</span>
+          <div class="principle-text"><strong>Circuit Breaker Pattern</strong>Fallback and retry logic prevents cascading failures</div>
+        </div>
+        <div class="principle">
+          <span class="principle-icon">📦</span>
+          <div class="principle-text"><strong>Container-First</strong>Every service is Dockerized and orchestrated by Kubernetes</div>
+        </div>
+        <div class="principle">
+          <span class="principle-icon">🔍</span>
+          <div class="principle-text"><strong>Observability-First</strong>Metrics, distributed tracing and centralized logging built in</div>
+        </div>
+        <div class="principle">
+          <span class="principle-icon">📐</span>
+          <div class="principle-text"><strong>API-First Design</strong>OpenAPI contracts defined before implementation begins</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center; margin-top:48px; padding-top:24px; border-top: 1px solid var(--border);">
+    <div style="font-family:'Share Tech Mono',monospace; font-size:10px; color:var(--text-dim); letter-spacing:3px;">
+      MICROSERVICE ARCHITECTURE REFERENCE — v2.4.1 · CLOUD-NATIVE · EVENT-DRIVEN
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
