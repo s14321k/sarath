@@ -25,6 +25,8 @@
     let items = [];
     let currentIndex = 0;
     let enabled = getStoredEnabled();
+    let hideTimeout = null;
+    let countdownInterval = null;
 
     function render(item) {
         if (!item) return;
@@ -235,9 +237,6 @@
         renderNow();
         startAutoHide();
     }
-
-    let hideTimeout = null;
-    let countdownInterval = null;
 
     function startAutoHide() {
         if (!isFloating || !enabled) return;
