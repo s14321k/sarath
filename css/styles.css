@@ -1127,6 +1127,17 @@ body {
     border-color: rgba(233, 69, 96, 0.45);
 }
 
+.chat-poll-toggle {
+    min-width: 92px;
+    justify-content: center;
+}
+
+.chat-poll-toggle.is-on {
+    background: rgba(56, 142, 60, 0.22);
+    border-color: rgba(76, 175, 80, 0.45);
+    color: #d8ffd8;
+}
+
 .chat-tool-btn svg,
 .chat-delete-btn svg,
 .chat-copy-btn svg {

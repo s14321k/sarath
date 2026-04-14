@@ -2,6 +2,7 @@
     'use strict';
 
     const endpoint = window.VISIT_ENDPOINT || '';
+    const POLLING_KEY = 'chatPollingEnabled';
     let user = sessionStorage.getItem('visitorName') || '';
 
     function initChat() {
@@ -22,6 +23,9 @@
             </button>
         </div>
         <div class="chat-tools">
+            <button type="button" class="chat-tool-btn chat-poll-toggle" id="chatPollToggle" aria-pressed="false" title="Enable auto polling">
+                Polling Off
+            </button>
             <button type="button" class="chat-tool-btn hidden" id="chatDeleteAll" aria-label="Delete all messages" title="Delete all messages">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9zM6 21h12a1 1 0 0 0 1-1V9H5v11a1 1 0 0 0 1 1z"/>
@@ -41,6 +45,7 @@
         const input = container.querySelector('#chatInput');
         const statusEl = container.querySelector('#chatStatus');
         const minBtn = container.querySelector('#chatMinBtn');
+        const pollToggleBtn = container.querySelector('#chatPollToggle');
         const globalBadge = container.querySelector('#globalBadge');
         const adminBadge = container.querySelector('#adminBadge');
         const deleteAllBtn = container.querySelector('#chatDeleteAll');
@@ -49,6 +54,7 @@
         let networkOk = true;
         let pollTimer = null;
         let minimized = false;
+        let pollingEnabled = getStoredPollingEnabled();
         let lastUnseen = { global: 0, admin: 0 };
         let lastLengths = { global: 0, admin: 0 };
         let bubbleStatePrimed = false;
@@ -63,13 +69,52 @@
         resizer.className = 'chat-resizer';
         container.appendChild(resizer);
 
+        function getStoredPollingEnabled() {
+            try {
+                return sessionStorage.getItem(POLLING_KEY) === '1';
+            } catch {
+                return false;
+            }
+        }
+
+        function storePollingEnabled(value) {
+            try {
+                sessionStorage.setItem(POLLING_KEY, value ? '1' : '0');
+            } catch {}
+        }
+
+        function clearPollTimer() {
+            if (pollTimer) {
+                clearTimeout(pollTimer);
+                pollTimer = null;
+            }
+        }
+
+        function updatePollingUi() {
+            if (!pollToggleBtn) return;
+            pollToggleBtn.textContent = pollingEnabled ? 'Polling On' : 'Polling Off';
+            pollToggleBtn.setAttribute('aria-pressed', pollingEnabled ? 'true' : 'false');
+            pollToggleBtn.classList.toggle('is-on', pollingEnabled);
+            pollToggleBtn.title = pollingEnabled ? 'Disable auto polling' : 'Enable auto polling';
+        }
+
+        function setPollingEnabled(next) {
+            pollingEnabled = Boolean(next);
+            storePollingEnabled(pollingEnabled);
+            updatePollingUi();
+            clearPollTimer();
+            if (pollingEnabled && !minimized) {
+                poll();
+            }
+        }
+
         function setMinimized(next) {
             minimized = next;
             if (minimized) {
                 container.classList.add('chat-minimized');
                 bubble.classList.remove('hidden');
                 try { sessionStorage.setItem('chatMinimized', '1'); } catch {}
-                schedulePoll(30000);
+                clearPollTimer();
             } else {
                 container.classList.remove('chat-minimized');
                 bubble.classList.add('hidden');
@@ -79,6 +124,7 @@
         }
 
         minBtn?.addEventListener('click', () => setMinimized(true));
+        pollToggleBtn?.addEventListener('click', () => setPollingEnabled(!pollingEnabled));
 
         // Draggable bubble
         let dragActive = false;
@@ -594,7 +640,8 @@
     }
 
     function schedulePoll(delay) {
-        if (pollTimer) clearTimeout(pollTimer);
+        clearPollTimer();
+        if (!pollingEnabled || minimized) return;
         pollTimer = setTimeout(poll, delay);
     }
 
@@ -610,22 +657,9 @@
     }
 
         async function poll() {
-        if (minimized) {
-            try {
-                const globalRes = await fetchMessages('global', false);
-                const adminRes = await fetchMessages('admin', false);
-                setBadge(globalBadge, globalRes.unseenCount);
-                setBadge(adminBadge, adminRes.unseenCount);
-                if (hasNewActivity('global', globalRes) || hasNewActivity('admin', adminRes)) {
-                    triggerBubbleNotification();
-                }
-                bubbleStatePrimed = true;
-            } catch {}
-            schedulePoll(networkOk ? 30000 : 300000);
-            return;
-        }
+        if (minimized) return;
         if (document.visibilityState === 'hidden') {
-            schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
+            if (pollingEnabled) schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
             return;
         }
         try {
@@ -643,7 +677,9 @@
                 setBadge(globalBadge, otherRes.unseenCount);
             }
         } catch {}
-        schedulePoll(networkOk ? 30000 : 300000);   //30000 ms = 30 seconds, 300000 ms = 300 seconds = 5 minutes
+        if (pollingEnabled) {
+            schedulePoll(networkOk ? 30000 : 300000);   //30000 ms = 30 seconds, 300000 ms = 300 seconds = 5 minutes
+        }
     }
         if (!endpoint || !user) {
             showStatus('Chat is unavailable until you login.');
@@ -701,7 +737,7 @@
             poll();
         });
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
+            if (document.visibilityState === 'visible' && !minimized && pollingEnabled) {
                 poll();
             }
         });
@@ -709,6 +745,7 @@
             const saved = sessionStorage.getItem('chatMinimized') === '1';
             if (saved) setMinimized(true);
         } catch {}
+        updatePollingUi();
         updateDeleteAllVisibility();
         poll();
     }
