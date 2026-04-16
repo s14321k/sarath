@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOLID and Design Principles Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --border: #1e1e2e;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --accent: #f0c040;
+    --solid: #8f7cff;
+    --general: #56d89a;
+    --bad-bg: #231417;
+    --bad-border: #6b2933;
+    --good-bg: #132318;
+    --good-border: #2f7d4f;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 980px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  header .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  header h1 {
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    background: linear-gradient(135deg, #fff 36%, #72d6ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    color: var(--muted);
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    animation: fadeDown 0.6s 0.1s ease both;
+  }
+
+  .tab {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 0.4rem 1rem;
+    border-radius: 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--accent); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
+
+  .count-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 1.25rem;
+  }
+  .count-badge span { color: var(--accent); font-weight: 700; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--card-color, var(--accent));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: var(--card-color, var(--accent));
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .card:hover::before { opacity: 1; }
+
+  .card-category {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--card-color, var(--accent));
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-icon { font-size: 1.5rem; line-height: 1; }
+  .card-title { font-weight: 700; font-size: 1rem; }
+  .card-tagline { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+  .card-arrow {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    transition: transform 0.3s, color 0.2s;
+  }
+  .card:hover .card-arrow { transform: translateX(3px); color: var(--card-color, var(--accent)); }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    background: rgba(4, 4, 10, 0.82);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 30;
+  }
+  .modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-panel {
+    width: min(980px, 100%);
+    max-height: min(90vh, 920px);
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgba(19,19,26,0.98), rgba(10,10,15,0.98));
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+    padding: 1.5rem;
+    position: relative;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.1rem;
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-right: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .modal-icon {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .modal-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.35rem;
+  }
+
+  .modal-tagline {
+    color: #c8c8e0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+  }
+
+  .meta-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: #d8d8ea;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.9rem 0;
+  }
+
+  .detail-section { margin-bottom: 1rem; }
+  .detail-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.4rem;
+  }
+
+  .detail-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: #c8c8e0;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .compare-card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .compare-card.bad {
+    background: var(--bad-bg);
+    border-color: var(--bad-border);
+  }
+
+  .compare-card.good {
+    background: var(--good-bg);
+    border-color: var(--good-border);
+  }
+
+  .compare-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.55rem 0.8rem;
+  }
+
+  .compare-card.bad .compare-label {
+    background: rgba(255, 122, 122, 0.12);
+    color: #ff9c9c;
+  }
+
+  .compare-card.good .compare-label {
+    background: rgba(104, 224, 140, 0.12);
+    color: #9cf0b3;
+  }
+
+  pre {
+    background: rgba(8, 10, 18, 0.55);
+    padding: 0.9rem;
+    overflow-x: auto;
+    color: #e9eefc;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    line-height: 1.7;
+    white-space: pre;
+  }
+
+  .quote {
+    border-left: 3px solid var(--card-color, var(--accent));
+    padding: 0.6rem 0.85rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 0 8px 8px 0;
+    color: #d8d8ea;
+    font-style: italic;
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .summary-table th,
+  .summary-table td {
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+
+  .summary-table th {
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .summary-table tr:last-child td { border-bottom: none; }
+
+  .diagram {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    padding: 0.75rem;
+  }
+
+  .diagram svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  body.modal-open { overflow: hidden; }
+
+  @keyframes fadeDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+  @media (max-width: 720px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .modal { padding: 0.75rem; }
+    .modal-panel { padding: 1.1rem; max-height: 92vh; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="label">// Software Engineering</div>
+    <h1>SOLID & Design Principles</h1>
+    <p>Click any card to explore the principle, bad vs good code, and the core takeaway</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-filter="all">All Principles</button>
+    <button class="tab" data-filter="solid">SOLID</button>
+    <button class="tab" data-filter="general">General</button>
+  </div>
+
+  <div class="count-badge">Showing <span id="count">12</span> principles</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="modal" id="principleModal" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-close" id="modalClose" type="button" aria-label="Close principle details">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const principles = [
+  {
+    icon: "1",
+    title: "Single Responsibility Principle (SRP)",
+    category: "solid",
+    categoryLabel: "SOLID",
+    color: "#8f7cff",
+    tagline: "One class should have one reason to change.",
+    keyIdea: "One responsibility",
+    goal: "Maintainability",
+    why: "A class should have one well-defined responsibility so it is easier to maintain, test, and modify without side effects.",
+    badCode: `class User {\n  void save() {}\n  void print() {}\n}`,
+    goodCode: `class User {}\nclass UserRepository {\n  void save(User u) {}\n}\nclass UserPrinter {\n  void print(User u) {}\n}`,
+    quote: "A class should have only one reason to change.",
+    diagram: `
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <div class="compare-label">Bad</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 120" role="img" aria-label="SRP bad diagram">
+              <rect x="20" y="16" width="240" height="90" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="16" width="240" height="26" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="38" width="240" height="4" fill="#F7C1C1"/>
+              <text x="140" y="34" text-anchor="middle" font-size="12" font-weight="500" fill="#791F1F" font-family="monospace">Employee</text>
+              <text x="30" y="58" font-size="10" fill="#A32D2D" font-family="monospace">- String name</text>
+              <text x="30" y="72" font-size="10" fill="#A32D2D" font-family="monospace">- double salary</text>
+              <text x="30" y="86" font-size="10" fill="#A32D2D" font-family="monospace">+ calculateSalary()</text>
+              <text x="30" y="100" font-size="10" fill="#A32D2D" font-family="monospace">+ generatePayrollReport()</text>
+            </svg>
+          </div>
+        </div>
+        <div class="compare-card good">
+          <div class="compare-label">Good</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 190" role="img" aria-label="SRP good diagram">
+              <rect x="20" y="16" width="240" height="80" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="20" y="16" width="240" height="26" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="20" y="38" width="240" height="4" fill="#C0DD97"/>
+              <text x="140" y="34" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">Employee</text>
+              <text x="30" y="58" font-size="10" fill="#27500A" font-family="monospace">- String name</text>
+              <text x="30" y="72" font-size="10" fill="#27500A" font-family="monospace">- double salary</text>
+              <text x="30" y="86" font-size="10" fill="#27500A" font-family="monospace">+ calculateSalary()</text>
+              <line x1="140" y1="96" x2="140" y2="110" stroke="#639922" stroke-width="0.5" stroke-dasharray="3 2"/>
+              <rect x="20" y="110" width="240" height="64" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="20" y="110" width="240" height="26" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="20" y="132" width="240" height="4" fill="#C0DD97"/>
+              <text x="140" y="128" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">PayrollReportGenerator</text>
+              <text x="30" y="150" font-size="10" fill="#27500A" font-family="monospace">+ generatePayrollReport(emp)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  {
+    icon: "2",
+    title: "Open/Closed Principle (OCP)",
+    category: "solid",
+    categoryLabel: "SOLID",
+    color: "#8f7cff",
+    tagline: "Open for extension, closed for modification.",
+    keyIdea: "Extend, don't modify",
+    goal: "Stability",
+    why: "Add new behavior by extending the system instead of changing already working code and risking regressions.",
+    badCode: `double getDiscount(String type) {\n  if (type.equals("STUDENT"))\n    return 0.2;\n  return 0;\n}`,
+    goodCode: `interface Discount {\n  double apply();\n}\nclass StudentDiscount implements Discount {\n  public double apply() {\n    return 0.2;\n  }\n}`,
+    quote: "Open for extension, closed for modification.",
+    diagram: `
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <div class="compare-label">Bad</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 110" role="img" aria-label="OCP bad diagram">
+              <rect x="20" y="16" width="240" height="86" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="16" width="240" height="26" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="38" width="240" height="4" fill="#F7C1C1"/>
+              <text x="140" y="34" text-anchor="middle" font-size="12" font-weight="500" fill="#791F1F" font-family="monospace">Rectangle</text>
+              <text x="30" y="55" font-size="10" fill="#A32D2D" font-family="monospace">- int width, height</text>
+              <text x="30" y="69" font-size="10" fill="#A32D2D" font-family="monospace">+ getWidth(), setWidth()</text>
+              <text x="30" y="83" font-size="10" fill="#A32D2D" font-family="monospace">+ calculateArea()</text>
+            </svg>
+          </div>
+        </div>
+        <div class="compare-card good">
+          <div class="compare-label">Good</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 220" role="img" aria-label="OCP good diagram">
+              <rect x="60" y="10" width="160" height="54" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="10" width="160" height="26" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="32" width="160" height="4" fill="#C0DD97"/>
+              <text x="140" y="28" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">Shape</text>
+              <text x="70" y="49" font-size="10" fill="#27500A" font-family="monospace">+ calculateArea()*</text>
+              <text x="70" y="59" font-size="9" fill="#3B6D11" font-family="monospace">&lt;&lt;abstract&gt;&gt;</text>
+              <line x1="80" y1="64" x2="50" y2="110" stroke="#639922" stroke-width="0.5"/>
+              <line x1="200" y1="64" x2="230" y2="110" stroke="#639922" stroke-width="0.5"/>
+              <polygon points="140,64 134,76 146,76" fill="none" stroke="#639922" stroke-width="0.5"/>
+              <rect x="10" y="110" width="120" height="64" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="10" y="110" width="120" height="26" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="10" y="132" width="120" height="4" fill="#C0DD97"/>
+              <text x="70" y="128" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">Rectangle</text>
+              <text x="18" y="148" font-size="10" fill="#27500A" font-family="monospace">- int width, height</text>
+              <text x="18" y="162" font-size="10" fill="#27500A" font-family="monospace">+ calculateArea()</text>
+              <rect x="150" y="110" width="120" height="64" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="150" y="110" width="120" height="26" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="150" y="132" width="120" height="4" fill="#C0DD97"/>
+              <text x="210" y="128" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">Circle</text>
+              <text x="158" y="148" font-size="10" fill="#27500A" font-family="monospace">- int radius</text>
+              <text x="158" y="162" font-size="10" fill="#27500A" font-family="monospace">+ calculateArea()</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  {
+    icon: "3",
+    title: "Liskov Substitution Principle (LSP)",
+    category: "solid",
+    categoryLabel: "SOLID",
+    color: "#8f7cff",
+    tagline: "Child classes must safely replace parent classes.",
+    keyIdea: "Replace safely",
+    goal: "Reliability",
+    why: "A subtype must honor the expectations of the base type so callers are not surprised at runtime.",
+    badCode: `class Bird { void fly() {} }\nclass Ostrich extends Bird {\n  void fly() {\n    throw new RuntimeException();\n  }\n}`,
+    goodCode: `interface Bird {}\ninterface Flyable { void fly(); }\n\nclass Sparrow implements Flyable {\n  public void fly() {}\n}`,
+    quote: "Subtypes must be substitutable for their base types without altering correctness.",
+    diagram: `
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <div class="compare-label">Bad</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 160" role="img" aria-label="LSP bad diagram">
+              <rect x="60" y="10" width="160" height="44" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="60" y="10" width="160" height="22" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="60" y="29" width="160" height="4" fill="#F7C1C1"/>
+              <text x="140" y="25" text-anchor="middle" font-size="12" font-weight="500" fill="#791F1F" font-family="monospace">Bird</text>
+              <text x="68" y="44" font-size="10" fill="#A32D2D" font-family="monospace">+ void fly()</text>
+              <line x1="140" y1="54" x2="140" y2="90" stroke="#E24B4A" stroke-width="0.5"/>
+              <polygon points="140,54 135,64 145,64" fill="none" stroke="#E24B4A" stroke-width="0.5"/>
+              <rect x="60" y="90" width="160" height="44" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="60" y="90" width="160" height="22" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="60" y="109" width="160" height="4" fill="#F7C1C1"/>
+              <text x="140" y="105" text-anchor="middle" font-size="12" font-weight="500" fill="#791F1F" font-family="monospace">Ostrich</text>
+              <text x="68" y="124" font-size="10" fill="#A32D2D" font-family="monospace">+ void fly() throws!</text>
+            </svg>
+          </div>
+        </div>
+        <div class="compare-card good">
+          <div class="compare-label">Good</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 160" role="img" aria-label="LSP good diagram">
+              <rect x="60" y="10" width="160" height="44" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="10" width="160" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="29" width="160" height="4" fill="#C0DD97"/>
+              <text x="140" y="25" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">Bird</text>
+              <text x="68" y="44" font-size="10" fill="#27500A" font-family="monospace">+ void move()</text>
+              <line x1="140" y1="54" x2="140" y2="90" stroke="#639922" stroke-width="0.5"/>
+              <polygon points="140,54 135,64 145,64" fill="none" stroke="#639922" stroke-width="0.5"/>
+              <rect x="60" y="90" width="160" height="44" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="90" width="160" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="109" width="160" height="4" fill="#C0DD97"/>
+              <text x="140" y="105" text-anchor="middle" font-size="12" font-weight="500" fill="#173404" font-family="monospace">Ostrich</text>
+              <text x="68" y="124" font-size="10" fill="#27500A" font-family="monospace">+ void move()</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  {
+    icon: "4",
+    title: "Interface Segregation Principle (ISP)",
+    category: "solid",
+    categoryLabel: "SOLID",
+    color: "#8f7cff",
+    tagline: "Do not force classes to implement unused methods.",
+    keyIdea: "Small interfaces",
+    goal: "Flexibility",
+    why: "Clients should depend only on the methods they actually use, which keeps APIs smaller and reduces accidental coupling.",
+    badCode: `interface Worker {\n  void work();\n  void eat();\n}`,
+    goodCode: `interface Workable { void work(); }\ninterface Eatable  { void eat(); }`,
+    quote: "Clients should not be forced to depend on interfaces they don't use.",
+    diagram: `
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <div class="compare-label">Bad</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 120" role="img" aria-label="ISP bad diagram">
+              <rect x="20" y="10" width="240" height="96" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="10" width="240" height="26" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="32" width="240" height="4" fill="#F7C1C1"/>
+              <text x="140" y="27" text-anchor="middle" font-size="12" font-weight="500" fill="#791F1F" font-family="monospace">Worker &lt;&lt;interface&gt;&gt;</text>
+              <text x="30" y="52" font-size="10" fill="#A32D2D" font-family="monospace">+ void work()</text>
+              <text x="30" y="66" font-size="10" fill="#A32D2D" font-family="monospace">+ void eat()</text>
+              <text x="30" y="80" font-size="10" fill="#A32D2D" font-family="monospace">+ void sleep()</text>
+              <text x="30" y="98" font-size="9" fill="#E24B4A" font-style="italic">Robot forced to implement eat() and sleep()</text>
+            </svg>
+          </div>
+        </div>
+        <div class="compare-card good">
+          <div class="compare-label">Good</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 170" role="img" aria-label="ISP good diagram">
+              <rect x="70" y="10" width="140" height="42" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="70" y="10" width="140" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="70" y="29" width="140" height="4" fill="#C0DD97"/>
+              <text x="140" y="25" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">Workable</text>
+              <text x="78" y="42" font-size="10" fill="#27500A" font-family="monospace">+ void work()</text>
+              <rect x="10" y="90" width="120" height="42" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="10" y="90" width="120" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="10" y="109" width="120" height="4" fill="#C0DD97"/>
+              <text x="70" y="106" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">Eatable</text>
+              <text x="18" y="122" font-size="10" fill="#27500A" font-family="monospace">+ void eat()</text>
+              <rect x="150" y="90" width="120" height="42" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="150" y="90" width="120" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="150" y="109" width="120" height="4" fill="#C0DD97"/>
+              <text x="210" y="106" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">Sleepable</text>
+              <text x="158" y="122" font-size="10" fill="#27500A" font-family="monospace">+ void sleep()</text>
+              <line x1="140" y1="52" x2="70" y2="90" stroke="#639922" stroke-width="0.5" stroke-dasharray="3 2"/>
+              <line x1="140" y1="52" x2="140" y2="90" stroke="#639922" stroke-width="0.5" stroke-dasharray="3 2"/>
+              <line x1="140" y1="52" x2="210" y2="90" stroke="#639922" stroke-width="0.5" stroke-dasharray="3 2"/>
+              <text x="140" y="162" text-anchor="middle" font-size="9" fill="#3B6D11" font-style="italic">Classes pick only what they need</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  {
+    icon: "5",
+    title: "Dependency Inversion Principle (DIP)",
+    category: "solid",
+    categoryLabel: "SOLID",
+    color: "#8f7cff",
+    tagline: "Depend on abstractions, not concrete classes.",
+    keyIdea: "Depend on abstraction",
+    goal: "Testability",
+    why: "High-level modules and low-level modules should both depend on abstractions so implementations can be swapped easily.",
+    badCode: `class App {\n  MySQL db = new MySQL();\n}`,
+    goodCode: `interface Database { void connect(); }\n\nclass App {\n  private Database db;\n  App(Database db) { this.db = db; }\n}`,
+    quote: "High-level modules should not depend on low-level modules. Both should depend on abstractions.",
+    diagram: `
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <div class="compare-label">Bad</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 130" role="img" aria-label="DIP bad diagram">
+              <defs>
+                <marker id="arr-bad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M2 1L8 5L2 9" fill="none" stroke="#E24B4A" stroke-width="1.5" stroke-linecap="round"/>
+                </marker>
+              </defs>
+              <rect x="20" y="10" width="110" height="44" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="10" width="110" height="22" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="20" y="29" width="110" height="4" fill="#F7C1C1"/>
+              <text x="75" y="25" text-anchor="middle" font-size="11" font-weight="500" fill="#791F1F" font-family="monospace">OrderService</text>
+              <text x="28" y="44" font-size="10" fill="#A32D2D" font-family="monospace">+ placeOrder()</text>
+              <line x1="130" y1="32" x2="150" y2="32" stroke="#E24B4A" stroke-width="1" marker-end="url(#arr-bad)"/>
+              <rect x="150" y="10" width="110" height="44" rx="6" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="150" y="10" width="110" height="22" rx="6" fill="#F7C1C1" stroke="#F09595" stroke-width="0.5"/>
+              <rect x="150" y="29" width="110" height="4" fill="#F7C1C1"/>
+              <text x="205" y="25" text-anchor="middle" font-size="11" font-weight="500" fill="#791F1F" font-family="monospace">MySQLDatabase</text>
+              <text x="158" y="44" font-size="10" fill="#A32D2D" font-family="monospace">+ void save()</text>
+              <text x="140" y="76" text-anchor="middle" font-size="9" fill="#E24B4A" font-style="italic">tightly coupled</text>
+              <text x="140" y="92" text-anchor="middle" font-size="9" fill="#A32D2D">Can't swap database without changes</text>
+            </svg>
+          </div>
+        </div>
+        <div class="compare-card good">
+          <div class="compare-label">Good</div>
+          <div class="diagram">
+            <svg viewBox="0 0 280 190" role="img" aria-label="DIP good diagram">
+              <defs>
+                <marker id="arr-good" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M2 1L8 5L2 9" fill="none" stroke="#639922" stroke-width="1.5" stroke-linecap="round"/>
+                </marker>
+              </defs>
+              <rect x="10" y="10" width="110" height="44" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="10" y="10" width="110" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="10" y="29" width="110" height="4" fill="#C0DD97"/>
+              <text x="65" y="25" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">OrderService</text>
+              <text x="18" y="44" font-size="10" fill="#27500A" font-family="monospace">+ placeOrder()</text>
+              <line x1="120" y1="32" x2="138" y2="32" stroke="#639922" stroke-width="0.5" stroke-dasharray="3 2" marker-end="url(#arr-good)"/>
+              <rect x="140" y="10" width="120" height="44" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="140" y="10" width="120" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="140" y="29" width="120" height="4" fill="#C0DD97"/>
+              <text x="200" y="25" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">IDatabase</text>
+              <text x="148" y="37" font-size="9" fill="#3B6D11" font-family="monospace">&lt;&lt;interface&gt;&gt;</text>
+              <text x="148" y="44" font-size="10" fill="#27500A" font-family="monospace">+ void save()</text>
+              <line x1="175" y1="54" x2="120" y2="100" stroke="#639922" stroke-width="0.5"/>
+              <line x1="225" y1="54" x2="240" y2="100" stroke="#639922" stroke-width="0.5"/>
+              <polygon points="175,54 170,65 180,65" fill="none" stroke="#639922" stroke-width="0.5"/>
+              <polygon points="225,54 220,65 230,65" fill="none" stroke="#639922" stroke-width="0.5"/>
+              <rect x="60" y="100" width="120" height="44" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="100" width="120" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="60" y="119" width="120" height="4" fill="#C0DD97"/>
+              <text x="120" y="115" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">MySQLDatabase</text>
+              <text x="68" y="134" font-size="10" fill="#27500A" font-family="monospace">+ void save()</text>
+              <rect x="160" y="100" width="110" height="44" rx="6" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="160" y="100" width="110" height="22" rx="6" fill="#C0DD97" stroke="#97C459" stroke-width="0.5"/>
+              <rect x="160" y="119" width="110" height="4" fill="#C0DD97"/>
+              <text x="215" y="115" text-anchor="middle" font-size="11" font-weight="500" fill="#173404" font-family="monospace">MongoDatabase</text>
+              <text x="168" y="134" font-size="10" fill="#27500A" font-family="monospace">+ void save()</text>
+              <text x="140" y="178" text-anchor="middle" font-size="9" fill="#3B6D11" font-style="italic">Swap implementations freely</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `
+  },
+  {
+    icon: "6",
+    title: "DRY",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "Don't Repeat Yourself.",
+    keyIdea: "No duplication",
+    goal: "Consistency",
+    why: "Every piece of knowledge should have a single authoritative representation so changes are cheaper and less error-prone.",
+    badCode: `int square(int x) { return x * x; }\nint rect(int l, int w) { return l * w; }`,
+    goodCode: `int multiply(int a, int b) {\n  return a * b;\n}`,
+    quote: "Avoid duplicate logic and duplicate sources of truth."
+  },
+  {
+    icon: "7",
+    title: "KISS",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "Keep It Simple.",
+    keyIdea: "Keep simple",
+    goal: "Readability",
+    why: "Simple code is easier to understand, debug, and maintain than clever code that compresses intent.",
+    badCode: `return (a | b) + (a & b);`,
+    goodCode: `return a + b;`,
+    quote: "Prefer the simplest solution that clearly solves the problem."
+  },
+  {
+    icon: "8",
+    title: "YAGNI",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "You Aren't Gonna Need It.",
+    keyIdea: "Build only what's needed",
+    goal: "Avoid waste",
+    why: "Do not build for hypothetical future scenarios. Implement capabilities when they are actually required.",
+    badCode: `class Car { void fly() {} }`,
+    goodCode: `class Car { void drive() {} }`,
+    quote: "Do not add complexity before there is a real need for it."
+  },
+  {
+    icon: "9",
+    title: "Validate Inputs",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "Check inputs before using them.",
+    keyIdea: "Check inputs",
+    goal: "Safety",
+    why: "Fail early with clear errors instead of letting invalid data produce hidden bugs or runtime crashes later.",
+    badCode: `int divide(int a, int b) {\n  return a / b;\n}`,
+    goodCode: `int divide(int a, int b) {\n  if (b == 0) throw new IllegalArgumentException();\n  return a / b;\n}`,
+    quote: "Validate assumptions at the boundary, not after the damage is done."
+  },
+  {
+    icon: "10",
+    title: "Composition Over Inheritance",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "Prefer has-a over is-a when behavior should stay flexible.",
+    keyIdea: "has-a over is-a",
+    goal: "Flexibility",
+    why: "Compose behavior from smaller parts instead of locking the design into rigid inheritance trees.",
+    badCode: `class Car extends Engine {}`,
+    goodCode: `class Car {\n  private Engine engine;\n}`,
+    quote: "Favor composition when you want reuse without tight inheritance coupling."
+  },
+  {
+    icon: "11",
+    title: "Law of Demeter (LoD)",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "Talk only to direct dependencies.",
+    keyIdea: "Avoid deep chaining",
+    goal: "Loose coupling",
+    why: "Each object should know as little as possible about the internal structure of collaborators.",
+    badCode: `order.getCustomer()\n     .getAddress()\n     .getCity();`,
+    goodCode: `order.getCustomerCity();`,
+    quote: "Avoid reaching through objects into objects behind them."
+  },
+  {
+    icon: "12",
+    title: "Fail Fast",
+    category: "general",
+    categoryLabel: "General",
+    color: "#56d89a",
+    tagline: "Detect errors early and loudly.",
+    keyIdea: "Error early",
+    goal: "Debuggability",
+    why: "It is easier to diagnose problems when code stops immediately at the broken assumption rather than continuing with corrupt state.",
+    badCode: `void process(List list) {\n  list.size();\n}`,
+    goodCode: `void process(List list) {\n  if (list == null) throw new IllegalArgumentException();\n  list.size();\n}`,
+    quote: "Surface invalid state early before it spreads through the system."
+  }
+];
+
+const grid = document.getElementById('grid');
+const countEl = document.getElementById('count');
+const modal = document.getElementById('principleModal');
+const modalContent = document.getElementById('modalContent');
+const modalClose = document.getElementById('modalClose');
+
+function summaryRows(category) {
+  const visible = category === 'all' ? principles : principles.filter(p => p.category === category);
+  return visible.map(item => `
+    <tr>
+      <td>${item.title}</td>
+      <td>${item.keyIdea}</td>
+      <td>${item.goal}</td>
+      <td>${item.categoryLabel}</td>
+    </tr>
+  `).join('');
+}
+
+function openModal(principle) {
+  modalContent.innerHTML = `
+    <div class="modal-header">
+      <div class="modal-icon">${principle.icon}</div>
+      <div>
+        <div class="card-category">${principle.categoryLabel}</div>
+        <h2 class="modal-title" id="modalTitle">${principle.title}</h2>
+        <div class="modal-tagline">${principle.tagline}</div>
+      </div>
+    </div>
+    <div class="meta-row">
+      <div class="meta-pill">${principle.keyIdea}</div>
+      <div class="meta-pill">${principle.goal}</div>
+    </div>
+    <hr class="divider">
+    <div class="detail-section">
+      <div class="detail-label">Why it matters</div>
+      <div class="detail-text">${principle.why}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Bad vs Good</div>
+      <div class="compare-grid">
+        <div class="compare-card bad">
+          <div class="compare-label">Bad</div>
+          <pre><code>${principle.badCode}</code></pre>
+        </div>
+        <div class="compare-card good">
+          <div class="compare-label">Good</div>
+          <pre><code>${principle.goodCode}</code></pre>
+        </div>
+      </div>
+    </div>
+    ${principle.diagram ? `
+    <div class="detail-section">
+      <div class="detail-label">Design View</div>
+      ${principle.diagram}
+    </div>` : ''}
+    <div class="detail-section">
+      <div class="detail-label">Core quote</div>
+      <div class="quote">${principle.quote}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Quick reference</div>
+      <table class="summary-table">
+        <thead>
+          <tr><th>Principle</th><th>Key idea</th><th>Goal</th><th>Type</th></tr>
+        </thead>
+        <tbody>${summaryRows(principle.category)}</tbody>
+      </table>
+    </div>
+  `;
+
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  modalClose.focus();
+}
+
+function closeModal() {
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+}
+
+function renderCards(filter) {
+  const visible = filter === 'all' ? principles : principles.filter(p => p.category === filter);
+  countEl.textContent = visible.length;
+
+  grid.innerHTML = '';
+  visible.forEach((principle, index) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', `Open details for ${principle.title}`);
+    card.style.setProperty('--card-color', principle.color);
+    card.style.animationDelay = `${index * 0.05}s`;
+
+    card.innerHTML = `
+      <div class="card-category">${principle.categoryLabel}</div>
+      <div class="card-header">
+        <div class="card-icon">${principle.icon}</div>
+        <div class="card-title">${principle.title}</div>
+      </div>
+      <div class="card-tagline">${principle.tagline}</div>
+      <div class="card-arrow">&rarr;</div>
+    `;
+
+    card.addEventListener('click', () => openModal(principle));
+    card.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openModal(principle);
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(item => item.classList.remove('active'));
+    tab.classList.add('active');
+    closeModal();
+    renderCards(tab.dataset.filter);
+  });
+});
+
+modalClose.addEventListener('click', closeModal);
+modal.addEventListener('click', (event) => {
+  if (event.target === modal) closeModal();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+});
+
+renderCards('all');
+</script>
+</body>
+</html>

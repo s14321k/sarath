@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP Load Balancer Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3efe7;
+    --bg-soft: #ebe3d7;
+    --panel: #fffdf8;
+    --text: #201812;
+    --muted: #685f58;
+    --rule: #d7cfc4;
+    --blue: #1a73e8;
+    --green: #2f9d62;
+    --orange: #c46a1a;
+    --shadow: 0 16px 40px rgba(32, 24, 18, 0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background:
+      radial-gradient(circle at top right, rgba(26,115,232,0.08), transparent 28%),
+      linear-gradient(180deg, var(--bg) 0%, #f8f4ee 100%);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    line-height: 1.6;
+  }
+
+  a { color: inherit; }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 14px 18px;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, 0.82);
+    backdrop-filter: blur(10px);
+  }
+
+  .crumb, .mini-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-decoration: none;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mini-link {
+    padding: 8px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--panel);
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 1.25fr 0.9fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .hero-card,
+  .panel,
+  .flow,
+  .learning-box {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .hero-card {
+    padding: 34px;
+  }
+
+  .eyebrow,
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--blue);
+  }
+
+  h1, h2 {
+    font-family: 'DM Serif Display', serif;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+  }
+
+  h1 {
+    font-size: clamp(44px, 7vw, 82px);
+    margin: 18px 0 20px;
+  }
+
+  .hero-card p {
+    max-width: 58ch;
+    font-size: 17px;
+    color: var(--muted);
+  }
+
+  .hero-facts {
+    display: grid;
+    gap: 12px;
+    padding: 28px;
+  }
+
+  .fact {
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f9f6f1 0%, #f4eee6 100%);
+    border: 1px solid var(--rule);
+  }
+
+  .fact strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+
+  .fact span {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .flow {
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+
+  .flow h2,
+  .panel h2,
+  .learning-box h2 {
+    font-size: clamp(28px, 4vw, 42px);
+    margin: 10px 0 18px;
+  }
+
+  .flow-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .flow-node {
+    min-height: 132px;
+    padding: 18px;
+    border-radius: 20px;
+    border: 1px solid var(--rule);
+    background: linear-gradient(180deg, #fffdf8 0%, #f7f2ea 100%);
+  }
+
+  .flow-node strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+
+  .flow-node p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .node-blue { border-color: rgba(26,115,232,0.35); }
+  .node-green { border-color: rgba(47,157,98,0.35); }
+  .node-orange { border-color: rgba(196,106,26,0.35); }
+
+  .arrow-note {
+    margin-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .panel {
+    padding: 28px;
+  }
+
+  .concept-list,
+  .service-list,
+  .learning-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .concept,
+  .service,
+  .learning {
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid var(--rule);
+    background: #faf7f2;
+  }
+
+  .concept strong,
+  .service strong,
+  .learning strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+  }
+
+  .concept p,
+  .service p,
+  .learning p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .service code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--blue);
+  }
+
+  .learning-box {
+    padding: 30px;
+    margin-bottom: 24px;
+    background: linear-gradient(180deg, #1f2430 0%, #131820 100%);
+    color: #eef5ff;
+    border-color: #293245;
+  }
+
+  .learning-box .section-label {
+    color: #91bfff;
+  }
+
+  .learning-box .learning {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  .learning-box .learning p {
+    color: #c8d5ea;
+  }
+
+  .footer {
+    padding: 12px 0 30px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 900px) {
+    .hero,
+    .grid,
+    .flow-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <a class="crumb" href="../microservice-architecture.html">Back to Microservice Architecture</a>
+      <a class="mini-link" href="gcp-api-gateway-security.html">Next: API Gateway + Security</a>
+    </div>
+
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">GCP Traffic Management</div>
+        <h1>Load Balancer</h1>
+        <p>
+          A load balancer is the public traffic director for your system. In GCP it terminates client traffic,
+          applies edge policies, checks backend health, and sends requests to the best available service instance.
+        </p>
+      </div>
+      <div class="hero-facts hero-card">
+        <div class="fact">
+          <strong>Main job</strong>
+          <span>Distribute traffic without making clients care where services actually run.</span>
+        </div>
+        <div class="fact">
+          <strong>Typical GCP choice</strong>
+          <span>Global external Application Load Balancer for HTTP and HTTPS microservice traffic.</span>
+        </div>
+        <div class="fact">
+          <strong>Why it matters</strong>
+          <span>It improves availability, rollout safety, latency, and edge security in one place.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="flow">
+      <div class="section-label">Request Path</div>
+      <h2>How traffic moves through the edge</h2>
+      <div class="flow-row">
+        <div class="flow-node node-blue">
+          <strong>1. Client</strong>
+          <p>Browser, mobile app, or another service sends HTTPS traffic to one public endpoint.</p>
+        </div>
+        <div class="flow-node node-blue">
+          <strong>2. Frontend</strong>
+          <p>GCP load balancer terminates TLS, accepts the request, and applies URL or host rules.</p>
+        </div>
+        <div class="flow-node node-orange">
+          <strong>3. Edge policy</strong>
+          <p>Cloud Armor can inspect the request before it reaches your backends.</p>
+        </div>
+        <div class="flow-node node-green">
+          <strong>4. Backend service</strong>
+          <p>The request is sent to a healthy backend target such as GKE, MIG, or Cloud Run via NEG.</p>
+        </div>
+        <div class="flow-node node-green">
+          <strong>5. Response</strong>
+          <p>The backend responds, and the same edge layer exposes a stable endpoint to the client.</p>
+        </div>
+      </div>
+      <div class="arrow-note">Client -> TLS termination -> policy checks -> healthy backend -> response</div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="section-label">Core Concepts</div>
+        <h2>What you should understand</h2>
+        <div class="concept-list">
+          <div class="concept">
+            <strong>Global anycast IP</strong>
+            <p>Clients hit one public IP, and Google routes them to the nearest healthy edge location. That reduces latency and hides regional backend complexity.</p>
+          </div>
+          <div class="concept">
+            <strong>Layer 7 routing</strong>
+            <p>Application load balancers can route by host, path, and header. That is how one endpoint can send <code>/users</code> and <code>/orders</code> to different services.</p>
+          </div>
+          <div class="concept">
+            <strong>Health checks</strong>
+            <p>GCP continuously probes backends. Unhealthy instances are removed from the serving pool automatically so bad nodes stop receiving traffic.</p>
+          </div>
+          <div class="concept">
+            <strong>Connection draining</strong>
+            <p>When a backend is removed during deploy or autoscaling, in-flight requests can finish instead of being cut off mid-request.</p>
+          </div>
+          <div class="concept">
+            <strong>Autoscaling compatibility</strong>
+            <p>The load balancer works best when the backend pool can grow or shrink independently. That makes it a natural match for GKE, MIGs, and Cloud Run.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">GCP Mapping</div>
+        <h2>Services you usually combine</h2>
+        <div class="service-list">
+          <div class="service">
+            <strong>Application Load Balancer</strong>
+            <p>Primary choice for HTTP and HTTPS traffic. Best when you want host and path routing, TLS offload, and global edge entry.</p>
+          </div>
+          <div class="service">
+            <strong>Cloud Armor</strong>
+            <p>Add WAF and DDoS protection at the edge. Commonly paired with the load balancer, not buried inside each microservice.</p>
+          </div>
+          <div class="service">
+            <strong>Serverless NEG</strong>
+            <p>Connect Cloud Run or other serverless backends behind the load balancer without exposing them directly.</p>
+          </div>
+          <div class="service">
+            <strong>Managed SSL certificates</strong>
+            <p>Use Google-managed certs to avoid manual certificate rotation on each service.</p>
+          </div>
+          <div class="service">
+            <strong>Backend services + health checks</strong>
+            <p>These are the units where you define instance groups or NEGs, balancing behavior, and liveness checks.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="learning-box">
+      <div class="section-label">Key Learnings</div>
+      <h2>Interview-ready takeaways</h2>
+      <div class="learning-list">
+        <div class="learning">
+          <strong>Load balancer and API gateway are not the same thing.</strong>
+          <p>The load balancer focuses on traffic distribution and edge routing. The gateway focuses on API policy, auth, quotas, and API contract management.</p>
+        </div>
+        <div class="learning">
+          <strong>Health checks are a reliability control, not a checkbox.</strong>
+          <p>Poor health-check timing can either flap healthy nodes or fail too slowly during incidents.</p>
+        </div>
+        <div class="learning">
+          <strong>Use the edge for cross-cutting concerns.</strong>
+          <p>TLS termination, DDoS protection, and request filtering belong at the entry layer so every service benefits from the same protection.</p>
+        </div>
+        <div class="learning">
+          <strong>Plan for rollout safety.</strong>
+          <p>Connection draining and staged backend changes matter during deploys just as much as normal traffic balancing.</p>
+        </div>
+        <div class="learning">
+          <strong>Keep backend services private when possible.</strong>
+          <p>Expose one controlled entry path and reduce the number of public surfaces clients can hit directly.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">GCP load balancer reference page</div>
+  </div>
+</body>
+</html>

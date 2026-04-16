@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCP Load Balancer · API Gateway · Security</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+          --bg: #f5f2ee;
+          --bg2: #ede9e3;
+          --ink: #1a1612;
+          --ink2: #3d3630;
+          --ink3: #7a6f65;
+          --rule: #d4cfc8;
+          --gcp-blue: #1a73e8;
+          --gcp-red: #ea4335;
+          --gcp-yellow: #fbbc04;
+          --gcp-green: #34a853;
+          --lb-color: #1a73e8;
+          --gw-color: #ea4335;
+          --sec-color: #34a853;
+          --accent-warm: #c2410c;
+          --card-bg: #ffffff;
+          --card-shadow: 0 2px 16px rgba(26,22,18,0.08), 0 1px 4px rgba(26,22,18,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+          background: var(--bg);
+          color: var(--ink);
+          font-family: 'Syne', sans-serif;
+          line-height: 1.6;
+          min-height: 100vh;
+        }
+
+        /* Subtle grain texture */
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+          pointer-events: none;
+          z-index: 0;
+          opacity: 0.4;
+        }
+
+        /* ===== NAVIGATION ===== */
+        .topnav {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: rgba(245,242,238,0.95);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid var(--rule);
+          padding: 0 40px;
+          display: flex;
+          align-items: center;
+          gap: 0;
+          height: 52px;
+        }
+
+        .nav-back {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+          text-decoration: none;
+          letter-spacing: 1px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding-right: 20px;
+          border-right: 1px solid var(--rule);
+          transition: color 0.2s;
+        }
+
+        .nav-back:hover { color: var(--gcp-blue); }
+
+        .nav-breadcrumb {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+          padding-left: 20px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          letter-spacing: 0.5px;
+        }
+
+        .nav-breadcrumb span { color: var(--ink); font-weight: 500; }
+
+        .nav-chapters {
+          margin-left: auto;
+          display: flex;
+          gap: 2px;
+        }
+
+        .nav-chapter {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          padding: 5px 12px;
+          border-radius: 3px;
+          text-decoration: none;
+          color: var(--ink3);
+          letter-spacing: 0.5px;
+          transition: all 0.2s;
+        }
+
+        .nav-chapter:hover { background: var(--bg2); color: var(--ink); }
+        .nav-chapter.active { background: var(--ink); color: var(--bg); }
+
+        /* ===== HERO ===== */
+        .hero {
+          position: relative;
+          z-index: 1;
+          padding: 80px 40px 60px;
+          max-width: 1200px;
+          margin: 0 auto;
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .hero-eyebrow {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--gcp-blue);
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin-bottom: 20px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .hero-eyebrow::before {
+          content: '';
+          width: 32px;
+          height: 2px;
+          background: var(--gcp-blue);
+          display: inline-block;
+        }
+
+        .hero h1 {
+          font-family: 'DM Serif Display', serif;
+          font-size: clamp(42px, 6vw, 84px);
+          line-height: 0.95;
+          color: var(--ink);
+          margin-bottom: 32px;
+          letter-spacing: -2px;
+        }
+
+        .hero h1 em {
+          font-style: italic;
+          color: var(--gcp-blue);
+        }
+
+        .hero-desc {
+          font-size: 17px;
+          color: var(--ink2);
+          max-width: 600px;
+          line-height: 1.7;
+          font-weight: 400;
+        }
+
+        .hero-gcp-strip {
+          margin-top: 40px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .gcp-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          background: var(--card-bg);
+          border: 1px solid var(--rule);
+          border-radius: 4px;
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--ink);
+          box-shadow: var(--card-shadow);
+        }
+
+        .gcp-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        /* ===== CHAPTERS NAV ===== */
+        .chapters-row {
+          position: relative;
+          z-index: 1;
+          max-width: 1200px;
+          margin: 0 auto;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .chapter-tab {
+          padding: 24px 32px;
+          border-right: 1px solid var(--rule);
+          cursor: pointer;
+          transition: background 0.2s;
+          text-decoration: none;
+          display: block;
+        }
+
+        .chapter-tab:last-child { border-right: none; }
+        .chapter-tab:hover { background: var(--bg2); }
+
+        .chapter-num {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          color: var(--ink3);
+          letter-spacing: 2px;
+          margin-bottom: 8px;
+        }
+
+        .chapter-title {
+          font-size: 17px;
+          font-weight: 700;
+          margin-bottom: 6px;
+        }
+
+        .chapter-sub {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+        }
+
+        .ch-lb { border-top: 3px solid var(--lb-color); }
+        .ch-gw { border-top: 3px solid var(--gw-color); }
+        .ch-sec { border-top: 3px solid var(--sec-color); }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+          position: relative;
+          z-index: 1;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 40px 80px;
+        }
+
+        /* ===== SECTION HEADERS ===== */
+        .section {
+          padding: 72px 0 48px;
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .section:last-child { border-bottom: none; }
+
+        .section-header {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 24px;
+          align-items: start;
+          margin-bottom: 48px;
+        }
+
+        .section-number {
+          font-family: 'DM Serif Display', serif;
+          font-size: 80px;
+          line-height: 0.85;
+          color: var(--rule);
+          letter-spacing: -4px;
+          user-select: none;
+        }
+
+        .section-meta {}
+
+        .section-tag {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          padding: 3px 8px;
+          border-radius: 2px;
+          margin-bottom: 12px;
+          display: inline-block;
+        }
+
+        .tag-lb { background: rgba(26,115,232,0.1); color: var(--lb-color); }
+        .tag-gw { background: rgba(234,67,53,0.1); color: var(--gw-color); }
+        .tag-sec { background: rgba(52,168,83,0.1); color: var(--sec-color); }
+
+        .section-meta h2 {
+          font-family: 'DM Serif Display', serif;
+          font-size: clamp(28px, 4vw, 48px);
+          line-height: 1.05;
+          color: var(--ink);
+          letter-spacing: -1px;
+          margin-bottom: 16px;
+        }
+
+        .section-meta p {
+          font-size: 16px;
+          color: var(--ink2);
+          max-width: 560px;
+          line-height: 1.7;
+        }
+
+        /* ===== CONCEPT CARDS ===== */
+        .concept-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 16px;
+          margin-bottom: 40px;
+        }
+
+        .concept-card {
+          background: var(--card-bg);
+          border: 1px solid var(--rule);
+          border-radius: 6px;
+          padding: 24px;
+          box-shadow: var(--card-shadow);
+          transition: all 0.25s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .concept-card::after {
+          content: '';
+          position: absolute;
+          bottom: 0; left: 0; right: 0;
+          height: 3px;
+          background: var(--card-accent, #1a73e8);
+          transform: scaleX(0);
+          transition: transform 0.3s ease;
+          transform-origin: left;
+        }
+
+        .concept-card:hover {
+          border-color: transparent;
+          box-shadow: 0 8px 32px rgba(26,22,18,0.12);
+          transform: translateY(-2px);
+        }
+
+        .concept-card:hover::after { transform: scaleX(1); }
+
+        .card-emoji { font-size: 28px; margin-bottom: 14px; display: block; }
+
+        .card-heading {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--ink);
+          margin-bottom: 8px;
+          letter-spacing: -0.3px;
+        }
+
+        .card-body {
+          font-size: 13px;
+          color: var(--ink2);
+          line-height: 1.65;
+        }
+
+        .card-mono {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid var(--rule);
+        }
+
+        /* ===== FLOW DIAGRAMS ===== */
+        .flow-box {
+          background: var(--card-bg);
+          border: 1px solid var(--rule);
+          border-radius: 8px;
+          padding: 32px;
+          box-shadow: var(--card-shadow);
+          margin: 32px 0;
+        }
+
+        .flow-box-title {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          margin-bottom: 28px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .flow-box-title::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: var(--rule);
+        }
+
+        /* LB Flow */
+        .lb-flow {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .lb-node {
+          padding: 12px 18px;
+          border-radius: 5px;
+          font-size: 13px;
+          font-weight: 600;
+          text-align: center;
+          min-width: 110px;
+          position: relative;
+        }
+
+        .node-client { background: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; }
+        .node-lb { background: rgba(26,115,232,0.1); border: 1px solid rgba(26,115,232,0.3); color: var(--lb-color); }
+        .node-gw { background: rgba(234,67,53,0.1); border: 1px solid rgba(234,67,53,0.3); color: var(--gw-color); }
+        .node-svc { background: rgba(52,168,83,0.1); border: 1px solid rgba(52,168,83,0.3); color: var(--sec-color); }
+        .node-sec { background: rgba(251,188,4,0.15); border: 1px solid rgba(251,188,4,0.4); color: #92600a; }
+
+        .node-sub {
+          font-family: 'DM Mono', monospace;
+          font-size: 9px;
+          font-weight: 400;
+          margin-top: 4px;
+          opacity: 0.8;
+        }
+
+        .flow-arrow {
+          font-size: 18px;
+          color: var(--ink3);
+          flex-shrink: 0;
+        }
+
+        .flow-arrow-label {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .arrow-txt {
+          font-family: 'DM Mono', monospace;
+          font-size: 9px;
+          color: var(--ink3);
+        }
+
+        /* Backend pool */
+        .backend-pool {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .backend-instance {
+          padding: 8px 14px;
+          background: rgba(52,168,83,0.07);
+          border: 1px solid rgba(52,168,83,0.2);
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--sec-color);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-family: 'DM Mono', monospace;
+        }
+
+        .instance-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: var(--sec-color);
+          flex-shrink: 0;
+          animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        /* ===== COMPARISON TABLE ===== */
+        .compare-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 24px 0;
+          font-size: 13px;
+        }
+
+        .compare-table th {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          color: var(--ink3);
+          padding: 12px 16px;
+          text-align: left;
+          border-bottom: 2px solid var(--rule);
+        }
+
+        .compare-table td {
+          padding: 13px 16px;
+          border-bottom: 1px solid var(--rule);
+          color: var(--ink2);
+          vertical-align: top;
+          line-height: 1.5;
+        }
+
+        .compare-table tr:hover td { background: var(--bg2); }
+
+        .compare-table td:first-child {
+          font-weight: 700;
+          color: var(--ink);
+        }
+
+        .pill {
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: 10px;
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          font-weight: 500;
+        }
+
+        .pill-l7 { background: rgba(26,115,232,0.1); color: var(--lb-color); }
+        .pill-l4 { background: rgba(52,168,83,0.1); color: var(--sec-color); }
+        .pill-gw { background: rgba(234,67,53,0.1); color: var(--gw-color); }
+        .pill-good { background: rgba(52,168,83,0.1); color: #166534; }
+        .pill-warn { background: rgba(251,188,4,0.15); color: #92600a; }
+
+        /* ===== GCP SERVICES GRID ===== */
+        .gcp-services {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 1px;
+          background: var(--rule);
+          border: 1px solid var(--rule);
+          border-radius: 8px;
+          overflow: hidden;
+          margin: 24px 0;
+        }
+
+        .gcp-service {
+          background: var(--card-bg);
+          padding: 24px;
+          transition: background 0.2s;
+        }
+
+        .gcp-service:hover { background: var(--bg2); }
+
+        .gcp-service-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          margin-bottom: 14px;
+        }
+
+        .icon-blue { background: rgba(26,115,232,0.1); }
+        .icon-red { background: rgba(234,67,53,0.1); }
+        .icon-green { background: rgba(52,168,83,0.1); }
+        .icon-yellow { background: rgba(251,188,4,0.15); }
+
+        .gcp-service-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--ink);
+          margin-bottom: 6px;
+        }
+
+        .gcp-service-desc {
+          font-size: 12px;
+          color: var(--ink2);
+          line-height: 1.6;
+          margin-bottom: 12px;
+        }
+
+        .gcp-service-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+        }
+
+        .stag {
+          font-family: 'DM Mono', monospace;
+          font-size: 9px;
+          padding: 2px 6px;
+          border-radius: 2px;
+          background: var(--bg);
+          color: var(--ink3);
+          border: 1px solid var(--rule);
+        }
+
+        /* ===== SECURITY LAYERS ===== */
+        .security-layers {
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          border: 1px solid var(--rule);
+          border-radius: 8px;
+          overflow: hidden;
+          margin: 24px 0;
+        }
+
+        .sec-layer {
+          padding: 20px 24px;
+          border-bottom: 1px solid var(--rule);
+          display: grid;
+          grid-template-columns: 48px 1fr auto;
+          gap: 16px;
+          align-items: center;
+          background: var(--card-bg);
+          transition: background 0.2s;
+          cursor: default;
+        }
+
+        .sec-layer:last-child { border-bottom: none; }
+        .sec-layer:hover { background: var(--bg2); }
+
+        .sec-layer-num {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'DM Serif Display', serif;
+          font-size: 16px;
+          font-weight: 700;
+          flex-shrink: 0;
+        }
+
+        .num-outer { background: rgba(234,67,53,0.1); color: var(--gw-color); }
+        .num-mid { background: rgba(251,188,4,0.15); color: #92600a; }
+        .num-inner { background: rgba(52,168,83,0.1); color: var(--sec-color); }
+
+        .sec-layer-info {}
+
+        .sec-layer-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--ink);
+          margin-bottom: 4px;
+        }
+
+        .sec-layer-desc {
+          font-size: 12px;
+          color: var(--ink3);
+          line-height: 1.5;
+        }
+
+        .sec-layer-tools {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
+        }
+
+        /* ===== CODE BLOCK ===== */
+        .code-block {
+          background: #1e1e2e;
+          border-radius: 6px;
+          padding: 24px;
+          margin: 20px 0;
+          overflow-x: auto;
+          position: relative;
+        }
+
+        .code-block-label {
+          font-family: 'DM Mono', monospace;
+          font-size: 9px;
+          color: #6e6a8b;
+          letter-spacing: 2px;
+          margin-bottom: 16px;
+        }
+
+        .code-block pre {
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          line-height: 1.7;
+          color: #cdd6f4;
+          white-space: pre-wrap;
+        }
+
+        .code-key { color: #89b4fa; }
+        .code-val { color: #a6e3a1; }
+        .code-str { color: #f9e2af; }
+        .code-comment { color: #585b70; }
+        .code-op { color: #cba6f7; }
+
+        /* ===== KEY LEARNINGS ===== */
+        .learnings {
+          background: var(--ink);
+          border-radius: 8px;
+          padding: 40px;
+          margin: 40px 0;
+          color: var(--bg);
+        }
+
+        .learnings h3 {
+          font-family: 'DM Serif Display', serif;
+          font-size: 28px;
+          margin-bottom: 28px;
+          color: white;
+          letter-spacing: -0.5px;
+        }
+
+        .learnings-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 20px;
+        }
+
+        .learning-item {
+          padding: 18px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 5px;
+          border-left: 3px solid var(--item-color, #1a73e8);
+        }
+
+        .learning-item h4 {
+          font-size: 13px;
+          font-weight: 700;
+          color: white;
+          margin-bottom: 8px;
+          letter-spacing: 0.3px;
+        }
+
+        .learning-item p {
+          font-size: 12px;
+          color: rgba(255,255,255,0.6);
+          line-height: 1.6;
+        }
+
+        /* ===== ALGORITHM COMPARISON ===== */
+        .algo-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+          margin: 24px 0;
+        }
+
+        .algo-card {
+          background: var(--card-bg);
+          border: 1px solid var(--rule);
+          border-radius: 6px;
+          padding: 18px;
+          box-shadow: var(--card-shadow);
+        }
+
+        .algo-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--ink);
+          margin-bottom: 8px;
+        }
+
+        .algo-desc {
+          font-size: 12px;
+          color: var(--ink2);
+          line-height: 1.6;
+          margin-bottom: 10px;
+        }
+
+        .algo-use {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          color: var(--gcp-blue);
+          letter-spacing: 0.5px;
+        }
+
+        /* ===== QUIZ / CHECK ===== */
+        .check-box {
+          border: 1px solid var(--rule);
+          border-radius: 6px;
+          overflow: hidden;
+          margin: 24px 0;
+        }
+
+        .check-header {
+          background: var(--bg2);
+          padding: 14px 20px;
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .check-items {
+          background: var(--card-bg);
+        }
+
+        .check-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 14px 20px;
+          border-bottom: 1px solid var(--rule);
+          font-size: 13px;
+          color: var(--ink2);
+          line-height: 1.5;
+        }
+
+        .check-item:last-child { border-bottom: none; }
+
+        .check-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+          position: relative;
+          z-index: 1;
+          border-top: 1px solid var(--rule);
+          padding: 32px 40px;
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .footer-nav {
+          display: flex;
+          gap: 20px;
+        }
+
+        .footer-link {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: var(--ink3);
+          text-decoration: none;
+          letter-spacing: 1px;
+          transition: color 0.2s;
+        }
+
+        .footer-link:hover { color: var(--gcp-blue); }
+
+        .footer-copy {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          color: var(--ink3);
+          letter-spacing: 1px;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes pulse-green {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in { animation: fadeIn 0.6s ease both; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+          .topnav { padding: 0 20px; }
+          .hero { padding: 48px 20px 40px; }
+          .main { padding: 0 20px 60px; }
+          .chapters-row { grid-template-columns: 1fr; }
+          .chapter-tab { border-right: none; border-bottom: 1px solid var(--rule); }
+          .section-header { grid-template-columns: 1fr; }
+          .section-number { font-size: 48px; display: none; }
+          .footer { flex-direction: column; gap: 16px; text-align: center; }
+          .nav-chapters { display: none; }
+          .lb-flow { gap: 4px; }
+          .flow-arrow { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+    <a href="microservice-architecture.html" class="nav-back">← Back</a>
+    <div class="nav-breadcrumb">Microservices / <span>GCP Load Balancer · API Gateway · Security</span></div>
+    <div class="nav-chapters">
+        <a href="#load-balancer" class="nav-chapter active">Load Balancer</a>
+        <a href="#api-gateway" class="nav-chapter">API Gateway</a>
+        <a href="#security" class="nav-chapter">Security</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero fade-in">
+    <div class="hero-eyebrow">Google Cloud Platform — Deep Dive</div>
+    <h1>Load Balancer,<br><em>API Gateway</em><br>&amp; Security</h1>
+    <p class="hero-desc">A comprehensive guide to GCP's traffic management, API orchestration, and security layers — how they work, why they matter, and how they fit in a production microservice architecture.</p>
+    <div class="hero-gcp-strip">
+        <div class="gcp-badge"><span class="gcp-dot" style="background:#1a73e8;"></span> Cloud Load Balancing</div>
+        <div class="gcp-badge"><span class="gcp-dot" style="background:#ea4335;"></span> API Gateway / Apigee</div>
+        <div class="gcp-badge"><span class="gcp-dot" style="background:#34a853;"></span> Cloud Armor · IAM · mTLS</div>
+        <div class="gcp-badge"><span class="gcp-dot" style="background:#fbbc04;"></span> Identity-Aware Proxy</div>
+    </div>
+</div>
+
+<!-- CHAPTER TABS -->
+<div class="chapters-row">
+    <a href="#load-balancer" class="chapter-tab ch-lb">
+        <div class="chapter-num">01 —</div>
+        <div class="chapter-title">Load Balancer</div>
+        <div class="chapter-sub">Traffic distribution · Algorithms · L4 vs L7</div>
+    </a>
+    <a href="#api-gateway" class="chapter-tab ch-gw">
+        <div class="chapter-num">02 —</div>
+        <div class="chapter-title">API Gateway</div>
+        <div class="chapter-sub">Routing · Rate limiting · OpenAPI · Apigee</div>
+    </a>
+    <a href="#security" class="chapter-tab ch-sec">
+        <div class="chapter-num">03 —</div>
+        <div class="chapter-title">Security</div>
+        <div class="chapter-sub">Cloud Armor · IAM · mTLS · WAF · IAP</div>
+    </a>
+</div>
+
+<div class="main">
+
+    <!-- ===================== -->
+    <!-- SECTION 1: LOAD BALANCER -->
+    <!-- ===================== -->
+    <section class="section" id="load-balancer">
+        <div class="section-header">
+            <div class="section-number">01</div>
+            <div class="section-meta">
+                <div class="section-tag tag-lb">Chapter One</div>
+                <h2>Cloud Load<br>Balancing</h2>
+                <p>GCP's Load Balancer distributes incoming traffic across multiple backend instances, ensuring high availability, fault tolerance, and horizontal scalability. It operates at both Layer 4 (TCP/UDP) and Layer 7 (HTTP/HTTPS).</p>
+            </div>
+        </div>
+
+        <!-- Flow diagram -->
+        <div class="flow-box">
+            <div class="flow-box-title">Traffic Flow — Client to Backend</div>
+            <div class="lb-flow">
+                <div class="lb-node node-client">
+                    🌍 Client
+                    <div class="node-sub">Browser / Mobile</div>
+                </div>
+                <div class="flow-arrow-label">
+                    <span style="font-size:18px; color:#9ca3af;">→</span>
+                    <span class="arrow-txt">HTTPS</span>
+                </div>
+                <div class="lb-node node-sec">
+                    🛡️ Cloud Armor
+                    <div class="node-sub">WAF · DDoS</div>
+                </div>
+                <div class="flow-arrow-label">
+                    <span style="font-size:18px; color:#9ca3af;">→</span>
+                    <span class="arrow-txt">Inspect</span>
+                </div>
+                <div class="lb-node node-lb">
+                    ⚖️ Load Balancer
+                    <div class="node-sub">L7 · Global</div>
+                </div>
+                <div class="flow-arrow-label">
+                    <span style="font-size:18px; color:#9ca3af;">→</span>
+                    <span class="arrow-txt">Route</span>
+                </div>
+                <div class="backend-pool">
+                    <div class="backend-instance"><span class="instance-dot"></span>Instance A — us-central1</div>
+                    <div class="backend-instance"><span class="instance-dot"></span>Instance B — us-east1</div>
+                    <div class="backend-instance"><span class="instance-dot"></span>Instance C — europe-west1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Concepts -->
+        <div class="concept-grid">
+            <div class="concept-card" style="--card-accent: #1a73e8;">
+                <span class="card-emoji">🌐</span>
+                <div class="card-heading">Global vs Regional LB</div>
+                <div class="card-body">GCP's Global Load Balancer uses Google's private backbone network to route traffic to the nearest healthy backend anywhere in the world. Regional LBs stay within a single GCP region and are cheaper for intra-region workloads.</div>
+                <div class="card-mono">Global → Anycast IP · Premium Tier</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #1a73e8;">
+                <span class="card-emoji">📐</span>
+                <div class="card-heading">L4 vs L7 Load Balancing</div>
+                <div class="card-body">Layer 4 (Network LB) operates on TCP/UDP packets — it's fast but blind to content. Layer 7 (HTTP/S LB) understands HTTP — it can route by URL path, headers, cookies, and do SSL termination, content-based routing, and more.</div>
+                <div class="card-mono">L4 → TCP/UDP passthrough · L7 → HTTP routing</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #1a73e8;">
+                <span class="card-emoji">❤️</span>
+                <div class="card-heading">Health Checks</div>
+                <div class="card-body">GCP LB continuously probes backend instances via HTTP, HTTPS, HTTP/2, TCP, or gRPC health checks. If an instance fails the threshold, it's removed from rotation automatically and traffic is redistributed.</div>
+                <div class="card-mono">checkIntervalSec: 5 · unhealthyThreshold: 2</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #1a73e8;">
+                <span class="card-emoji">📌</span>
+                <div class="card-heading">Session Affinity</div>
+                <div class="card-body">Also called "sticky sessions." Ensures requests from the same client always hit the same backend instance, useful for stateful applications. GCP supports Client IP, HTTP cookie, and generated cookie affinity modes.</div>
+                <div class="card-mono">sessionAffinity: GENERATED_COOKIE</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #1a73e8;">
+                <span class="card-emoji">🔄</span>
+                <div class="card-heading">Backend Services &amp; NEGs</div>
+                <div class="card-body">Backend Services define how the LB connects to backends. Network Endpoint Groups (NEGs) let you target individual containers (GKE pods), VMs, serverless endpoints (Cloud Run), or on-prem via hybrid NEGs.</div>
+                <div class="card-mono">NEG types: GCE_VM · SERVERLESS · HYBRID_CONNECTIVITY</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #1a73e8;">
+                <span class="card-emoji">⚡</span>
+                <div class="card-heading">SSL Termination &amp; Certificates</div>
+                <div class="card-body">GCP LB handles TLS termination at the edge — the backend receives plain HTTP internally, reducing CPU load. Google-managed SSL certificates auto-provision and auto-renew via Certificate Manager.</div>
+                <div class="card-mono">Google-managed · Self-managed · Certificate Map</div>
+            </div>
+        </div>
+
+        <!-- LB Algorithms -->
+        <h3 style="font-family:'DM Serif Display',serif; font-size:22px; margin: 32px 0 16px; color:var(--ink);">Load Balancing Algorithms</h3>
+        <div class="algo-cards">
+            <div class="algo-card">
+                <div class="algo-name">Round Robin</div>
+                <div class="algo-desc">Requests are distributed evenly to each backend in sequence. Simple and predictable.</div>
+                <div class="algo-use">→ Default for equal-weight backends</div>
+            </div>
+            <div class="algo-card">
+                <div class="algo-name">Least Connections</div>
+                <div class="algo-desc">Routes to the backend with the fewest active connections. Best for long-lived connections.</div>
+                <div class="algo-use">→ WebSocket · gRPC streaming</div>
+            </div>
+            <div class="algo-card">
+                <div class="algo-name">Weighted Round Robin</div>
+                <div class="algo-desc">Backends with higher weights receive proportionally more traffic. Used in canary deploys.</div>
+                <div class="algo-use">→ Traffic splitting · Canary releases</div>
+            </div>
+            <div class="algo-card">
+                <div class="algo-name">IP Hash / Sticky</div>
+                <div class="algo-desc">A hash of the client IP determines which backend handles the request consistently.</div>
+                <div class="algo-use">→ Stateful sessions</div>
+            </div>
+            <div class="algo-card">
+                <div class="algo-name">Geolocation Routing</div>
+                <div class="algo-desc">Routes client requests to the geographically closest backend region, reducing latency.</div>
+                <div class="algo-use">→ Multi-region deployments</div>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <h3 style="font-family:'DM Serif Display',serif; font-size:22px; margin: 32px 0 16px; color:var(--ink);">GCP Load Balancer Types</h3>
+        <div style="background:var(--card-bg); border:1px solid var(--rule); border-radius:8px; overflow:hidden; box-shadow:var(--card-shadow);">
+            <table class="compare-table">
+                <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Layer</th>
+                    <th>Scope</th>
+                    <th>Use Case</th>
+                    <th>Protocol</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Global External HTTPS LB</td>
+                    <td><span class="pill pill-l7">L7</span></td>
+                    <td>Global</td>
+                    <td>Web apps, APIs — most common choice</td>
+                    <td>HTTP, HTTPS, HTTP/2, gRPC</td>
+                </tr>
+                <tr>
+                    <td>Regional External HTTPS LB</td>
+                    <td><span class="pill pill-l7">L7</span></td>
+                    <td>Regional</td>
+                    <td>Single-region web apps, lower cost</td>
+                    <td>HTTP, HTTPS</td>
+                </tr>
+                <tr>
+                    <td>External TCP/SSL Proxy LB</td>
+                    <td><span class="pill pill-l4">L4</span></td>
+                    <td>Global</td>
+                    <td>Non-HTTP TCP workloads, databases</td>
+                    <td>TCP, SSL</td>
+                </tr>
+                <tr>
+                    <td>External Network LB</td>
+                    <td><span class="pill pill-l4">L4</span></td>
+                    <td>Regional</td>
+                    <td>UDP traffic, pass-through (preserves client IP)</td>
+                    <td>TCP, UDP, ESP, ICMP</td>
+                </tr>
+                <tr>
+                    <td>Internal HTTPS LB</td>
+                    <td><span class="pill pill-l7">L7</span></td>
+                    <td>Regional</td>
+                    <td>Service mesh between internal microservices</td>
+                    <td>HTTP, HTTPS, gRPC</td>
+                </tr>
+                <tr>
+                    <td>Internal TCP/UDP LB</td>
+                    <td><span class="pill pill-l4">L4</span></td>
+                    <td>Regional</td>
+                    <td>Internal databases and services</td>
+                    <td>TCP, UDP</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Key learnings LB -->
+        <div class="check-box">
+            <div class="check-header">✦ Key Learnings — Load Balancer</div>
+            <div class="check-items">
+                <div class="check-item"><span class="check-icon">💡</span>GCP's Global LB uses a single Anycast IP — all regions served from one IP address, with routing happening on Google's backbone.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Always use L7 (HTTPS) LB for microservices — it enables URL path routing, header inspection, and can integrate directly with Cloud Armor for WAF.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Use Serverless NEGs to load-balance directly to Cloud Run or Cloud Functions without managing VMs.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Health check intervals should be tuned per service — too short causes flapping, too long causes slow failover. Typical: check every 5s, unhealthy after 2 failures.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Connection draining (default 300s) lets in-flight requests complete before a backend is removed — critical for zero-downtime deploys.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== -->
+    <!-- SECTION 2: API GATEWAY -->
+    <!-- ===================== -->
+    <section class="section" id="api-gateway">
+        <div class="section-header">
+            <div class="section-number">02</div>
+            <div class="section-meta">
+                <div class="section-tag tag-gw">Chapter Two</div>
+                <h2>API Gateway<br>&amp; Apigee</h2>
+                <p>GCP offers two products for API management: Cloud API Gateway (lightweight, serverless-focused) and Apigee (enterprise-grade, full lifecycle). Both sit between clients and your backend services, enforcing policies and providing observability.</p>
+            </div>
+        </div>
+
+        <!-- API Gateway Flow -->
+        <div class="flow-box">
+            <div class="flow-box-title">API Gateway Request Lifecycle</div>
+            <div class="lb-flow">
+                <div class="lb-node node-client">📱 Client<div class="node-sub">App / Browser</div></div>
+                <div class="flow-arrow-label"><span style="font-size:18px;color:#9ca3af;">→</span><span class="arrow-txt">HTTPS</span></div>
+                <div class="lb-node node-lb">⚖️ LB<div class="node-sub">L7 Global</div></div>
+                <div class="flow-arrow-label"><span style="font-size:18px;color:#9ca3af;">→</span><span class="arrow-txt">Forward</span></div>
+                <div class="lb-node node-gw">
+                    🚀 API Gateway
+                    <div class="node-sub">Auth · Rate Limit</div>
+                </div>
+                <div class="flow-arrow-label"><span style="font-size:18px;color:#9ca3af;">→</span><span class="arrow-txt">Route</span></div>
+                <div class="backend-pool">
+                    <div class="backend-instance"><span class="instance-dot"></span>/users → User Service</div>
+                    <div class="backend-instance"><span class="instance-dot"></span>/orders → Order Service</div>
+                    <div class="backend-instance"><span class="instance-dot"></span>/products → Product Svc</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core concepts -->
+        <div class="concept-grid">
+            <div class="concept-card" style="--card-accent: #ea4335;">
+                <span class="card-emoji">🗺️</span>
+                <div class="card-heading">API Routing &amp; Path Matching</div>
+                <div class="card-body">The gateway maps incoming URL paths to specific backend services. <code style="font-size:11px; background:var(--bg2); padding:1px 4px; border-radius:2px;">/api/v1/users/**</code> → User Service, <code style="font-size:11px; background:var(--bg2); padding:1px 4px; border-radius:2px;">/api/v1/orders/**</code> → Order Service. This decouples the public API surface from internal service URLs.</div>
+                <div class="card-mono">OpenAPI 3.0 spec-driven routing</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #ea4335;">
+                <span class="card-emoji">🔑</span>
+                <div class="card-heading">Authentication at the Gateway</div>
+                <div class="card-body">API Gateway validates JWT tokens, API keys, or OAuth2 tokens before forwarding requests. This centralizes auth logic — individual microservices don't need to re-validate tokens, they trust the gateway has already done it.</div>
+                <div class="card-mono">securityDefinitions: jwt · apiKey · oauth2</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #ea4335;">
+                <span class="card-emoji">🚦</span>
+                <div class="card-heading">Rate Limiting &amp; Quotas</div>
+                <div class="card-body">Protect backends from abuse and overload by limiting requests per consumer. GCP API Gateway supports per-API-key quotas, per-consumer rate limits, and burst allowances configurable in the OpenAPI spec or Apigee policies.</div>
+                <div class="card-mono">x-google-quota: metricCosts · limits</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #ea4335;">
+                <span class="card-emoji">🔄</span>
+                <div class="card-heading">Request / Response Transformation</div>
+                <div class="card-body">Apigee (the enterprise tier) can transform request and response payloads, add/remove headers, convert between JSON and XML, mask PII fields in responses, and inject tracing headers before forwarding to backends.</div>
+                <div class="card-mono">AssignMessage · JSONToXML · MaskData policies</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #ea4335;">
+                <span class="card-emoji">📊</span>
+                <div class="card-heading">Observability &amp; Analytics</div>
+                <div class="card-body">Every request through the gateway produces logs, metrics, and traces. Cloud Logging captures access logs. Cloud Monitoring tracks latency, error rates, and quota usage. Apigee adds developer portal analytics and API usage dashboards.</div>
+                <div class="card-mono">Cloud Trace · Logging · Monitoring · Apigee Analytics</div>
+            </div>
+            <div class="concept-card" style="--card-accent: #ea4335;">
+                <span class="card-emoji">🔀</span>
+                <div class="card-heading">Canary &amp; Version Management</div>
+                <div class="card-body">Route a percentage of traffic to a new API version for canary testing. The gateway can split traffic between v1 and v2 backends based on weights, headers, or API key tiers — without changing client code.</div>
+                <div class="card-mono">Traffic splitting · A/B routing · API versioning</div>
+            </div>
+        </div>
+
+        <!-- GCP API Products -->
+        <h3 style="font-family:'DM Serif Display',serif; font-size:22px; margin: 32px 0 16px; color:var(--ink);">GCP API Management Products</h3>
+        <div class="gcp-services">
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-red">🚀</div>
+                <div class="gcp-service-name">Cloud API Gateway</div>
+                <div class="gcp-service-desc">Lightweight, fully managed, serverless API gateway. Spec-driven using OpenAPI 2.0. Best for Cloud Run, Cloud Functions, and App Engine backends. Pay-per-call pricing.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">OpenAPI 2.0</span><span class="stag">Serverless</span><span class="stag">JWT/API Key</span><span class="stag">Pay-per-call</span>
+                </div>
+            </div>
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-red">🏢</div>
+                <div class="gcp-service-name">Apigee API Platform</div>
+                <div class="gcp-service-desc">Enterprise-grade API management with full lifecycle support: design, publish, monetize, analyze. Includes developer portal, advanced policy engine, GraphQL support, and hybrid deployment.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">Enterprise</span><span class="stag">Monetization</span><span class="stag">Dev Portal</span><span class="stag">Policy Engine</span>
+                </div>
+            </div>
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-blue">🌐</div>
+                <div class="gcp-service-name">Cloud Endpoints</div>
+                <div class="gcp-service-desc">Deploy and manage APIs on GKE, Compute Engine, or App Engine using an Extensible Service Proxy (ESP). Supports gRPC transcoding (gRPC → REST) and works alongside existing infrastructure.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">gRPC</span><span class="stag">ESP/ESPv2</span><span class="stag">GKE</span><span class="stag">OpenAPI</span>
+                </div>
+            </div>
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-green">🔗</div>
+                <div class="gcp-service-name">Cloud Run + API GW</div>
+                <div class="gcp-service-desc">The recommended modern pattern: deploy each microservice as a Cloud Run service (containers), front them all with API Gateway for auth, routing and rate limiting. Zero infrastructure management.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">Cloud Run</span><span class="stag">Containers</span><span class="stag">Serverless NEG</span><span class="stag">Auto-scale</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- OpenAPI Spec example -->
+        <h3 style="font-family:'DM Serif Display',serif; font-size:22px; margin: 32px 0 16px; color:var(--ink);">OpenAPI Config Example</h3>
+        <div class="code-block">
+            <div class="code-block-label">// openapi-config.yaml — GCP API Gateway Spec</div>
+            <pre><span class="code-key">swagger</span>: <span class="code-str">"2.0"</span>
+<span class="code-key">info</span>:
+  <span class="code-key">title</span>: <span class="code-str">My Microservice API</span>
+  <span class="code-key">version</span>: <span class="code-str">"1.0.0"</span>
+
+<span class="code-key">schemes</span>: [<span class="code-str">https</span>]
+<span class="code-key">produces</span>: [<span class="code-str">application/json</span>]
+
+<span class="code-comment"># Global security — JWT validation on every route</span>
+<span class="code-key">securityDefinitions</span>:
+  <span class="code-key">firebase</span>:
+    <span class="code-key">authorizationUrl</span>: <span class="code-str">""</span>
+    <span class="code-key">flow</span>: <span class="code-str">implicit</span>
+    <span class="code-key">type</span>: <span class="code-str">oauth2</span>
+    <span class="code-key">x-google-issuer</span>: <span class="code-str">"https://securetoken.google.com/PROJECT_ID"</span>
+    <span class="code-key">x-google-jwks_uri</span>: <span class="code-str">"https://www.googleapis.com/service_accounts/v1/jwk/..."</span>
+
+<span class="code-key">paths</span>:
+  <span class="code-key">/users/{userId}</span>:
+    <span class="code-key">get</span>:
+      <span class="code-key">summary</span>: <span class="code-str">Get user by ID</span>
+      <span class="code-key">operationId</span>: <span class="code-str">getUser</span>
+      <span class="code-key">security</span>:
+        - <span class="code-key">firebase</span>: []
+      <span class="code-key">x-google-backend</span>:
+        <span class="code-key">address</span>: <span class="code-str">https://user-service-abc123-uc.a.run.app</span>
+      <span class="code-key">x-google-quota</span>:
+        <span class="code-key">metricCosts</span>:
+          <span class="code-str">"users-quota"</span>: <span class="code-val">1</span>
+
+  <span class="code-key">/orders</span>:
+    <span class="code-key">post</span>:
+      <span class="code-key">summary</span>: <span class="code-str">Create order</span>
+      <span class="code-key">x-google-backend</span>:
+        <span class="code-key">address</span>: <span class="code-str">https://order-service-xyz789-uc.a.run.app</span>
+        <span class="code-key">deadline</span>: <span class="code-val">30.0</span>  <span class="code-comment"># timeout in seconds</span></pre>
+        </div>
+
+        <!-- Key learnings GW -->
+        <div class="check-box">
+            <div class="check-header">✦ Key Learnings — API Gateway</div>
+            <div class="check-items">
+                <div class="check-item"><span class="check-icon">💡</span>The API Gateway is the <strong>single entry point</strong> for all clients — it abstracts away the internal service topology. Clients never call services directly.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Validate JWTs at the gateway, not in individual services. Services should only receive requests that have already been authenticated, reducing code duplication and attack surface.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Cloud API Gateway is best for Cloud Run / serverless. For on-prem / hybrid, use Cloud Endpoints with ESPv2 sidecar. For enterprise with monetization needs, use Apigee.</div>
+                <div class="check-item"><span class="check-icon">💡</span>Set explicit backend deadlines in the OpenAPI config to avoid gateway timeouts cascading into backend overload (set deadline slightly less than your backend's own timeout).</div>
+                <div class="check-item"><span class="check-icon">💡</span>Use API versioning in the path (<code style="font-size:11px">/v1/</code>, <code style="font-size:11px">/v2/</code>) and route different versions to different backends — enables zero-downtime major API upgrades.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== -->
+    <!-- SECTION 3: SECURITY   -->
+    <!-- ===================== -->
+    <section class="section" id="security">
+        <div class="section-header">
+            <div class="section-number">03</div>
+            <div class="section-meta">
+                <div class="section-tag tag-sec">Chapter Three</div>
+                <h2>Security<br>Architecture</h2>
+                <p>GCP provides a layered security model — from the network edge down to individual service identities. Defense-in-depth means each layer independently validates, filters, and authorizes traffic so no single failure exposes your system.</p>
+            </div>
+        </div>
+
+        <!-- Security Layers Stack -->
+        <h3 style="font-family:'DM Serif Display',serif; font-size:22px; margin: 0 0 16px; color:var(--ink);">Defense-in-Depth Layers</h3>
+        <div class="security-layers">
+            <div class="sec-layer">
+                <div class="sec-layer-num num-outer">1</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🛡️ Cloud Armor — Edge Protection</div>
+                    <div class="sec-layer-desc">GCP's managed Web Application Firewall (WAF) and DDoS protection. Blocks OWASP Top 10 threats (SQLi, XSS), volumetric DDoS attacks, and allows IP allowlist/blocklist rules. Applied before traffic even hits your LB backends.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-warn">WAF</span>
+                    <span class="pill pill-warn">DDoS</span>
+                </div>
+            </div>
+            <div class="sec-layer">
+                <div class="sec-layer-num num-outer">2</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🔒 HTTPS / TLS Termination</div>
+                    <div class="sec-layer-desc">All traffic from clients to the LB is encrypted with TLS 1.2/1.3. Google-managed certificates auto-renew. Internally, traffic can use HTTP within a private VPC, or you can enforce internal TLS with Certificate Authority Service for full encryption in transit.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-l7">TLS 1.3</span>
+                    <span class="pill pill-good">Managed Cert</span>
+                </div>
+            </div>
+            <div class="sec-layer">
+                <div class="sec-layer-num num-mid">3</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🚀 API Gateway Auth — JWT / OAuth2 / API Keys</div>
+                    <div class="sec-layer-desc">Every request must carry a valid credential. The API Gateway validates JWTs against a known JWKS endpoint (Firebase Auth, Google Identity, or custom IdP), verifies API keys against its registry, and rejects anything that doesn't match.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-warn">JWT</span>
+                    <span class="pill pill-warn">OAuth2</span>
+                </div>
+            </div>
+            <div class="sec-layer">
+                <div class="sec-layer-num num-mid">4</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🔐 Identity-Aware Proxy (IAP)</div>
+                    <div class="sec-layer-desc">IAP enforces access control based on user identity and context (device posture, location) for internal tools and admin services, without a VPN. It integrates with Google Workspace accounts and supports BeyondCorp enterprise access policies.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-warn">BeyondCorp</span>
+                    <span class="pill pill-warn">Zero-Trust</span>
+                </div>
+            </div>
+            <div class="sec-layer">
+                <div class="sec-layer-num num-inner">5</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🎭 IAM — Service Account Permissions</div>
+                    <div class="sec-layer-desc">Each microservice runs as a dedicated GCP Service Account with the minimum required IAM roles (principle of least privilege). Services authenticate to GCP APIs using Workload Identity (in GKE) or attached Service Accounts — no long-lived keys.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-good">IAM</span>
+                    <span class="pill pill-good">Workload ID</span>
+                </div>
+            </div>
+            <div class="sec-layer">
+                <div class="sec-layer-num num-inner">6</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🔗 mTLS — Service-to-Service Auth</div>
+                    <div class="sec-layer-desc">Within the cluster/VPC, services authenticate each other using mutual TLS (both sides present certificates). Managed by Istio service mesh or Traffic Director. Ensures a compromised service can't impersonate another, even inside the private network.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-good">mTLS</span>
+                    <span class="pill pill-good">Istio</span>
+                </div>
+            </div>
+            <div class="sec-layer">
+                <div class="sec-layer-num num-inner">7</div>
+                <div class="sec-layer-info">
+                    <div class="sec-layer-name">🔑 Secret Manager — Credentials at Rest</div>
+                    <div class="sec-layer-desc">Database passwords, API keys, and certificates are stored in GCP Secret Manager (never in code or environment variables). Services fetch secrets at startup via the Secret Manager API, encrypted at rest with Cloud KMS, with full audit logging.</div>
+                </div>
+                <div class="sec-layer-tools">
+                    <span class="pill pill-good">Secrets</span>
+                    <span class="pill pill-good">KMS</span>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="font-family:'DM Serif Display',serif; font-size:22px; margin: 32px 0 16px; color:var(--ink);">Recommended GCP Security Stack</h3>
+        <div class="gcp-services">
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-yellow">1</div>
+                <div class="gcp-service-name">Edge Protection</div>
+                <div class="gcp-service-desc">Put Cloud Armor in front of your public Application Load Balancer so malicious traffic is filtered before it reaches APIs or service backends.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">Cloud Armor</span><span class="stag">WAF</span><span class="stag">DDoS</span>
+                </div>
+            </div>
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-red">2</div>
+                <div class="gcp-service-name">API Front Door</div>
+                <div class="gcp-service-desc">Use API Gateway for lightweight managed API control or Apigee when you need deeper policy, governance, developer portals, or monetization.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">API Gateway</span><span class="stag">Apigee</span><span class="stag">JWT</span>
+                </div>
+            </div>
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-green">3</div>
+                <div class="gcp-service-name">Service Identity</div>
+                <div class="gcp-service-desc">Run each workload under its own service account with minimum IAM roles. Avoid shared admin identities and avoid distributing long-lived keys.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">IAM</span><span class="stag">Least Privilege</span><span class="stag">Workload Identity</span>
+                </div>
+            </div>
+            <div class="gcp-service">
+                <div class="gcp-service-icon icon-blue">4</div>
+                <div class="gcp-service-name">Private Service Mesh</div>
+                <div class="gcp-service-desc">Keep east-west traffic private, and add mTLS with Istio or Traffic Director when service-to-service identity and encryption are required.</div>
+                <div class="gcp-service-tags">
+                    <span class="stag">mTLS</span><span class="stag">Istio</span><span class="stag">Private VPC</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="check-box">
+            <div class="check-header">Key Learnings - Security</div>
+            <div class="check-items">
+                <div class="check-item"><span class="check-icon">1.</span>Security is strongest when it is layered. Cloud Armor, TLS, gateway auth, IAM, network controls, and secret management each address different failure modes.</div>
+                <div class="check-item"><span class="check-icon">2.</span>Do authentication and coarse-grained filtering as early as possible. Reject bad traffic before it reaches internal microservices.</div>
+                <div class="check-item"><span class="check-icon">3.</span>Least privilege matters for workloads too, not just humans. Every service should have a narrowly scoped service account.</div>
+                <div class="check-item"><span class="check-icon">4.</span>Never rely on a private network alone as your trust model. Internal service identity, mTLS, and explicit authorization still matter.</div>
+                <div class="check-item"><span class="check-icon">5.</span>Secrets should be managed centrally with rotation and auditability, not embedded in source code, container images, or copied environment files.</div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<footer class="footer">
+    <div class="footer-nav">
+        <a href="#load-balancer" class="footer-link">Load Balancer</a>
+        <a href="#api-gateway" class="footer-link">API Gateway</a>
+        <a href="#security" class="footer-link">Security</a>
+        <a href="microservice-architecture.html" class="footer-link">Architecture Overview</a>
+    </div>
+    <div class="footer-copy">GCP DEEP DIVE - LOAD BALANCER - API GATEWAY - SECURITY</div>
+</footer>
+
+</body>
+</html>

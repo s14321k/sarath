@@ -599,6 +599,78 @@
   .dot-blue { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation-delay: 0.5s; }
   .dot-yellow { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation-delay: 1s; }
 
+  /* ====== DEEP DIVE LINKS ====== */
+  .deep-dive-section {
+    margin: 0 0 56px;
+    animation: fadeUp 0.8s ease 0.15s both;
+  }
+
+  .deep-dive-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .deep-dive-card {
+    display: block;
+    text-decoration: none;
+    background: linear-gradient(135deg, rgba(10,22,36,0.95), rgba(6,12,20,0.98));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .deep-dive-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--dive-color, var(--accent));
+    box-shadow: 0 0 18px var(--dive-color, var(--accent));
+  }
+
+  .deep-dive-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--dive-color, var(--accent));
+    box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+  }
+
+  .deep-dive-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dive-color, var(--accent));
+    margin-bottom: 10px;
+  }
+
+  .deep-dive-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .deep-dive-text {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .deep-dive-meta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
   /* ====== ANIMATIONS ====== */
   @keyframes fadeDown {
     from { opacity: 0; transform: translateY(-20px); }
@@ -645,6 +717,7 @@
   @media (max-width: 900px) {
     .flow-row { flex-wrap: wrap; }
     .service-card { min-width: 140px; }
+    .deep-dive-grid { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 600px) {
@@ -672,6 +745,24 @@
     <div class="status-badge"><span class="status-dot dot-blue"></span> Message Bus Active</div>
     <div class="status-badge"><span class="status-dot dot-yellow"></span> Monitoring Enabled</div>
     <div class="status-badge"><span class="status-dot dot-green"></span> Auto-scaling On</div>
+  </div>
+
+  <div class="deep-dive-section">
+    <div class="section-title">GCP Deep Dive Pages</div>
+    <div class="deep-dive-grid">
+      <a class="deep-dive-card" href="childhtmls/gcp-load-balancer.html" style="--dive-color:#00d4ff;">
+        <div class="deep-dive-label">Traffic Entry Layer</div>
+        <div class="deep-dive-title">GCP Load Balancer</div>
+        <div class="deep-dive-text">Standalone page covering routing, health checks, backend services, TLS termination, and the main interview takeaways for GCP load balancing.</div>
+        <div class="deep-dive-meta">Open page -> gcp-load-balancer.html</div>
+      </a>
+      <a class="deep-dive-card" href="childhtmls/gcp-api-gateway-security.html" style="--dive-color:#00ff9d;">
+        <div class="deep-dive-label">Control And Protection</div>
+        <div class="deep-dive-title">GCP API Gateway + Security</div>
+        <div class="deep-dive-text">Standalone page covering API Gateway, Apigee, auth, quotas, IAM, IAP, Cloud Armor, and layered security guidance for microservices.</div>
+        <div class="deep-dive-meta">Open page -> gcp-api-gateway-security.html</div>
+      </a>
+    </div>
   </div>
 
   <!-- ===== MAIN FLOW DIAGRAM ===== -->

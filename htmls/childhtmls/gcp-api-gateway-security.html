@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCP API Gateway and Security Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-soft: #141b23;
+    --panel: #111821;
+    --panel-2: #0f141c;
+    --text: #ecf3ff;
+    --muted: #9eb0c5;
+    --rule: #243246;
+    --red: #f05b4f;
+    --blue: #57a6ff;
+    --green: #5ec78a;
+    --yellow: #f6c453;
+    --shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(87,166,255,0.12), transparent 26%),
+      radial-gradient(circle at top right, rgba(240,91,79,0.12), transparent 28%),
+      linear-gradient(180deg, #0b1016 0%, #111821 100%);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1.6;
+  }
+
+  a { color: inherit; }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+    padding: 14px 18px;
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    background: rgba(17,24,33,0.78);
+    backdrop-filter: blur(12px);
+  }
+
+  .crumb, .mini-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-decoration: none;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mini-link {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .hero-card,
+  .panel,
+  .learning-box,
+  .stack {
+    background: linear-gradient(180deg, rgba(17,24,33,0.98) 0%, rgba(13,18,25,0.98) 100%);
+    border: 1px solid var(--rule);
+    border-radius: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .hero-card {
+    padding: 34px;
+  }
+
+  .eyebrow,
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--red);
+  }
+
+  h1, h2 {
+    font-family: 'Instrument Serif', serif;
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+  }
+
+  h1 {
+    font-size: clamp(44px, 7vw, 86px);
+    margin: 18px 0 20px;
+  }
+
+  h2 {
+    font-size: clamp(28px, 4vw, 42px);
+    margin: 10px 0 18px;
+  }
+
+  .hero-card p,
+  .panel p {
+    color: var(--muted);
+  }
+
+  .hero-side {
+    display: grid;
+    gap: 12px;
+    padding: 24px;
+  }
+
+  .hero-chip {
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid var(--rule);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .hero-chip strong {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .stack {
+    padding: 28px;
+    margin-bottom: 28px;
+  }
+
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .layer {
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid var(--rule);
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  }
+
+  .layer strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  .layer p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .panel,
+  .learning-box {
+    padding: 28px;
+  }
+
+  .item-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .item {
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid var(--rule);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .item strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+  }
+
+  .item p {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .learning-box {
+    background: linear-gradient(180deg, rgba(87,166,255,0.12) 0%, rgba(17,24,33,0.95) 100%);
+  }
+
+  .security-line {
+    margin-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .footer {
+    padding: 12px 0 30px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 900px) {
+    .hero,
+    .grid,
+    .stack-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <a class="crumb" href="../microservice-architecture.html">Back to Microservice Architecture</a>
+      <a class="mini-link" href="gcp-load-balancer.html">Related: Load Balancer</a>
+    </div>
+
+    <section class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">GCP API Edge</div>
+        <h1>API Gateway<br>and Security</h1>
+        <p>
+          The API gateway is the policy and control point for your APIs. In GCP it is where you centralize
+          authentication, request validation, rate limits, routing decisions, and observability before the
+          request reaches internal microservices.
+        </p>
+      </div>
+      <div class="hero-side hero-card">
+        <div class="hero-chip">
+          <strong>Main job</strong>
+          One managed front door for clients and one consistent contract for backend services.
+        </div>
+        <div class="hero-chip">
+          <strong>Typical GCP options</strong>
+          API Gateway for lightweight managed APIs, Apigee for enterprise API lifecycle and policy depth.
+        </div>
+        <div class="hero-chip">
+          <strong>Security model</strong>
+          Authenticate early, authorize explicitly, and keep services private behind controlled entry points.
+        </div>
+      </div>
+    </section>
+
+    <section class="stack">
+      <div class="section-label">Defense Flow</div>
+      <h2>How gateway and security layers work together</h2>
+      <div class="stack-grid">
+        <div class="layer">
+          <strong>1. Edge filter</strong>
+          <p>Cloud Armor blocks malicious traffic before it reaches the API layer.</p>
+        </div>
+        <div class="layer">
+          <strong>2. Gateway policy</strong>
+          <p>API Gateway or Apigee validates tokens, applies quotas, and enforces API definitions.</p>
+        </div>
+        <div class="layer">
+          <strong>3. Identity-aware access</strong>
+          <p>IAP and IAM restrict which users or services can access protected backends and admin surfaces.</p>
+        </div>
+        <div class="layer">
+          <strong>4. Service trust</strong>
+          <p>Private networking, service accounts, and optional mTLS reduce lateral movement inside the platform.</p>
+        </div>
+      </div>
+      <div class="security-line">Cloud Armor -> API Gateway or Apigee -> IAM or IAP -> private services</div>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="section-label">Core Concepts</div>
+        <h2>What the gateway is responsible for</h2>
+        <div class="item-list">
+          <div class="item">
+            <strong>Central authentication</strong>
+            <p>JWT, OAuth, or API-key checks happen once at the gateway. Backend services should trust the verified identity context instead of duplicating token parsing everywhere.</p>
+          </div>
+          <div class="item">
+            <strong>Request routing</strong>
+            <p>The gateway maps public paths such as <code>/v1/orders</code> to internal backends. This keeps public APIs stable even if internal service locations change.</p>
+          </div>
+          <div class="item">
+            <strong>Quota and rate limiting</strong>
+            <p>Abusive or buggy clients can be contained before they overload core services. This is one of the clearest reasons to put a gateway in front of a microservice fleet.</p>
+          </div>
+          <div class="item">
+            <strong>Observability and auditability</strong>
+            <p>Because every request flows through one control point, logs, metrics, and latency distributions are easier to measure consistently.</p>
+          </div>
+          <div class="item">
+            <strong>Contract-first APIs</strong>
+            <p>GCP API Gateway is spec-driven. Your OpenAPI definition becomes both documentation and enforcement logic for request shape and backend mapping.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-label">Security Layers</div>
+        <h2>What usually belongs in the design</h2>
+        <div class="item-list">
+          <div class="item">
+            <strong>Cloud Armor</strong>
+            <p>Use it for WAF rules, IP filtering, geo policies, and DDoS reduction at the outer edge.</p>
+          </div>
+          <div class="item">
+            <strong>IAM service accounts</strong>
+            <p>Each backend should run with the smallest required permission set. Do not share broad service identities across unrelated services.</p>
+          </div>
+          <div class="item">
+            <strong>IAP for internal tools</strong>
+            <p>Good for dashboards and admin apps that should stay private but still be accessible through identity-based access control.</p>
+          </div>
+          <div class="item">
+            <strong>Secret Manager</strong>
+            <p>Keep credentials and signing secrets out of source code and out of ad hoc environment variable sprawl.</p>
+          </div>
+          <div class="item">
+            <strong>Private backends and optional mTLS</strong>
+            <p>Even after edge auth, internal service-to-service trust still matters. Private networking and mesh-level mTLS make lateral abuse harder.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="learning-box">
+      <div class="section-label">Key Learnings</div>
+      <h2>What to say clearly in an interview</h2>
+      <div class="item-list">
+        <div class="item">
+          <strong>The gateway is a policy boundary, not just a router.</strong>
+          <p>If you only use it for path forwarding, you are missing most of its value.</p>
+        </div>
+        <div class="item">
+          <strong>Auth at the edge reduces duplication.</strong>
+          <p>Central token validation makes service code simpler and avoids inconsistent security checks between teams.</p>
+        </div>
+        <div class="item">
+          <strong>Security should be layered.</strong>
+          <p>Cloud Armor, gateway auth, IAM, private networking, and secret handling each solve different failure modes.</p>
+        </div>
+        <div class="item">
+          <strong>Pick the GCP product based on depth.</strong>
+          <p>API Gateway is simpler and lighter. Apigee is heavier but better when you need advanced policies, developer portals, monetization, or enterprise governance.</p>
+        </div>
+        <div class="item">
+          <strong>Do not expose every service publicly.</strong>
+          <p>A microservice system with many direct public endpoints is harder to secure, monitor, and evolve than one protected by a controlled ingress path.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">GCP API gateway and security reference page</div>
+  </div>
+</body>
+</html>
