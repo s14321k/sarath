@@ -18,11 +18,6 @@
         el.innerHTML = html;
     }
 
-    function showUnavailableMessage(kind) {
-        if (kind !== 'content') return;
-        injectTo('content', '<section class="content-section"><p>Content is temporarily unavailable. Please try again later.</p></section>');
-    }
-
     function fetchPage(endpoint, page, kind) {
         return fetch(endpoint, {
             method: 'POST',
@@ -38,27 +33,6 @@
         }).then((data) => data && data.html ? data.html : '');
     }
 
-    function fetchLocalPage(page, kind) {
-        const url = new URL('../private-repo/visit-data-repo/data/pages/' + encodeURIComponent(page) + '-' + encodeURIComponent(kind) + '.json', window.location.href);
-        return fetch(url.toString())
-            .then((resp) => {
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                return resp.json();
-            })
-            .then((data) => data && data.html ? data.html : '');
-    }
-
-    function loadPage(endpoint, page, kind) {
-        return fetchLocalPage(page, kind).catch((localErr) => {
-            if (!endpoint) throw localErr;
-            console.warn('safe-loader: local fallback unavailable for ' + kind + ', trying backend', localErr);
-            return fetchPage(endpoint, page, kind).catch((remoteErr) => {
-                console.warn('safe-loader: backend load failed for ' + kind, remoteErr);
-                throw remoteErr;
-            });
-        });
-    }
-
     const scripts = document.getElementsByTagName('script');
     let me = null;
     for (let i = scripts.length - 1; i >= 0; i--) {
@@ -71,21 +45,21 @@
     if (!page) { console.error('safe-loader: missing data-page attribute'); return; }
     const loadAttr = (getAttr(me, 'data-load') || 'toc,content').split(',').map(s => s.trim().toLowerCase());
     const endpoint = window.VISIT_ENDPOINT || '';
-    if (!endpoint) console.warn('safe-loader: missing VISIT_ENDPOINT, using local content only');
+    if (!endpoint) {
+        console.warn('safe-loader: missing VISIT_ENDPOINT');
+        return;
+    }
 
     const tasks = [];
     if (loadAttr.indexOf('toc') !== -1) {
-        tasks.push(loadPage(endpoint, page, 'toc')
+        tasks.push(fetchPage(endpoint, page, 'toc')
             .then((html) => injectTo('toc', html))
             .catch((err) => console.warn('safe-loader: failed to load toc', err)));
     }
     if (loadAttr.indexOf('content') !== -1) {
-        tasks.push(loadPage(endpoint, page, 'content')
+        tasks.push(fetchPage(endpoint, page, 'content')
             .then((html) => injectTo('content', html))
-            .catch((err) => {
-                console.warn('safe-loader: failed to load content', err);
-                showUnavailableMessage('content');
-            }));
+            .catch((err) => console.warn('safe-loader: failed to load content', err)));
     }
 
     Promise.all(tasks).then(() => {
