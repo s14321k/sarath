@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1700" viewBox="0 0 1200 1700">
+  <style>
+    .box { fill: #f7fbff; stroke:#2b6cb0; stroke-width:2; rx:12; }
+    .title { font: bold 20px sans-serif; fill: #0b3b66; }
+    .subtitle { font: 12px sans-serif; fill: #123; }
+    .num { font: bold 16px sans-serif; fill: #ffffff; }
+    .badge { fill:#2b6cb0; rx:10; }
+    .arrow { stroke:#2b6cb0; stroke-width:2; fill:none; marker-end:url(#arrowhead);}
+    a { text-decoration: none; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2b6cb0" />
+    </marker>
+  </defs>
+
+  <!-- Header -->
+  <rect x="40" y="20" width="1120" height="80" class="box" style="rx:16;"/>
+  <text x="80" y="60" class="title">Java Core Concepts — Study Roadmap (short notes + examples)</text>
+  <text x="980" y="60" class="subtitle">Order &amp; Examples</text>
+
+  <!-- Column 1 (left) boxes -->
+  <!-- 1 Java Overview -->
+  <g>
+    <rect x="60" y="130" width="500" height="110" class="box"/>
+    <rect x="60" y="130" width="60" height="110" class="badge"/>
+    <text x="85" y="165" class="num">1</text>
+    <text x="135" y="155" class="title">Java Overview</text>
+    <text x="135" y="178" class="subtitle">JVM • JRE • JDK — what runs &amp; what builds</text>
+    <text x="135" y="198" class="subtitle">Example: javac Hello.java → java Hello</text>
+  </g>
+
+  <!-- 2 Basics -->
+  <g>
+    <rect x="60" y="260" width="500" height="110" class="box"/>
+    <rect x="60" y="260" width="60" height="110" class="badge"/>
+    <text x="85" y="295" class="num">2</text>
+    <text x="135" y="285" class="title">Language Basics</text>
+    <text x="135" y="308" class="subtitle">Identifiers, variables, primitive types</text>
+    <text x="135" y="328" class="subtitle">Example: int x = 5; String name = "A";</text>
+  </g>
+
+  <!-- 3 OOP -->
+  <g>
+    <rect x="60" y="390" width="500" height="130" class="box"/>
+    <rect x="60" y="390" width="60" height="130" class="badge"/>
+    <text x="85" y="430" class="num">3</text>
+    <text x="135" y="420" class="title">OOP Concepts</text>
+    <text x="135" y="443" class="subtitle">Classes, objects, encapsulation, inheritance, polymorphism, abstraction</text>
+    <text x="135" y="463" class="subtitle">Example: class Dog { void bark(){} } Dog d = new Dog();</text>
+  </g>
+
+  <!-- 4 Constructors &amp; Modifiers -->
+  <g>
+    <rect x="60" y="540" width="500" height="110" class="box"/>
+    <rect x="60" y="540" width="60" height="110" class="badge"/>
+    <text x="85" y="575" class="num">4</text>
+    <text x="135" y="565" class="title">Constructors &amp; Modifiers</text>
+    <text x="135" y="588" class="subtitle">default/param/private constructors; public/protected/private/static/final</text>
+    <text x="135" y="608" class="subtitle">Example: public MyClass() {} &amp; static int count;</text>
+  </g>
+
+  <!-- 5 Strings &amp; Memory -->
+  <g>
+    <rect x="60" y="670" width="500" height="110" class="box"/>
+    <rect x="60" y="670" width="60" height="110" class="badge"/>
+    <text x="85" y="705" class="num">5</text>
+    <text x="135" y="695" class="title">Strings &amp; JVM Memory</text>
+    <text x="135" y="718" class="subtitle">String pool, immutability, heap, stack, young/old gen</text>
+    <text x="135" y="738" class="subtitle">Example: String s = "Hi"; s.intern()</text>
+  </g>
+
+  <!-- 6 Collections &amp; Generics -->
+  <g>
+    <rect x="60" y="800" width="500" height="120" class="box"/>
+    <rect x="60" y="800" width="60" height="120" class="badge"/>
+    <text x="85" y="840" class="num">6</text>
+    <text x="135" y="830" class="title">Collections &amp; Generics</text>
+    <text x="135" y="853" class="subtitle">List, Set, Map; ArrayList vs LinkedList; generics basics</text>
+    <text x="135" y="873" class="subtitle">Example: List&lt;String&gt; list = new ArrayList&lt;&gt;();</text>
+  </g>
+
+  <!-- Column 2 (right) boxes -->
+  <!-- 7 Exceptions -->
+  <g>
+    <rect x="640" y="130" width="500" height="110" class="box"/>
+    <rect x="640" y="130" width="60" height="110" class="badge"/>
+    <text x="665" y="165" class="num">7</text>
+    <text x="715" y="155" class="title">Exceptions &amp; Errors</text>
+    <text x="715" y="178" class="subtitle">Checked vs unchecked; try/catch/finally</text>
+    <text x="715" y="198" class="subtitle">Example: try { ... } catch(Exception e) { }</text>
+  </g>
+
+  <!-- 8 Concurrency -->
+  <g>
+    <rect x="640" y="260" width="500" height="120" class="box"/>
+    <rect x="640" y="260" width="60" height="120" class="badge"/>
+    <text x="665" y="300" class="num">8</text>
+    <text x="715" y="290" class="title">Concurrency &amp; Threads</text>
+    <text x="715" y="313" class="subtitle">Threads, synchronized, volatile, executors</text>
+    <text x="715" y="333" class="subtitle">Example: new Thread(() =&gt; {}).start();</text>
+  </g>
+
+  <!-- 9 Class Loaders &amp; JVM Internals -->
+  <g>
+    <rect x="640" y="410" width="500" height="140" class="box"/>
+    <rect x="640" y="410" width="60" height="140" class="badge"/>
+    <text x="665" y="455" class="num">9</text>
+    <text x="715" y="440" class="title">Class Loaders &amp; JVM Internals</text>
+    <text x="715" y="463" class="subtitle">Bootstrap/Platform/App loaders; class loading phases; GC basics</text>
+    <text x="715" y="483" class="subtitle">Example: ClassLoader.getSystemClassLoader()</text>
+  </g>
+
+  <!-- 10 Design Principles -->
+  <g>
+    <rect x="640" y="580" width="500" height="110" class="box"/>
+    <rect x="640" y="580" width="60" height="110" class="badge"/>
+    <text x="665" y="615" class="num">10</text>
+    <text x="715" y="605" class="title">Design Principles</text>
+    <text x="715" y="628" class="subtitle">SOLID, DRY, KISS, YAGNI, Composition over Inheritance</text>
+    <text x="715" y="648" class="subtitle">Example: SRP — split responsibilities</text>
+  </g>
+
+  <!-- 11 Design Patterns -->
+  <g>
+    <rect x="640" y="710" width="500" height="120" class="box"/>
+    <rect x="640" y="710" width="60" height="120" class="badge"/>
+    <text x="665" y="750" class="num">11</text>
+    <text x="715" y="740" class="title">Design Patterns</text>
+    <text x="715" y="763" class="subtitle">Common patterns: Singleton, Factory, Builder, Strategy</text>
+    <text x="715" y="783" class="subtitle">Example: Singleton: private ctor + getInstance()</text>
+  </g>
+
+  <!-- 12 Streams &amp; Functional -->
+  <g>
+    <rect x="640" y="860" width="500" height="110" class="box"/>
+    <rect x="640" y="860" width="60" height="110" class="badge"/>
+    <text x="665" y="895" class="num">12</text>
+    <text x="715" y="885" class="title">Streams &amp; Functional APIs</text>
+    <text x="715" y="908" class="subtitle">Stream, Optional, lambdas, method refs</text>
+    <text x="715" y="928" class="subtitle">Example: list.stream().filter(n =&gt; n%2==0).toList()</text>
+  </g>
+
+  <!-- 13 Best Practices -->
+  <g>
+    <rect x="640" y="990" width="500" height="120" class="box"/>
+    <rect x="640" y="990" width="60" height="120" class="badge"/>
+    <text x="665" y="1030" class="num">13</text>
+    <text x="715" y="1020" class="title">Best Practices &amp; Debugging</text>
+    <text x="715" y="1043" class="subtitle">Validate inputs, fail fast, logging, unit tests</text>
+    <text x="715" y="1063" class="subtitle">Example: if(arg==null) throw new IllegalArgumentException();</text>
+  </g>
+
+  <!-- Connectors showing recommended study order -->
+  <path d="M560 185 L640 185" class="arrow"/>
+  <path d="M560 315 L640 315" class="arrow"/>
+  <path d="M560 455 L640 455" class="arrow"/>
+  <path d="M560 595 L640 595" class="arrow"/>
+  <path d="M560 725 L640 725" class="arrow"/>
+  <path d="M560 845 L640 845" class="arrow"/>
+
+  <path d="M560 925 L640 925" class="arrow" stroke-dasharray="4 4"/>
+
+  <!-- Legend / Notes -->
+  <rect x="60" y="945" width="500" height="210" class="box"/>
+  <text x="85" y="980" class="title">Suggested Study Sequence</text>
+  <text x="85" y="1004" class="subtitle">1 → 6: Core language &amp; collections first; 7–9: runtime, concurrency; 10–12: design &amp; advanced APIs; 13: practices</text>
+  <text x="85" y="1024" class="subtitle">Use small runnable examples for each item and experiment in a REPL or small projects.</text>
+  <text x="85" y="1044" class="subtitle">Study tip: alternate theory with hands-on (30m reading → 60m coding).</text>
+
+  <!-- Footer -->
+  <text x="80" y="1280" class="subtitle">Generated summary: concise explanations + one-line examples. For full details, read the linked chapter file `md2/Java Core Concepts.md`.</text>
+  <text x="80" y="1300" class="subtitle">Filename: images/JavaCoreConcepts-summary.svg</text>
+
+</svg>
+

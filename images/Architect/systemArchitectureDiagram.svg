@@ -1,29 +1,10 @@
+
 <svg width="100%" viewBox="0 0 680 920">
 <defs>
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
     <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </marker>
 </defs>
-<style>
-  :root {
-    --color-border-tertiary: #2a2a3e;
-    --color-border-secondary: #3a3a54;
-  }
-  text { font-family: "Work Sans", sans-serif; fill: #e6e6f0; }
-  .ts { font-size: 9px; fill: #b9b9cc; }
-  .th { font-size: 11px; font-weight: 600; fill: #f4f4f8; }
-  .node rect { fill: #1c1f2d; stroke: #44445f; }
-  .c-gray rect { fill: #2a2f3e; }
-  .c-purple rect { fill: #3a2a50; }
-  .c-teal rect { fill: #203b3a; }
-  .c-blue rect { fill: #1e2e4a; }
-  .c-coral rect { fill: #452a2f; }
-  .c-amber rect { fill: #3d3523; }
-  .c-green rect { fill: #213a2d; }
-  rect.c-blue { fill: #1e2e4a; stroke: #44445f; }
-  .arr { stroke: var(--color-border-secondary); }
-</style>
-
 <!-- Layer labels (left) -->
 <text class="ts" x="18" y="68" text-anchor="middle" transform="rotate(-90,18,68)">clients</text>
 <text class="ts" x="18" y="182" text-anchor="middle" transform="rotate(-90,18,182)">gateway</text>
