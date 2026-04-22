@@ -5,6 +5,11 @@ pre code.hljs {
     background: transparent;
 }
 
+.hljs-subst,
+.hljs-punctuation {
+    color: #c9d1d9;
+}
+
 .hljs-comment,
 .hljs-quote {
     color: #8b949e;
@@ -32,6 +37,10 @@ pre code.hljs {
     color: #79c0ff;
 }
 
+.hljs-operator {
+    color: #ff9e64;
+}
+
 .hljs-title,
 .hljs-section,
 .hljs-function {
@@ -43,4 +52,10 @@ pre code.hljs {
 .hljs-meta,
 .hljs-name {
     color: #7ee787;
+}
+
+.hljs-tag,
+.hljs-selector-id,
+.hljs-selector-class {
+    color: #f2cc60;
 }

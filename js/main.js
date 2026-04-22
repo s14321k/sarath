@@ -187,6 +187,81 @@
         window.addEventListener('pageContentLoaded', () => normalizeContentLinks());
     });
 
+    // Code blocks: syntax colors and floating copy button
+    safe(() => {
+        const content = $('#content');
+        if (!content) return;
+
+        function fallbackCopy(text) {
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            let ok = false;
+            try {
+                ok = document.execCommand('copy');
+            } catch {}
+            area.remove();
+            return ok;
+        }
+
+        function setCopyState(button, label, className) {
+            button.textContent = label;
+            button.classList.remove('is-copied', 'is-error');
+            if (className) button.classList.add(className);
+            clearTimeout(button._resetTimer);
+            button._resetTimer = setTimeout(() => {
+                button.textContent = 'Copy';
+                button.classList.remove('is-copied', 'is-error');
+            }, 1800);
+        }
+
+        function ensureCodeBlocks(root) {
+            $$('pre', root).forEach((pre) => {
+                const code = $('code', pre);
+                if (!code) return;
+                if (!pre.parentElement || !pre.parentElement.classList.contains('code-block-shell')) {
+                    const shell = document.createElement('div');
+                    shell.className = 'code-block-shell';
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'code-copy-button';
+                    button.textContent = 'Copy';
+                    button.setAttribute('aria-label', 'Copy code block');
+                    button.addEventListener('click', async () => {
+                        const raw = code.textContent || '';
+                        try {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                await navigator.clipboard.writeText(raw);
+                            } else if (!fallbackCopy(raw)) {
+                                throw new Error('Copy failed');
+                            }
+                            setCopyState(button, 'Copied', 'is-copied');
+                        } catch {
+                            setCopyState(button, 'Retry', 'is-error');
+                        }
+                    });
+                    pre.parentNode.insertBefore(shell, pre);
+                    shell.appendChild(button);
+                    shell.appendChild(pre);
+                }
+                if (window.hljs && typeof window.hljs.highlightElement === 'function') {
+                    window.hljs.highlightElement(code);
+                }
+            });
+        }
+
+        window.enhanceCodeBlocks = ensureCodeBlocks;
+        ensureCodeBlocks(content);
+
+        const observer = new MutationObserver(() => ensureCodeBlocks(content));
+        observer.observe(content, { childList: true, subtree: true });
+        window.addEventListener('pageContentLoaded', () => ensureCodeBlocks(content));
+    });
+
     // Preview same-page and cross-page section links on hover
     safe(() => {
         const content = $('#content');

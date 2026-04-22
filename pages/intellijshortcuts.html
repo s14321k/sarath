@@ -45,25 +45,5 @@
     <!-- Use the combined safe loader to inject TOC and Content safely -->
     <script src="../js/safe-loader.js" data-page="intellijshortcuts" data-load="toc,content"></script>
     <script src="../js/main.js"></script>
-    
-    <!-- Initialize syntax highlighting after content is loaded -->
-    <script>
-        // Wait for content to be injected, then highlight
-        const observer = new MutationObserver(() => {
-            document.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightElement(block);
-            });
-        });
-        observer.observe(document.getElementById('content'), { childList: true, subtree: true });
-        
-        // Also highlight on initial load
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                document.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-            }, 100);
-        });
-    </script>
 </body>
 </html>
