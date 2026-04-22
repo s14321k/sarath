@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1320" viewBox="0 0 1600 1320">
+  <defs>
+    <style>
+      .title { font: 700 28px Georgia, serif; fill: #14213d; }
+      .subtitle { font: 400 14px Georgia, serif; fill: #4a5568; }
+      .section { font: 700 18px Georgia, serif; fill: #1f2937; }
+      .label { font: 600 14px "Segoe UI", Arial, sans-serif; fill: #111827; }
+      .small { font: 400 12px "Segoe UI", Arial, sans-serif; fill: #374151; }
+      .arrow { stroke: #355070; stroke-width: 2.2; fill: none; marker-end: url(#arrowHead); }
+      .soft { stroke: #94a3b8; stroke-width: 1.6; fill: none; marker-end: url(#arrowHeadSoft); }
+      .box { fill: #f8fafc; stroke: #355070; stroke-width: 2; rx: 16; ry: 16; }
+      .decision { fill: #fff7ed; stroke: #c2410c; stroke-width: 2; }
+      .data { fill: #f0fdf4; stroke: #15803d; stroke-width: 2; rx: 16; ry: 16; }
+      .test { fill: #eef2ff; stroke: #4338ca; stroke-width: 2; rx: 16; ry: 16; }
+      .return { fill: #ecfeff; stroke: #0f766e; stroke-width: 2; rx: 16; ry: 16; }
+      .lane { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 20; ry: 20; }
+    </style>
+    <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#355070" />
+    </marker>
+    <marker id="arrowHeadSoft" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1320" fill="#f7f7f2" />
+  <text x="60" y="60" class="title">Flow Diagram for src/hurdle/Solution.java</text>
+  <text x="60" y="88" class="subtitle">Execution flow, object relationships, and result-producing branches in the single Java file.</text>
+
+  <rect x="40" y="120" width="500" height="1140" class="lane" />
+  <rect x="560" y="120" width="500" height="1140" class="lane" />
+  <rect x="1080" y="120" width="480" height="1140" class="lane" />
+
+  <text x="60" y="155" class="section">1. Entry and test flow</text>
+  <text x="580" y="155" class="section">2. Domain objects and collection logic</text>
+  <text x="1100" y="155" class="section">3. Aggregation branches</text>
+
+  <rect x="90" y="190" width="390" height="72" class="box" />
+  <text x="110" y="220" class="label">Solution.main(String[] argv)</text>
+  <text x="110" y="244" class="small">Entry point. Calls the two built-in test routines in order.</text>
+
+  <rect x="90" y="320" width="390" height="160" class="test" />
+  <text x="110" y="350" class="label">testRun()</text>
+  <text x="110" y="374" class="small">Creates Course("Test course", 2)</text>
+  <text x="110" y="396" class="small">Creates Run for that course</text>
+  <text x="110" y="418" class="small">Adds obstacle times 6 and 5</text>
+  <text x="110" y="440" class="small">Asserts incomplete after first add, complete after second</text>
+  <text x="110" y="462" class="small">Asserts total runtime is 11</text>
+
+  <polygon points="285,540 395,610 285,680 175,610" class="decision" />
+  <text x="238" y="600" class="label">Add obstacle</text>
+  <text x="250" y="620" class="label">after complete?</text>
+
+  <rect x="90" y="740" width="390" height="200" class="test" />
+  <text x="110" y="770" class="label">testRunCollection()</text>
+  <text x="110" y="794" class="small">Builds obstacleData with 5 runs</text>
+  <text x="110" y="816" class="small">Creates Course("Test course", 4)</text>
+  <text x="110" y="838" class="small">Calls makeRunCollection(course, obstacleData)</text>
+  <text x="110" y="860" class="small">Asserts collection size matches input rows</text>
+  <text x="110" y="882" class="small">Prints and asserts personalBest() == 17</text>
+
+  <rect x="90" y="1000" width="390" height="110" class="box" />
+  <text x="110" y="1030" class="label">makeRunCollection(Course, int[][])</text>
+  <text x="110" y="1054" class="small">For each row: create Run, add all obstacle times, add run to collection.</text>
+  <text x="110" y="1076" class="small">Returns populated RunCollection.</text>
+
+  <rect x="620" y="190" width="370" height="120" class="data" />
+  <text x="640" y="220" class="label">Course</text>
+  <text x="640" y="244" class="small">Fields: title, obstacleCount</text>
+  <text x="640" y="266" class="small">equals(): same title and obstacle count</text>
+  <text x="640" y="288" class="small">hashCode(): derived from title and obstacleCount</text>
+
+  <rect x="620" y="370" width="370" height="210" class="data" />
+  <text x="640" y="400" class="label">Run</text>
+  <text x="640" y="424" class="small">Fields: course, complete, obstacleTimes</text>
+  <text x="640" y="446" class="small">Constructor initializes empty run with complete = false</text>
+  <text x="640" y="468" class="small">addObstacleTime(time): reject if already complete</text>
+  <text x="640" y="490" class="small">Append time, then set complete=true when size == obstacleCount</text>
+  <text x="640" y="512" class="small">getRunTime(): sum all recorded obstacle times</text>
+  <text x="640" y="544" class="small">Used by tests and by RunCollection.personalBest()</text>
+
+  <polygon points="805,640 915,710 805,780 695,710" class="decision" />
+  <text x="757" y="700" class="label">run.complete?</text>
+  <text x="735" y="720" class="small">inside addObstacleTime()</text>
+
+  <rect x="620" y="850" width="370" height="260" class="data" />
+  <text x="640" y="880" class="label">RunCollection</text>
+  <text x="640" y="904" class="small">Fields: course, runs</text>
+  <text x="640" y="926" class="small">getNumRuns(): returns runs.size()</text>
+  <text x="640" y="948" class="small">addRun(run): verifies run.course.equals(course)</text>
+  <text x="640" y="970" class="small">If course mismatches, throws IllegalArgumentException</text>
+  <text x="640" y="992" class="small">personalBest(): smallest total time among complete runs</text>
+  <text x="640" y="1014" class="small">bestOfBests(): best time per obstacle column, then sum</text>
+
+  <polygon points="1260,220 1380,290 1260,360 1140,290" class="decision" />
+  <text x="1206" y="280" class="label">Any runs?</text>
+  <text x="1190" y="300" class="small">inside bestOfBests()</text>
+
+  <rect x="1130" y="420" width="380" height="140" class="return" />
+  <text x="1150" y="450" class="label">bestOfBests() branch A</text>
+  <text x="1150" y="474" class="small">If runs.isEmpty() is true, return 0 immediately.</text>
+  <text x="1150" y="496" class="small">No column scan is performed.</text>
+
+  <rect x="1130" y="620" width="380" height="220" class="return" />
+  <text x="1150" y="650" class="label">bestOfBests() branch B</text>
+  <text x="1150" y="674" class="small">Compute maxCols = max recorded obstacle count across runs</text>
+  <text x="1150" y="696" class="small">For each column index:</text>
+  <text x="1150" y="718" class="small">Filter runs that contain that obstacle</text>
+  <text x="1150" y="740" class="small">Take the minimum time for that column</text>
+  <text x="1150" y="762" class="small">Sum all per-column minima</text>
+  <text x="1150" y="784" class="small">Return aggregate best-of-bests score</text>
+
+  <polygon points="1260,900 1380,970 1260,1040 1140,970" class="decision" />
+  <text x="1188" y="960" class="label">Complete runs</text>
+  <text x="1200" y="980" class="label">present?</text>
+
+  <rect x="1130" y="1090" width="380" height="110" class="return" />
+  <text x="1150" y="1120" class="label">personalBest()</text>
+  <text x="1150" y="1144" class="small">Filter to complete runs, map to getRunTime(), return min.</text>
+  <text x="1150" y="1166" class="small">If none are complete, return Integer.MAX_VALUE.</text>
+
+  <path d="M285 262 L285 320" class="arrow" />
+  <path d="M285 480 L285 540" class="arrow" />
+  <path d="M285 680 L285 740" class="arrow" />
+  <path d="M285 940 L285 1000" class="arrow" />
+
+  <path d="M480 390 C560 390, 560 430, 620 430" class="arrow" />
+  <path d="M480 840 C560 840, 560 920, 620 920" class="arrow" />
+  <path d="M480 1050 C560 1050, 560 930, 620 930" class="arrow" />
+
+  <path d="M805 580 L805 640" class="arrow" />
+  <path d="M915 710 L1030 710 L1030 500 L990 500" class="soft" />
+  <text x="930" y="694" class="small">No</text>
+  <path d="M805 780 L805 850" class="soft" />
+  <text x="818" y="812" class="small">Yes, stop adding</text>
+
+  <path d="M990 980 C1060 980, 1060 970, 1140 970" class="arrow" />
+  <path d="M990 1010 C1060 1010, 1060 290, 1140 290" class="soft" />
+
+  <path d="M1260 360 L1260 420" class="arrow" />
+  <text x="1274" y="392" class="small">Yes</text>
+  <path d="M1380 290 L1460 290 L1460 620 L1510 620" class="soft" />
+  <text x="1394" y="280" class="small">No</text>
+
+  <path d="M1260 840 L1260 900" class="arrow" />
+  <path d="M1260 1040 L1260 1090" class="arrow" />
+
+  <text x="90" y="1225" class="subtitle">Read left to right: main triggers tests; tests create Course/Run/RunCollection objects; collection methods compute the final scores through the decision branches on the right.</text>
+</svg>

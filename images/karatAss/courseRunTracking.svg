@@ -1,0 +1,57 @@
+<svg width="900" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Arial">
+
+    <!-- Title -->
+    <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="bold">
+        Obstacle Course Run Tracking System
+    </text>
+
+    <!-- Course Box -->
+    <rect x="50" y="100" width="180" height="80" fill="#E3F2FD" stroke="#1E88E5"/>
+    <text x="140" y="130" text-anchor="middle" font-weight="bold">Course</text>
+    <text x="140" y="150" text-anchor="middle" font-size="12">fixed obstacles</text>
+
+    <!-- Run Box -->
+    <rect x="350" y="80" width="200" height="120" fill="#E8F5E9" stroke="#43A047"/>
+    <text x="450" y="110" text-anchor="middle" font-weight="bold">Run</text>
+    <text x="450" y="130" text-anchor="middle" font-size="12">obstacleTimes[]</text>
+    <text x="450" y="150" text-anchor="middle" font-size="12">addObstacleTime()</text>
+    <text x="450" y="170" text-anchor="middle" font-size="12">getRunTime()</text>
+
+    <!-- RunCollection Box -->
+    <rect x="650" y="70" width="220" height="140" fill="#FFF3E0" stroke="#FB8C00"/>
+    <text x="760" y="100" text-anchor="middle" font-weight="bold">RunCollection</text>
+    <text x="760" y="120" text-anchor="middle" font-size="12">List&lt;Run&gt;</text>
+    <text x="760" y="140" text-anchor="middle" font-size="12">totalRuns()</text>
+    <text x="760" y="160" text-anchor="middle" font-size="12">personalBest()</text>
+
+    <!-- Arrows -->
+    <line x1="230" y1="140" x2="350" y2="140" stroke="black" marker-end="url(#arrow)"/>
+    <text x="290" y="130" font-size="12">creates</text>
+
+    <line x1="550" y1="140" x2="650" y2="140" stroke="black" marker-end="url(#arrow)"/>
+    <text x="600" y="130" font-size="12">stored in</text>
+
+    <!-- Complexity Box -->
+    <rect x="200" y="300" width="500" height="180" fill="#F5F5F5" stroke="#616161"/>
+    <text x="450" y="330" text-anchor="middle" font-weight="bold">Complexity Analysis</text>
+
+    <text x="220" y="360" font-size="13">
+        makeRunCollection: Time = O(N × M), Space = O(N × M)
+    </text>
+
+    <text x="220" y="390" font-size="13">
+        personalBest: Time = O(N × M), Space = O(1)
+    </text>
+
+    <text x="220" y="420" font-size="13">
+        testRunCollection: Time = O(N × M), Space = O(N × M)
+    </text>
+
+    <!-- Arrow Marker -->
+    <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="black"/>
+        </marker>
+    </defs>
+
+</svg>

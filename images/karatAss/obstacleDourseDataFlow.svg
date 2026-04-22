@@ -1,6 +1,6 @@
-<svg width="100%" viewBox="0 0 682 520" role="img" style="" xmlns="http://www.w3.org/2000/svg">
-  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Obstacle course data flow: Run → RunCollection → personalBest / bestOfBests</title>
-  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Diagram showing how obstacle times flow from runs into a RunCollection and produce personalBest and bestOfBests results.</desc>
+<svg width="100%" viewBox="0 0 682 740" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Obstacle course data flow: Run → RunCollection → personalBest / bestOfBests / chanceOfPersonalBest</title>
+  <desc>Diagram showing how obstacle times flow from runs into a RunCollection and produce personalBest, bestOfBests, and chanceOfPersonalBest results.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
       <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -8,75 +8,156 @@
   </defs>
 
   <!-- Course box -->
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="240" y="20" width="200" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="340" y="42" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206, 203, 246);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">Course</text>
-    <text x="340" y="60" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175, 169, 236);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">"Test course", 4 obstacles</text>
+  <g>
+    <rect x="240" y="20" width="200" height="52" rx="8" stroke-width="0.5" style="fill:rgb(60, 52, 137);stroke:rgb(175, 169, 236)"/>
+    <text x="340" y="42" text-anchor="middle" dominant-baseline="central" style="fill:rgb(206, 203, 246);font-size:14px;font-weight:500">Course</text>
+    <text x="340" y="60" text-anchor="middle" dominant-baseline="central" style="fill:rgb(175, 169, 236);font-size:12px">"Test course", 4 obstacles</text>
   </g>
 
   <!-- Arrow Course → Runs -->
-  <line x1="340" y1="72" x2="340" y2="104" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="340" y1="72" x2="340" y2="104" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
 
   <!-- Runs row -->
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="20" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="94" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">Run 1</text>
-    <text x="94" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">3  4  5  6 → 18s</text>
-    <text x="94" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">complete ✓</text>
+  <g>
+    <rect x="20" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165)"/>
+    <text x="94" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500">Run 1</text>
+    <text x="94" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px">3  4  5  6 → 18s</text>
+    <text x="94" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px">complete ✓</text>
   </g>
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="188" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="262" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">Run 2</text>
-    <text x="262" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">4  4  4  5 → 17s</text>
-    <text x="262" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">complete ✓</text>
+  <g>
+    <rect x="188" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165)"/>
+    <text x="262" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500">Run 2</text>
+    <text x="262" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px">4  4  4  5 → 17s</text>
+    <text x="262" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px">complete ✓</text>
   </g>
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="356" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="430" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">Run 3</text>
-    <text x="430" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">4  5  4  6 → 19s</text>
-    <text x="430" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">complete ✓</text>
+  <g>
+    <rect x="356" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(8, 80, 65);stroke:rgb(93, 202, 165)"/>
+    <text x="430" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(159, 225, 203);font-size:14px;font-weight:500">Run 3</text>
+    <text x="430" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px">4  5  4  6 → 19s</text>
+    <text x="430" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(93, 202, 165);font-size:12px">complete ✓</text>
   </g>
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="524" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="598" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245, 196, 179);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">Run 4</text>
-    <text x="598" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(240, 153, 123);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">5  5  3 → 13s</text>
-    <text x="598" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(240, 153, 123);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">incomplete ✗</text>
+  <g>
+    <rect x="524" y="104" width="148" height="72" rx="8" stroke-width="0.5" style="fill:rgb(113, 43, 19);stroke:rgb(240, 153, 123)"/>
+    <text x="598" y="128" text-anchor="middle" dominant-baseline="central" style="fill:rgb(245, 196, 179);font-size:14px;font-weight:500">Run 4</text>
+    <text x="598" y="148" text-anchor="middle" dominant-baseline="central" style="fill:rgb(240, 153, 123);font-size:12px">5  5  3 → 13s</text>
+    <text x="598" y="166" text-anchor="middle" dominant-baseline="central" style="fill:rgb(240, 153, 123);font-size:12px">incomplete ✗</text>
   </g>
 
   <!-- Arrows Runs → RunCollection -->
-  <line x1="94" y1="176" x2="280" y2="240" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-  <line x1="262" y1="176" x2="310" y2="240" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-  <line x1="430" y1="176" x2="370" y2="240" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-  <line x1="598" y1="176" x2="400" y2="240" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="94" y1="176" x2="280" y2="240" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
+  <line x1="262" y1="176" x2="310" y2="240" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
+  <line x1="430" y1="176" x2="370" y2="240" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
+  <line x1="598" y1="176" x2="400" y2="240" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
 
   <!-- RunCollection box -->
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="200" y="240" width="280" height="52" rx="8" stroke-width="0.5" style="fill:rgb(12, 68, 124);stroke:rgb(133, 183, 235);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="340" y="262" text-anchor="middle" dominant-baseline="central" style="fill:rgb(181, 212, 244);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">RunCollection</text>
-    <text x="340" y="280" text-anchor="middle" dominant-baseline="central" style="fill:rgb(133, 183, 235);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">holds all runs for one course</text>
+  <g>
+    <rect x="200" y="240" width="280" height="52" rx="8" stroke-width="0.5" style="fill:rgb(12, 68, 124);stroke:rgb(133, 183, 235)"/>
+    <text x="340" y="262" text-anchor="middle" dominant-baseline="central" style="fill:rgb(181, 212, 244);font-size:14px;font-weight:500">RunCollection</text>
+    <text x="340" y="280" text-anchor="middle" dominant-baseline="central" style="fill:rgb(133, 183, 235);font-size:12px">holds all runs for one course</text>
   </g>
 
   <!-- personalBest arrow -->
-  <line x1="270" y1="292" x2="190" y2="360" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="270" y1="292" x2="190" y2="330" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
   <!-- bestOfBests arrow -->
-  <line x1="410" y1="292" x2="490" y2="360" marker-end="url(#arrow)" style="fill:none;stroke:rgb(156, 154, 146);color:rgb(255, 255, 255);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <line x1="410" y1="292" x2="490" y2="330" marker-end="url(#arrow)" style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
 
   <!-- personalBest box -->
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="60" y="360" width="260" height="72" rx="8" stroke-width="0.5" style="fill:rgb(39, 80, 10);stroke:rgb(151, 196, 89);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="190" y="384" text-anchor="middle" dominant-baseline="central" style="fill:rgb(192, 221, 151);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">personalBest()</text>
-    <text x="190" y="404" text-anchor="middle" dominant-baseline="central" style="fill:rgb(151, 196, 89);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">min total time (complete runs)</text>
-    <text x="190" y="422" text-anchor="middle" dominant-baseline="central" style="fill:rgb(151, 196, 89);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">→ 17s (Run 2)</text>
+  <g>
+    <rect x="60" y="330" width="260" height="72" rx="8" stroke-width="0.5" style="fill:rgb(39, 80, 10);stroke:rgb(151, 196, 89)"/>
+    <text x="190" y="354" text-anchor="middle" dominant-baseline="central" style="fill:rgb(192, 221, 151);font-size:14px;font-weight:500">personalBest()</text>
+    <text x="190" y="374" text-anchor="middle" dominant-baseline="central" style="fill:rgb(151, 196, 89);font-size:12px">min total time (complete runs)</text>
+    <text x="190" y="392" text-anchor="middle" dominant-baseline="central" style="fill:rgb(151, 196, 89);font-size:12px">→ 17s (Run 2)</text>
   </g>
 
   <!-- bestOfBests box -->
-  <g style="fill:rgb(0, 0, 0);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">
-    <rect x="360" y="360" width="260" height="72" rx="8" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39);color:rgb(255, 255, 255);stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
-    <text x="490" y="384" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250, 199, 117);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:14px;font-weight:500;text-anchor:middle;dominant-baseline:central">bestOfBests()</text>
-    <text x="490" y="404" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239, 159, 39);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">min per obstacle (all runs)</text>
-    <text x="490" y="422" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239, 159, 39);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">3+4+3+5 = 15s</text>
+  <g>
+    <rect x="360" y="330" width="260" height="72" rx="8" stroke-width="0.5" style="fill:rgb(99, 56, 6);stroke:rgb(239, 159, 39)"/>
+    <text x="490" y="354" text-anchor="middle" dominant-baseline="central" style="fill:rgb(250, 199, 117);font-size:14px;font-weight:500">bestOfBests()</text>
+    <text x="490" y="374" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239, 159, 39);font-size:12px">min per obstacle (all runs)</text>
+    <text x="490" y="392" text-anchor="middle" dominant-baseline="central" style="fill:rgb(239, 159, 39);font-size:12px">3+4+3+5 = 15s</text>
   </g>
 
   <!-- Column mins label -->
-  <text x="340" y="470" text-anchor="middle" dominant-baseline="central" style="fill:rgb(194, 192, 182);stroke:none;color:rgb(255, 255, 255);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:central">col min: O1=3  O2=4  O3=3  O4=5   (Run 4 contributes O3=3 despite being incomplete)</text>
+  <text x="340" y="432" text-anchor="middle" dominant-baseline="central" style="fill:rgb(194, 192, 182);font-size:12px">col min: O1=3  O2=4  O3=3  O4=5   (Run 4 contributes O3=3 despite being incomplete)</text>
+
+  <!-- Section divider -->
+  <line x1="40" y1="460" x2="642" y2="460" style="stroke:rgb(211, 207, 192);stroke-width:0.6;stroke-dasharray:6,4"/>
+
+  <!-- Arrow from RunCollection to In-Progress scenario -->
+  <line x1="340" y1="292" x2="340" y2="490"
+        marker-end="url(#arrow)"
+        style="stroke:rgb(156, 154, 146);stroke-width:1.5;stroke-dasharray:4,3"/>
+
+  <!-- In-Progress Run box -->
+  <g>
+    <rect x="50" y="490" width="260" height="72" rx="8"
+          style="fill:#3a2c7a;stroke:#b2aeea;stroke-width:.5"/>
+    <text x="180" y="514" text-anchor="middle"
+          style="fill:#e0ddf7;font-size:14px;font-weight:500">
+      In‑Progress Run
+    </text>
+    <text x="180" y="534" text-anchor="middle"
+          style="fill:#b2aeea;font-size:12px">
+      known obstacles only
+    </text>
+    <text x="180" y="552" text-anchor="middle"
+          style="fill:#b2aeea;font-size:12px">
+      e.g. [3, 3, ? , ?]
+    </text>
+  </g>
+
+  <!-- Arrow from In-Progress to chanceOfPersonalBest -->
+  <line x1="310" y1="526" x2="360" y2="526"
+        marker-end="url(#arrow)"
+        style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
+
+  <!-- chanceOfPersonalBest box -->
+  <g>
+    <rect x="360" y="480" width="300" height="130" rx="10"
+          style="fill:#0b3a47;stroke:#7cd1e6;stroke-width:.5"/>
+    <text x="510" y="504" text-anchor="middle"
+          style="fill:#c8f1fb;font-size:14px;font-weight:600">
+      chanceOfPersonalBest()
+    </text>
+
+    <text x="510" y="528" text-anchor="middle"
+          style="fill:#7cd1e6;font-size:12px">
+      10,000 Monte‑Carlo trials
+    </text>
+
+    <text x="510" y="548" text-anchor="middle"
+          style="fill:#7cd1e6;font-size:12px">
+      For each missing obstacle:
+    </text>
+
+    <text x="510" y="568" text-anchor="middle"
+          style="fill:#7cd1e6;font-size:12px">
+      random time from past runs
+    </text>
+
+    <text x="510" y="588" text-anchor="middle"
+          style="fill:#7cd1e6;font-size:12px">
+      simulatedTotal ≤ personalBest ?
+    </text>
+  </g>
+
+  <!-- Arrow from chanceOfPersonalBest to Probability result -->
+  <line x1="510" y1="610" x2="510" y2="640"
+        marker-end="url(#arrow)"
+        style="stroke:rgb(156, 154, 146);stroke-width:1.5"/>
+
+  <!-- Probability result box -->
+  <g>
+    <rect x="260" y="640" width="500" height="70" rx="8"
+          style="fill:#1f5d1f;stroke:#97c459;stroke-width:1"/>
+    <text x="510" y="662" text-anchor="middle"
+          style="fill:#c0dd97;font-size:11px;font-weight:400;letter-spacing:1.2px">
+      RESULT
+    </text>
+    <text x="510" y="688" text-anchor="middle"
+          style="fill:#ffffff;font-size:15px;font-weight:500">
+      Probability = successes / trials
+    </text>
+  </g>
+
 </svg>
