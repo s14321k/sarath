@@ -1,0 +1,79 @@
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1000" height="700" fill="#f0f4f8"/>
+  
+  <!-- Title -->
+  <text x="500" y="40" font-size="26" font-weight="bold" text-anchor="middle" fill="#1a365d">📚 Library System - Simple Flow</text>
+  
+  <!-- Member starts -->
+  <ellipse cx="500" cy="100" rx="80" ry="40" fill="#48bb78" stroke="#38a169" stroke-width="3"/>
+  <text x="500" y="108" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Member</text>
+  
+  <!-- Arrow down -->
+  <path d="M 500 140 L 500 180" stroke="#2d3748" stroke-width="4" marker-end="url(#arrow)"/>
+  
+  <!-- Borrow Book -->
+  <rect x="380" y="180" width="240" height="80" fill="#4299e1" stroke="#3182ce" stroke-width="3" rx="10"/>
+  <text x="500" y="205" font-size="16" font-weight="bold" text-anchor="middle" fill="white">📖 Borrows Book</text>
+  <text x="500" y="230" font-size="12" text-anchor="middle" fill="white">Book has: Title, Author, Genre</text>
+  <text x="500" y="250" font-size="12" text-anchor="middle" fill="white">Record has: Borrow Date</text>
+  
+  <!-- Arrow down -->
+  <path d="M 500 260 L 500 300" stroke="#2d3748" stroke-width="4" marker-end="url(#arrow)"/>
+  
+  <!-- Split into two paths -->
+  <rect x="200" y="300" width="200" height="70" fill="#ed8936" stroke="#dd6b20" stroke-width="3" rx="10"/>
+  <text x="300" y="325" font-size="14" font-weight="bold" text-anchor="middle" fill="white">📥 Returns Book</text>
+  <text x="300" y="350" font-size="11" text-anchor="middle" fill="white">Return Date recorded</text>
+  
+  <rect x="600" y="300" width="200" height="70" fill="#f56565" stroke="#e53e3e" stroke-width="3" rx="10"/>
+  <text x="700" y="325" font-size="14" font-weight="bold" text-anchor="middle" fill="white">📚 Still Borrowed</text>
+  <text x="700" y="350" font-size="11" text-anchor="middle" fill="white">Return Date = null</text>
+  
+  <!-- Arrows from borrow to return/still borrowed -->
+  <path d="M 450 280 L 350 300" stroke="#2d3748" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 550 280 L 650 300" stroke="#2d3748" stroke-width="3" marker-end="url(#arrow)"/>
+  
+  <!-- Analytics Section -->
+  <rect x="150" y="420" width="700" height="220" fill="#e6fffa" stroke="#319795" stroke-width="3" rx="10"/>
+  <text x="500" y="450" font-size="18" font-weight="bold" text-anchor="middle" fill="#234e52">📊 Analytics & Statistics</text>
+  
+  <!-- Three columns of stats -->
+  <g id="stats-column1">
+    <circle cx="240" cy="500" r="8" fill="#48bb78"/>
+    <text x="260" y="505" font-size="13" fill="#2d3748">Total Books Borrowed</text>
+    
+    <circle cx="240" cy="530" r="8" fill="#48bb78"/>
+    <text x="260" y="535" font-size="13" fill="#2d3748">Currently Borrowed Count</text>
+    
+    <circle cx="240" cy="560" r="8" fill="#48bb78"/>
+    <text x="260" y="565" font-size="13" fill="#2d3748">Returned Count</text>
+  </g>
+  
+  <g id="stats-column2">
+    <circle cx="500" cy="500" r="8" fill="#ed8936"/>
+    <text x="520" y="505" font-size="13" fill="#2d3748">Average Holding Days</text>
+    <text x="520" y="520" font-size="10" fill="#e53e3e">⚠️ Bug: Divide by zero fix needed</text>
+    
+    <circle cx="500" cy="560" r="8" fill="#4299e1"/>
+    <text x="520" y="565" font-size="13" fill="#2d3748">Most Borrowed Genre</text>
+    <text x="520" y="580" font-size="10" fill="#3182ce">🔨 New feature to implement</text>
+  </g>
+  
+  <g id="visual-example">
+    <text x="175" y="615" font-size="12" font-weight="bold" fill="#2d3748">Example:</text>
+    <text x="175" y="632" font-size="11" fill="#4a5568">Fantasy: 2 books → Science Fiction: 3 books</text>
+    <text x="620" y="632" font-size="11" font-weight="bold" fill="#38a169">Result: ["Science Fiction", 3]</text>
+  </g>
+  
+  <!-- Bottom note -->
+  <rect x="100" y="660" width="800" height="30" fill="#fef5e7" stroke="#f39c12" stroke-width="2" rx="5"/>
+  <text x="500" y="680" font-size="11" text-anchor="middle" fill="#7d6608">💡 System tracks borrowing history and provides insights into member reading habits</text>
+  
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <polygon points="0 0, 12 6, 0 12" fill="#2d3748"/>
+    </marker>
+  </defs>
+</svg>

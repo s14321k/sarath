@@ -1,0 +1,73 @@
+<svg viewBox="0 0 1000 750" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1000" height="750" fill="#f0f4f8"/>
+  
+  <!-- Title -->
+  <text x="500" y="40" font-size="26" font-weight="bold" text-anchor="middle" fill="#1a365d">🛒 E-commerce Analytics - Simple Flow</text>
+  
+  <!-- Customer starts -->
+  <ellipse cx="500" cy="100" rx="80" ry="40" fill="#48bb78" stroke="#38a169" stroke-width="3"/>
+  <text x="500" y="108" font-size="14" font-weight="bold" text-anchor="middle" fill="white">Customer</text>
+  
+  <!-- Arrow down -->
+  <path d="M 500 140 L 500 180" stroke="#2d3748" stroke-width="4" marker-end="url(#arrow)"/>
+  
+  <!-- Browse Products -->
+  <rect x="330" y="180" width="340" height="90" fill="#4299e1" stroke="#3182ce" stroke-width="3" rx="10"/>
+  <text x="500" y="205" font-size="16" font-weight="bold" text-anchor="middle" fill="white">🔍 Browses Products</text>
+  <text x="500" y="230" font-size="12" text-anchor="middle" fill="white">Product: Name, Category, Price</text>
+  <text x="500" y="250" font-size="11" text-anchor="middle" fill="white">Example: "Laptop", Electronics, $1000</text>
+  
+  <!-- Arrow down -->
+  <path d="M 500 270 L 500 310" stroke="#2d3748" stroke-width="4" marker-end="url(#arrow)"/>
+  
+  <!-- Makes Purchase -->
+  <rect x="200" y="310" width="600" height="90" fill="#9f7aea" stroke="#805ad5" stroke-width="3" rx="10"/>
+  <text x="500" y="335" font-size="15" font-weight="bold" text-anchor="middle" fill="white">💳 Makes Purchase</text>
+  <text x="500" y="360" font-size="12" text-anchor="middle" fill="white">Purchase: Product + Quantity + Customer ID + Date</text>
+  <text x="500" y="380" font-size="11" text-anchor="middle" fill="white">Example: 2× Laptops @ $1000 each = $2000 total</text>
+  
+  <!-- Arrow down -->
+  <path d="M 500 400 L 500 440" stroke="#2d3748" stroke-width="4" marker-end="url(#arrow)"/>
+  
+  <!-- Analytics Section -->
+  <rect x="100" y="440" width="800" height="260" fill="#e6fffa" stroke="#319795" stroke-width="3" rx="10"/>
+  <text x="500" y="470" font-size="18" font-weight="bold" text-anchor="middle" fill="#234e52">📊 Sales Analytics Dashboard</text>
+  
+  <!-- Left Column -->
+  <g id="stats-left">
+    <rect x="130" y="490" width="320" height="45" fill="#bee3f8" stroke="#3182ce" stroke-width="2" rx="5"/>
+    <text x="290" y="518" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a365d">Total Purchases: 150 transactions</text>
+    
+    <rect x="130" y="550" width="320" height="45" fill="#c6f6d5" stroke="#38a169" stroke-width="2" rx="5"/>
+    <text x="290" y="578" font-size="12" font-weight="bold" text-anchor="middle" fill="#22543d">Total Revenue: $125,000</text>
+    
+    <rect x="130" y="610" width="320" height="45" fill="#fbb6ce" stroke="#d53f8c" stroke-width="2" rx="5"/>
+    <text x="290" y="638" font-size="12" font-weight="bold" text-anchor="middle" fill="#702459">Total Items Sold: 450 units</text>
+  </g>
+  
+  <!-- Right Column -->
+  <g id="stats-right">
+    <rect x="480" y="490" width="380" height="55" fill="#fed7d7" stroke="#e53e3e" stroke-width="2" rx="5"/>
+    <text x="670" y="513" font-size="12" font-weight="bold" text-anchor="middle" fill="#742a2a">Average Purchase Value: $833</text>
+    <text x="670" y="532" font-size="10" text-anchor="middle" fill="#e53e3e">⚠️ Bug: Returns NaN if no purchases</text>
+    
+    <rect x="480" y="558" width="380" height="45" fill="#bee3f8" stroke="#3182ce" stroke-width="2" rx="5"/>
+    <text x="670" y="586" font-size="12" font-weight="bold" text-anchor="middle" fill="#1a365d">Unique Customers: 85</text>
+    
+    <rect x="480" y="615" width="380" height="55" fill="#fefcbf" stroke="#d69e2e" stroke-width="2" rx="5"/>
+    <text x="670" y="638" font-size="12" font-weight="bold" text-anchor="middle" fill="#744210">🔨 Top Selling Product</text>
+    <text x="670" y="657" font-size="10" text-anchor="middle" fill="#975a16">New feature: Find most purchased product by quantity</text>
+  </g>
+  
+  <!-- Example Result -->
+  <rect x="200" y="715" width="600" height="25" fill="#d1fae5" stroke="#10b981" stroke-width="2" rx="5"/>
+  <text x="500" y="733" font-size="11" font-weight="bold" text-anchor="middle" fill="#065f46">💡 Result: Product B sold 10 units (most popular)</text>
+  
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <polygon points="0 0, 12 6, 0 12" fill="#2d3748"/>
+    </marker>
+  </defs>
+</svg>
