@@ -509,7 +509,7 @@ body {
 
         .code-block-shell pre {
             margin: 0;
-            padding-top: 54px;
+            padding-top: 0px;
             padding-right: 92px;
         }
 
