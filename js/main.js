@@ -187,10 +187,33 @@
         window.addEventListener('pageContentLoaded', () => normalizeContentLinks());
     });
 
-    // Code blocks: syntax colors and floating copy button
+    // Code blocks: syntax colors, copy button, and online run modal
     safe(() => {
         const content = $('#content');
         if (!content) return;
+        const compilerConfig = {
+            endpoint: 'https://ce.judge0.com',
+            languageMap: {
+                java: { id: 62, label: 'Java' },
+                javascript: { id: 63, label: 'JavaScript' },
+                js: { id: 63, label: 'JavaScript' },
+                python: { id: 71, label: 'Python' },
+                py: { id: 71, label: 'Python' },
+                c: { id: 50, label: 'C' },
+                cpp: { id: 54, label: 'C++' },
+                'c++': { id: 54, label: 'C++' }
+            }
+        };
+        let runnerModal = null;
+        let runnerTitle = null;
+        let runnerStatus = null;
+        let runnerEditor = null;
+        let runnerInput = null;
+        let runnerMeta = null;
+        let runnerOutput = null;
+        let runnerRunButton = null;
+        let runnerCode = '';
+        let runnerLanguage = null;
 
         function fallbackCopy(text) {
             const area = document.createElement('textarea');
@@ -219,6 +242,259 @@
             }, 1800);
         }
 
+        function detectCodeLanguage(code) {
+            const classes = Array.from(code.classList || []);
+            for (const className of classes) {
+                const match = className.match(/^language-(.+)$/);
+                if (!match) continue;
+                const key = match[1].toLowerCase();
+                if (compilerConfig.languageMap[key]) {
+                    return compilerConfig.languageMap[key];
+                }
+            }
+            return null;
+        }
+
+        function normalizeJavaSource(source) {
+            if (!source) return source;
+            let normalized = source.replace(/\r\n/g, '\n');
+            const publicClassMatch = normalized.match(/\bpublic\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/);
+            if (publicClassMatch) {
+                return normalized.replace(/\bpublic\s+class\s+([A-Za-z_][A-Za-z0-9_]*)/, 'public class Main');
+            }
+
+            const packageMatch = normalized.match(/^\s*package\s+[\w.]+\s*;/m);
+            if (packageMatch) {
+                return normalized;
+            }
+
+            const classMatch = normalized.match(/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)/);
+            if (classMatch && classMatch[1] !== 'Main') {
+                return normalized.replace(/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)/, 'class Main');
+            }
+
+            return normalized;
+        }
+
+        function prepareSourceForExecution(source, language) {
+            if (!language) return source;
+            if (language.label === 'Java') {
+                return normalizeJavaSource(source);
+            }
+            return source;
+        }
+
+        function ensureRunnerModal() {
+            if (runnerModal) return;
+            runnerModal = document.createElement('div');
+            runnerModal.className = 'code-runner-modal hidden';
+            runnerModal.innerHTML = `
+                <div class="code-runner-backdrop" data-runner-close="1"></div>
+                <section class="code-runner-panel" role="dialog" aria-modal="true" aria-label="Run code">
+                    <div class="code-runner-toolbar">
+                        <div>
+                            <div class="code-runner-title">Run Code</div>
+                            <div class="code-runner-status" data-runner-status>Ready</div>
+                        </div>
+                        <div class="code-runner-actions">
+                            <button type="button" class="code-runner-button secondary" data-runner-action="open-ide">Open IDE</button>
+                            <button type="button" class="code-runner-button secondary" data-runner-close="1">Close</button>
+                        </div>
+                    </div>
+                    <div class="code-runner-body">
+                        <label class="code-runner-label" for="codeRunnerEditor">Program</label>
+                        <textarea id="codeRunnerEditor" class="code-runner-editor" spellcheck="false"></textarea>
+                        <label class="code-runner-label" for="codeRunnerInput">Program input</label>
+                        <textarea id="codeRunnerInput" class="code-runner-input" placeholder="Optional stdin"></textarea>
+                        <div class="code-runner-controls">
+                            <button type="button" class="code-runner-button primary" data-runner-action="run">Run</button>
+                        </div>
+                        <div class="code-runner-output-header">
+                            <label class="code-runner-label" for="codeRunnerOutput">Output</label>
+                            <div class="code-runner-meta" data-runner-meta></div>
+                        </div>
+                        <pre id="codeRunnerOutput" class="code-runner-output"></pre>
+                    </div>
+                </section>
+            `;
+            document.body.appendChild(runnerModal);
+            runnerTitle = runnerModal.querySelector('.code-runner-title');
+            runnerStatus = runnerModal.querySelector('[data-runner-status]');
+            runnerEditor = runnerModal.querySelector('#codeRunnerEditor');
+            runnerInput = runnerModal.querySelector('#codeRunnerInput');
+            runnerMeta = runnerModal.querySelector('[data-runner-meta]');
+            runnerOutput = runnerModal.querySelector('#codeRunnerOutput');
+            runnerRunButton = runnerModal.querySelector('[data-runner-action="run"]');
+
+            runnerModal.addEventListener('click', (ev) => {
+                if (ev.target.closest('[data-runner-close="1"]')) {
+                    closeRunnerModal();
+                    return;
+                }
+                const action = ev.target.closest('[data-runner-action]')?.dataset.runnerAction;
+                if (action === 'run') {
+                    runCurrentCode();
+                } else if (action === 'open-ide') {
+                    openJudge0Ide();
+                }
+            });
+
+            document.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Escape' && runnerModal && !runnerModal.classList.contains('hidden')) {
+                    closeRunnerModal();
+                }
+            });
+        }
+
+        function setRunnerState(statusText, outputText, isRunning) {
+            if (runnerStatus) runnerStatus.textContent = statusText;
+            if (typeof outputText === 'string' && runnerOutput) runnerOutput.textContent = outputText;
+            if (runnerRunButton) {
+                runnerRunButton.disabled = Boolean(isRunning);
+                runnerRunButton.textContent = isRunning ? 'Running...' : 'Run';
+            }
+        }
+
+        function setRunnerMeta(data) {
+            if (!runnerMeta) return;
+            if (!data) {
+                runnerMeta.textContent = '';
+                runnerMeta.classList.remove('has-meta');
+                return;
+            }
+
+            const parts = [];
+            if (data.statusText) parts.push(`Status: ${data.statusText}`);
+            if (typeof data.time !== 'undefined' && data.time !== null && data.time !== '') {
+                parts.push(`Time: ${data.time}s`);
+            }
+            if (typeof data.memory !== 'undefined' && data.memory !== null && data.memory !== '') {
+                parts.push(`Memory: ${data.memory} KB`);
+            }
+
+            runnerMeta.textContent = parts.join(' | ');
+            runnerMeta.classList.toggle('has-meta', parts.length > 0);
+        }
+
+        function openRunnerModal(codeText, language) {
+            ensureRunnerModal();
+            runnerCode = codeText;
+            runnerLanguage = language;
+            runnerTitle.textContent = `Run ${language.label}`;
+            if (runnerEditor) runnerEditor.value = codeText;
+            setRunnerMeta(null);
+            setRunnerState(`Ready to run on Judge0 CE (${language.label})`, '', false);
+            runnerModal.classList.remove('hidden');
+            document.body.classList.add('code-runner-open');
+            setTimeout(() => runnerEditor?.focus(), 0);
+        }
+
+        function closeRunnerModal() {
+            if (!runnerModal) return;
+            runnerModal.classList.add('hidden');
+            document.body.classList.remove('code-runner-open');
+        }
+
+        function formatExecutionResult(data) {
+            const sections = [];
+            if (data?.compile_output) {
+                sections.push(`Compile Output:\n${data.compile_output}`);
+            }
+            if (data?.stderr) {
+                sections.push(`Error:\n${data.stderr}`);
+            }
+            if (data?.message) {
+                sections.push(`Message:\n${data.message}`);
+            }
+            if (data?.stdout) {
+                sections.push(`Output:\n${data.stdout}`);
+            }
+            if (sections.length === 1) {
+                sections.push('No output.');
+            }
+            return sections.join('\n\n');
+        }
+
+        async function createSubmission(payload) {
+            const response = await fetch(`${compilerConfig.endpoint}/submissions/?base64_encoded=false&wait=false`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data?.token) {
+                throw new Error(data?.message || data?.error || `Submission failed (${response.status})`);
+            }
+            return data.token;
+        }
+
+        async function pollSubmission(token) {
+            const fields = [
+                'stdout',
+                'stderr',
+                'compile_output',
+                'message',
+                'status',
+                'time',
+                'memory'
+            ].join(',');
+            for (let attempt = 0; attempt < 20; attempt++) {
+                await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 800 : 1200));
+                const response = await fetch(`${compilerConfig.endpoint}/submissions/${encodeURIComponent(token)}?base64_encoded=false&fields=${fields}`);
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data?.message || `Status check failed (${response.status})`);
+                }
+                const statusId = data?.status?.id;
+                if (statusId !== 1 && statusId !== 2) {
+                    return data;
+                }
+                setRunnerState(`Running on Judge0 CE (${data?.status?.description || 'Processing'})`, runnerOutput?.textContent || '', true);
+            }
+            throw new Error('Execution timed out while waiting for Judge0 CE.');
+        }
+
+        async function runCurrentCode() {
+            if (!runnerLanguage) return;
+            const sourceToRun = runnerEditor?.value || runnerCode;
+            setRunnerState(`Submitting ${runnerLanguage.label} code to Judge0 CE...`, 'Waiting for execution...', true);
+            setRunnerMeta({ statusText: 'Submitting' });
+            try {
+                const token = await createSubmission({
+                    source_code: prepareSourceForExecution(sourceToRun, runnerLanguage),
+                    language_id: runnerLanguage.id,
+                    stdin: runnerInput?.value || ''
+                });
+                setRunnerState(`Submission accepted. Waiting for Judge0 CE result...`, runnerOutput?.textContent || '', true);
+                setRunnerMeta({ statusText: 'Queued' });
+                const result = await pollSubmission(token);
+                setRunnerMeta({
+                    statusText: result?.status?.description || 'Completed',
+                    time: result?.time,
+                    memory: result?.memory
+                });
+                setRunnerState(`Finished: ${result?.status?.description || 'Completed'}`, formatExecutionResult(result), false);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Execution failed.';
+                setRunnerMeta({ statusText: 'Error' });
+                setRunnerState(
+                    'Unable to run code',
+                    `${message}\n\nIf the public Judge0 instance is unavailable, switch to your own Judge0 host in js/main.js.`,
+                    false
+                );
+            }
+        }
+
+        function openJudge0Ide() {
+            if (!runnerLanguage) return;
+            const sourceToOpen = runnerEditor?.value || runnerCode;
+            const url = new URL('https://ide.judge0.com/');
+            url.searchParams.set('source_code', sourceToOpen);
+            url.searchParams.set('language_id', String(runnerLanguage.id));
+            url.searchParams.set('stdin', runnerInput?.value || '');
+            window.open(url.toString(), '_blank', 'noopener,noreferrer');
+        }
+
         function ensureCodeBlocks(root) {
             $$('pre', root).forEach((pre) => {
                 const code = $('code', pre);
@@ -226,6 +502,8 @@
                 if (!pre.parentElement || !pre.parentElement.classList.contains('code-block-shell')) {
                     const shell = document.createElement('div');
                     shell.className = 'code-block-shell';
+                    const actions = document.createElement('div');
+                    actions.className = 'code-block-actions';
                     const button = document.createElement('button');
                     button.type = 'button';
                     button.className = 'code-copy-button';
@@ -244,8 +522,23 @@
                             setCopyState(button, 'Retry', 'is-error');
                         }
                     });
+                    actions.appendChild(button);
+
+                    const runLanguage = detectCodeLanguage(code);
+                    if (runLanguage) {
+                        const runButton = document.createElement('button');
+                        runButton.type = 'button';
+                        runButton.className = 'code-run-button';
+                        runButton.textContent = 'Run';
+                        runButton.setAttribute('aria-label', `Run ${runLanguage.label} code`);
+                        runButton.addEventListener('click', () => {
+                            openRunnerModal(code.textContent || '', runLanguage);
+                        });
+                        actions.appendChild(runButton);
+                    }
+
                     pre.parentNode.insertBefore(shell, pre);
-                    shell.appendChild(button);
+                    shell.appendChild(actions);
                     shell.appendChild(pre);
                 }
                 if (window.hljs && typeof window.hljs.highlightElement === 'function') {
