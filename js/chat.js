@@ -3,6 +3,7 @@
 
     const endpoint = window.VISIT_ENDPOINT || '';
     const POLLING_KEY = 'chatPollingEnabled';
+    const CHAT_CACHE_PREFIX = 'chatCache:v1:';
     let user = sessionStorage.getItem('visitorName') || '';
 
     function initChat() {
@@ -58,6 +59,54 @@
         let lastUnseen = { global: 0, admin: 0 };
         let lastLengths = { global: 0, admin: 0 };
         let bubbleStatePrimed = false;
+
+        function chatCacheKey(scope) {
+            return `${CHAT_CACHE_PREFIX}${String(user || '').toLowerCase()}:${scope}`;
+        }
+
+        function readChatCache(scope) {
+            try {
+                const raw = localStorage.getItem(chatCacheKey(scope));
+                if (!raw) return null;
+                const parsed = JSON.parse(raw);
+                if (!parsed || !Array.isArray(parsed.messages)) return null;
+                return {
+                    messages: parsed.messages,
+                    unseenCount: Number(parsed.unseenCount || 0),
+                    version: String(parsed.version || '')
+                };
+            } catch {
+                return null;
+            }
+        }
+
+        function writeChatCache(scope, payload) {
+            try {
+                localStorage.setItem(chatCacheKey(scope), JSON.stringify({
+                    messages: Array.isArray(payload?.messages) ? payload.messages : [],
+                    unseenCount: Number(payload?.unseenCount || 0),
+                    version: String(payload?.version || ''),
+                    cachedAt: Date.now()
+                }));
+            } catch {}
+        }
+
+        function primeChatFromCache() {
+            const currentCache = readChatCache(current);
+            if (currentCache) {
+                hasNewActivity(current, currentCache);
+                render(currentCache.messages);
+            }
+            const other = current === 'global' ? 'admin' : 'global';
+            const otherCache = readChatCache(other);
+            if (current === 'global') {
+                setBadge(globalBadge, 0);
+                setBadge(adminBadge, Number(otherCache?.unseenCount || 0));
+            } else {
+                setBadge(adminBadge, 0);
+                setBadge(globalBadge, Number(otherCache?.unseenCount || 0));
+            }
+        }
 
         const bubble = document.createElement('button');
         bubble.type = 'button';
@@ -412,6 +461,7 @@
 
         async function fetchMessages(scope, markSeen) {
         if (!endpoint || !user) return { messages: [], unseenCount: 0 };
+        const cached = readChatCache(scope);
         try {
             const res = await fetch(endpoint, {
                 method: 'POST',
@@ -420,17 +470,28 @@
                     eventType: 'message_fetch',
                     scope: scope === 'global' ? 'global' : 'user',
                     user,
-                    markSeen: Boolean(markSeen)
+                    markSeen: Boolean(markSeen),
+                    knownVersion: cached?.version || ''
                 })
             });
             if (!res.ok) throw new Error('Fetch failed');
             const json = await res.json().catch(() => ({}));
+            if (json.notModified && cached) {
+                showStatus('');
+                return cached;
+            }
+            const payload = {
+                messages: json.messages || [],
+                unseenCount: Number(json.unseenCount || 0),
+                version: String(json.version || '')
+            };
+            writeChatCache(scope, payload);
             showStatus('');
-            return { messages: json.messages || [], unseenCount: Number(json.unseenCount || 0) };
+            return payload;
         } catch {
             networkOk = false;
             showStatus('Chat is blocked by the browser or network.');
-            return { messages: [], unseenCount: 0 };
+            return cached || { messages: [], unseenCount: 0, version: '' };
         }
     }
 
@@ -747,6 +808,7 @@
         } catch {}
         updatePollingUi();
         updateDeleteAllVisibility();
+        primeChatFromCache();
         poll();
     }
 
