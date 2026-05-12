@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { font-family: sans-serif; font-size: 13px; margin: 0; padding: 12px; background: #fff; color: #111; }
+.nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.nav button { font-size: 11px; padding: 5px 12px; border-radius: 999px; border: 1px solid #ccc; background: #f5f5f5; color: #555; cursor: pointer; }
+.nav button.active { background: #111; color: #fff; border-color: #111; }
+.sec { display: none; }
+.sec.active { display: block; }
+.card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.q { font-size: 11px; font-weight: 600; color: #1a56db; background: #eff6ff; padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 10px; }
+.trick { background: #f8f8f8; border-left: 3px solid #888; padding: 8px 12px; margin: 10px 0; font-size: 12px; line-height: 1.6; border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+th { text-align: left; padding: 7px 10px; background: #f5f5f5; font-weight: 600; font-size: 11px; color: #555; }
+td { padding: 7px 10px; border-top: 1px solid #f0f0f0; vertical-align: top; line-height: 1.5; }
+tr:hover td { background: #fafafa; }
+.flow { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.fb { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; border: 1px solid #ddd; background: #f5f5f5; white-space: nowrap; }
+.fb.p { background: #f0effe; border-color: #c4b8f5; color: #3c2f99; }
+.fb.t { background: #e8faf3; border-color: #7dd3b0; color: #0a5c3a; }
+.fb.a { background: #fef7e8; border-color: #f5c76a; color: #7a4a00; }
+.fb.b { background: #eaf3ff; border-color: #93c5fd; color: #1d4ed8; }
+.fb.c { background: #fef0ef; border-color: #f5a89a; color: #8b1a0e; }
+.arr { color: #999; font-size: 13px; }
+pre { background: #f5f5f5; border-radius: 6px; padding: 10px; font-size: 11px; line-height: 1.7; overflow-x: auto; margin: 8px 0; white-space: pre; }
+.yes { color: #16a34a; font-weight: 600; }
+.no { color: #dc2626; font-weight: 600; }
+ul { padding-left: 16px; margin: 6px 0; }
+li { line-height: 1.7; color: #444; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <button class="active" onclick="show('all')">All Pairs</button>
+  <button onclick="show('sf')">Strategy vs Factory vs AbsFactory</button>
+  <button onclick="show('adp')">Adapter vs Decorator vs Proxy</button>
+  <button onclick="show('obs')">Observer vs Chain</button>
+  <button onclick="show('ss')">State vs Strategy</button>
+  <button onclick="show('fb2')">Factory vs Builder</button>
+  <button onclick="show('ts')">Template vs Strategy</button>
+  <button onclick="show('fp')">Facade vs Proxy</button>
+  <button onclick="show('mem')">Memory Tricks</button>
+</div>
+
+<!-- ALL PAIRS -->
+<div id="sec-all" class="sec active">
+  <div class="card">
+    <div class="card-title">Master comparison — all confusing pairs</div>
+    <table>
+      <tr><th>Pattern A</th><th>Pattern B</th><th>Look alike because…</th><th>Key difference</th></tr>
+      <tr><td><b>Adapter</b></td><td><b>Decorator</b></td><td>Both wrap an object</td><td>Adapter converts interface; Decorator adds behavior on same interface</td></tr>
+      <tr><td><b>Decorator</b></td><td><b>Proxy</b></td><td>Same interface, wrap real object</td><td>Decorator stacks features; Proxy controls access</td></tr>
+      <tr><td><b>Strategy</b></td><td><b>State</b></td><td>Both inject behavior via interface</td><td>Strategy: client picks; State: object auto-transitions itself</td></tr>
+      <tr><td><b>Strategy</b></td><td><b>Template Method</b></td><td>Both vary algorithm steps</td><td>Strategy = composition; Template = inheritance</td></tr>
+      <tr><td><b>Factory</b></td><td><b>Abstract Factory</b></td><td>Both create objects via interface</td><td>Factory = one product; AbsFactory = family of products</td></tr>
+      <tr><td><b>Factory</b></td><td><b>Builder</b></td><td>Both hide object creation</td><td>Factory = one call; Builder = step-by-step</td></tr>
+      <tr><td><b>Factory</b></td><td><b>Strategy</b></td><td>Both use interface + polymorphism</td><td>Factory returns object; Strategy returns behavior</td></tr>
+      <tr><td><b>Observer</b></td><td><b>Chain of Responsibility</b></td><td>Both pass to multiple handlers</td><td>Observer: ALL notified; Chain: ONE handles then stops</td></tr>
+      <tr><td><b>Facade</b></td><td><b>Proxy</b></td><td>Both sit in front of something</td><td>Facade simplifies many; Proxy controls one</td></tr>
+      <tr><td><b>Command</b></td><td><b>Strategy</b></td><td>Both encapsulate behavior in object</td><td>Command = action + undo/queue; Strategy = algorithm swap</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- STRATEGY vs FACTORY vs ABSTRACT FACTORY -->
+<div id="sec-sf" class="sec">
+  <div class="card">
+    <div class="card-title">Strategy vs Factory vs Abstract Factory</div>
+    <div class="q">The #1 interview confusion — all three use interfaces!</div>
+    <div class="trick"><b>Core insight:</b> Strategy = behavior. Factory/AbsFactory = creation. One changes HOW something works. The others decide WHAT to create.</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Strategy — behavior is injected, swapped at runtime</p>
+    <div class="flow">
+      <div class="fb b">Client</div><div class="arr">→</div>
+      <div class="fb p">Context holds Strategy</div><div class="arr">→</div>
+      <div class="fb t">UPI.pay()</div><div class="arr">or</div>
+      <div class="fb t">Card.pay()</div><div class="arr">or</div>
+      <div class="fb t">NetBanking.pay()</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Factory — creation hidden, one object returned</p>
+    <div class="flow">
+      <div class="fb b">Client: getVehicle("CAR")</div><div class="arr">→</div>
+      <div class="fb p">VehicleFactory decides</div><div class="arr">→</div>
+      <div class="fb t">new Car()</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Abstract Factory — whole matching family created</p>
+    <div class="flow">
+      <div class="fb b">Client picks factory</div><div class="arr">→</div>
+      <div class="fb p">WindowsFactory</div><div class="arr">→</div>
+      <div class="fb t">WindowsButton</div><div class="arr">+</div>
+      <div class="fb t">WindowsCheckbox</div>
+    </div>
+    <div class="flow">
+      <div class="fb b">Client picks factory</div><div class="arr">→</div>
+      <div class="fb a">MacFactory</div><div class="arr">→</div>
+      <div class="fb t">MacButton</div><div class="arr">+</div>
+      <div class="fb t">MacCheckbox</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th>Question</th><th>Strategy</th><th>Factory</th><th>Abstract Factory</th></tr>
+      <tr><td>Changes behavior?</td><td><span class="yes">✅ Yes</span></td><td><span class="no">❌ No</span></td><td><span class="no">❌ No</span></td></tr>
+      <tr><td>Creates objects?</td><td><span class="no">❌ No</span></td><td><span class="yes">✅ One</span></td><td><span class="yes">✅ Family</span></td></tr>
+      <tr><td>Runtime switching?</td><td><span class="yes">✅ Yes</span></td><td><span class="no">❌ No</span></td><td><span class="no">❌ No</span></td></tr>
+      <tr><td>Multiple related objects?</td><td><span class="no">❌</span></td><td><span class="no">❌</span></td><td><span class="yes">✅ Yes</span></td></tr>
+      <tr><td>Real example</td><td>Payment methods</td><td>VehicleFactory</td><td>OS UI theme</td></tr>
+    </table>
+    <div class="trick" style="margin-top:10px">
+      Strategy = "plug different algorithms into the SAME object"<br>
+      Factory = "give me ONE object, hide how it's made"<br>
+      Abstract Factory = "give me a MATCHING SET of objects"
+    </div>
+  </div>
+</div>
+
+<!-- ADAPTER vs DECORATOR vs PROXY -->
+<div id="sec-adp" class="sec">
+  <div class="card">
+    <div class="card-title">Adapter vs Decorator vs Proxy</div>
+    <div class="q">All three wrap an object. All three look identical in code!</div>
+    <div class="trick"><b>Core insight:</b> Ask — am I changing the <b>interface</b>? Adding <b>behavior</b>? Or controlling <b>access</b>?</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Adapter — two different interfaces, bridged</p>
+    <div class="flow">
+      <div class="fb b">Client expects: MediaPlayer</div><div class="arr">→</div>
+      <div class="fb p">Adapter (implements MediaPlayer)</div><div class="arr">→</div>
+      <div class="fb c">VlcPlayer (incompatible type)</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Decorator — same interface, stacks behavior like onion layers</p>
+    <div class="flow">
+      <div class="fb b">client.cost()</div><div class="arr">→</div>
+      <div class="fb p">SugarDecorator</div><div class="arr">→</div>
+      <div class="fb a">MilkDecorator</div><div class="arr">→</div>
+      <div class="fb t">SimpleCoffee (base)</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Proxy — same interface, stands guard in front</p>
+    <div class="flow">
+      <div class="fb b">client.display()</div><div class="arr">→</div>
+      <div class="fb p">Proxy: check auth / cache</div><div class="arr">→</div>
+      <div class="fb t">RealImage.display()</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th></th><th>Adapter</th><th>Decorator</th><th>Proxy</th></tr>
+      <tr><td>Same interface?</td><td>No — converts it</td><td><span class="yes">✅ Yes</span></td><td><span class="yes">✅ Yes</span></td></tr>
+      <tr><td>Purpose</td><td>Make incompatible work</td><td>Stack/add behavior</td><td>Control access</td></tr>
+      <tr><td>Can stack multiples?</td><td>No</td><td><span class="yes">✅ Yes — that's the point</span></td><td>Usually no</td></tr>
+      <tr><td>Java real use</td><td>InputStreamReader</td><td>BufferedReader(FileReader)</td><td>Spring AOP, Hibernate</td></tr>
+      <tr><td>Analogy</td><td>Travel plug adapter</td><td>Gift wrap layers</td><td>Receptionist / bodyguard</td></tr>
+    </table>
+    <div class="trick" style="margin-top:10px">
+      Does the client interface CHANGE? → <b>Adapter</b><br>
+      Do you ADD more behavior, layer by layer? → <b>Decorator</b><br>
+      Do you CONTROL who/when gets to call? → <b>Proxy</b>
+    </div>
+  </div>
+</div>
+
+<!-- OBSERVER vs CHAIN -->
+<div id="sec-obs" class="sec">
+  <div class="card">
+    <div class="card-title">Observer vs Chain of Responsibility</div>
+    <div class="q">Both pass a message to multiple handlers — in completely opposite ways</div>
+    <div class="trick"><b>Core insight:</b> Observer = broadcast (everyone hears it). Chain = relay race (one person finishes it, done).</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Observer — ALL subscribers notified</p>
+    <div class="flow">
+      <div class="fb p">Subject changes</div><div class="arr">→</div>
+      <div class="fb b">notifyAll()</div><div class="arr">→</div>
+      <div class="fb t">EmailAlert ✅</div><div class="arr">+</div>
+      <div class="fb t">SMSAlert ✅</div><div class="arr">+</div>
+      <div class="fb t">PushAlert ✅</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Chain — stops at the first handler that can handle it</p>
+    <div class="flow">
+      <div class="fb b">Request (level 3)</div><div class="arr">→</div>
+      <div class="fb p">Bot: can't handle</div><div class="arr">→</div>
+      <div class="fb a">L1: can't handle</div><div class="arr">→</div>
+      <div class="fb t">Manager: handles ✅ STOP</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th></th><th>Observer</th><th>Chain of Responsibility</th></tr>
+      <tr><td>Who handles?</td><td><span class="yes">ALL observers</span></td><td>Only ONE (the right one)</td></tr>
+      <tr><td>Flow type</td><td>Broadcast / pub-sub</td><td>Linear relay, early exit</td></tr>
+      <tr><td>Handlers know each other?</td><td>No — Subject has a list</td><td>Yes — each has a "next" pointer</td></tr>
+      <tr><td>Real example</td><td>Stock price → all apps notified</td><td>Support ticket escalation</td></tr>
+      <tr><td>Java real use</td><td>EventListener, Spring events</td><td>Servlet filters, middleware</td></tr>
+    </table>
+    <div class="trick" style="margin-top:10px">
+      Observer = YouTube upload → ALL subscribers get notified<br>
+      Chain = Customer support → first agent who can help, answers. Done.
+    </div>
+  </div>
+</div>
+
+<!-- STATE vs STRATEGY -->
+<div id="sec-ss" class="sec">
+  <div class="card">
+    <div class="card-title">State vs Strategy</div>
+    <div class="q">Most identical-looking pair — the code looks EXACTLY the same!</div>
+    <div class="trick"><b>Core insight:</b> Strategy = YOU choose the behavior. State = object automatically switches itself when something happens.</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Strategy — client manually injects the algorithm</p>
+    <div class="flow">
+      <div class="fb b">You: sorter.setStrategy(new QuickSort())</div><div class="arr">→</div>
+      <div class="fb p">Context runs it</div><div class="arr">→</div>
+      <div class="fb t">QuickSort.sort()</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">State — object self-transitions automatically</p>
+    <div class="flow">
+      <div class="fb b">vm.insertCoin()</div><div class="arr">→</div>
+      <div class="fb p">auto: NoCoin → HasCoin</div>
+    </div>
+    <div class="flow" style="margin-top:4px">
+      <div class="fb b">vm.pressButton()</div><div class="arr">→</div>
+      <div class="fb a">auto: HasCoin → Dispensing → NoCoin</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th></th><th>Strategy</th><th>State</th></tr>
+      <tr><td>Who changes behavior?</td><td>Client explicitly sets it</td><td>Object transitions itself</td></tr>
+      <tr><td>States know each other?</td><td>No</td><td><span class="yes">Yes — trigger transitions</span></td></tr>
+      <tr><td>Can client set it directly?</td><td><span class="yes">✅ Yes, that's the point</span></td><td>Unusual — breaks the pattern</td></tr>
+      <tr><td>Intent</td><td>Swap algorithms</td><td>Model a lifecycle / state machine</td></tr>
+      <tr><td>Real example</td><td>Payment method selection</td><td>Vending machine, Order status</td></tr>
+    </table>
+    <pre>// Strategy — client picks
+sorter.setStrategy(new BubbleSort()); // explicit choice
+sorter.sort(data);
+
+// State — object self-transitions
+machine.insertCoin();   // internally: state = HasCoinState
+machine.pressButton();  // internally: state = NoCoinState again</pre>
+    <div class="trick">
+      <b>Litmus test:</b><br>
+      "Who sets the next behavior?"<br>
+      → Client code sets it? = <b>Strategy</b><br>
+      → Object sets it on itself after an event? = <b>State</b>
+    </div>
+  </div>
+</div>
+
+<!-- FACTORY vs BUILDER -->
+<div id="sec-fb2" class="sec">
+  <div class="card">
+    <div class="card-title">Factory vs Builder</div>
+    <div class="q">Both hide object creation. The difference is HOW complex the object is.</div>
+    <div class="trick"><b>Core insight:</b> Factory = one call, done. Builder = piece by piece, then assemble.</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Factory — fast, one decision</p>
+    <div class="flow">
+      <div class="fb b">getVehicle("CAR")</div><div class="arr">→</div>
+      <div class="fb p">Factory decides</div><div class="arr">→</div>
+      <div class="fb t">new Car() returned instantly</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Builder — step by step, optional parts, then build</p>
+    <div class="flow">
+      <div class="fb b">.size("large")</div><div class="arr">→</div>
+      <div class="fb p">.crust("thin")</div><div class="arr">→</div>
+      <div class="fb a">.topping("cheese")</div><div class="arr">→</div>
+      <div class="fb t">.build() → Pizza</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th></th><th>Factory</th><th>Builder</th></tr>
+      <tr><td>Steps to create?</td><td>One call</td><td>Many steps, then build()</td></tr>
+      <tr><td>Optional fields?</td><td>Poor support</td><td><span class="yes">✅ Excellent</span></td></tr>
+      <tr><td>Result varies by?</td><td>Type/condition (if-else)</td><td>Which steps you called</td></tr>
+      <tr><td>Readability</td><td>Factory.get("X")</td><td>.a().b().c().build() — fluent</td></tr>
+      <tr><td>Java real use</td><td>Calendar.getInstance()</td><td>StringBuilder, HttpRequest.Builder</td></tr>
+    </table>
+    <div class="trick" style="margin-top:10px">
+      Constructor has 4+ parameters, many optional? → <b>Builder</b><br>
+      Just need the right TYPE of object in one shot? → <b>Factory</b>
+    </div>
+  </div>
+</div>
+
+<!-- TEMPLATE vs STRATEGY -->
+<div id="sec-ts" class="sec">
+  <div class="card">
+    <div class="card-title">Template Method vs Strategy</div>
+    <div class="q">Both vary algorithm steps. One uses inheritance, one uses composition.</div>
+    <div class="trick"><b>Core insight:</b> Template locks the skeleton in base class — subclasses fill gaps. Strategy injects the whole algorithm from outside.</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Template Method — skeleton fixed in parent, steps overridden in child</p>
+    <div class="flow">
+      <div class="fb p">Beverage.prepare() [fixed order]</div><div class="arr">→</div>
+      <div class="fb b">boilWater()</div><div class="arr">→</div>
+      <div class="fb a">brew() [override]</div><div class="arr">→</div>
+      <div class="fb t">addExtras() [hook]</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Strategy — inject whole algorithm from outside</p>
+    <div class="flow">
+      <div class="fb b">Sorter</div><div class="arr">→</div>
+      <div class="fb p">holds SortStrategy interface</div><div class="arr">→</div>
+      <div class="fb t">QuickSort (swappable at runtime)</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th></th><th>Template Method</th><th>Strategy</th></tr>
+      <tr><td>Mechanism</td><td>Inheritance (extends)</td><td>Composition (has-a interface)</td></tr>
+      <tr><td>Who controls flow?</td><td>Parent class — skeleton fixed</td><td>Client injects the algorithm</td></tr>
+      <tr><td>Swap at runtime?</td><td><span class="no">❌ No — baked in subclass</span></td><td><span class="yes">✅ Yes — inject any impl</span></td></tr>
+      <tr><td>Partial variation?</td><td><span class="yes">✅ Override just 1–2 steps</span></td><td>Replace the entire algorithm</td></tr>
+      <tr><td>Java real use</td><td>HttpServlet.service() → doGet()</td><td>Collections.sort(list, comparator)</td></tr>
+    </table>
+    <div class="trick" style="margin-top:10px">
+      Steps mostly same, 1–2 differ? → <b>Template Method</b><br>
+      Whole algorithm varies or needs runtime swap? → <b>Strategy</b><br><br>
+      GoF says: "Prefer composition over inheritance" — that's why Strategy is more flexible.
+    </div>
+  </div>
+</div>
+
+<!-- FACADE vs PROXY -->
+<div id="sec-fp" class="sec">
+  <div class="card">
+    <div class="card-title">Facade vs Proxy</div>
+    <div class="q">Both sit "in front of" something — but solve completely different problems</div>
+    <div class="trick"><b>Core insight:</b> Facade = simplify MANY things into ONE. Proxy = stand in front of ONE thing to control it.</div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Facade — hides complexity of many subsystems</p>
+    <div class="flow">
+      <div class="fb b">client.watchMovie()</div><div class="arr">→</div>
+      <div class="fb p">HomeTheaterFacade</div><div class="arr">→</div>
+      <div class="fb t">TV.on()</div><div class="arr">+</div>
+      <div class="fb t">Sound.setVol()</div><div class="arr">+</div>
+      <div class="fb t">Lights.dim()</div>
+    </div>
+
+    <p style="font-size:11px;font-weight:600;color:#555;margin:10px 0 4px">Proxy — controls access to ONE object</p>
+    <div class="flow">
+      <div class="fb b">client.display()</div><div class="arr">→</div>
+      <div class="fb p">ImageProxy: check / cache</div><div class="arr">→</div>
+      <div class="fb t">RealImage.display()</div>
+    </div>
+
+    <table style="margin-top:10px">
+      <tr><th></th><th>Facade</th><th>Proxy</th></tr>
+      <tr><td>Wraps how many?</td><td>Many subsystems</td><td>One real object</td></tr>
+      <tr><td>Same interface as real?</td><td>No — provides NEW simpler one</td><td><span class="yes">✅ Yes — identical</span></td></tr>
+      <tr><td>Purpose</td><td>Simplify / convenience API</td><td>Control, protect, cache, lazy-load</td></tr>
+      <tr><td>Java real use</td><td>JdbcTemplate, SLF4J</td><td>Spring AOP, Hibernate lazy load</td></tr>
+      <tr><td>Analogy</td><td>TV remote (hides 10 devices)</td><td>Receptionist (guards one boss)</td></tr>
+    </table>
+    <div class="trick" style="margin-top:10px">
+      New interface SIMPLER than what's underneath? → <b>Facade</b><br>
+      Interface IDENTICAL to real object, just intercepted? → <b>Proxy</b>
+    </div>
+  </div>
+</div>
+
+<!-- MEMORY TRICKS -->
+<div id="sec-mem" class="sec">
+  <div class="card">
+    <div class="card-title">One-line memory tricks for every pattern</div>
+    <table>
+      <tr><th>Pattern</th><th>Memory trick</th><th>Analogy</th></tr>
+      <tr><td><b>Singleton</b></td><td>"Only one CEO in a company"</td><td>Company CEO</td></tr>
+      <tr><td><b>Factory</b></td><td>"Tell me what, I'll handle the new"</td><td>Car showroom — you say "Car", they bring it</td></tr>
+      <tr><td><b>Abstract Factory</b></td><td>"A factory that makes matching sets"</td><td>IKEA room set — chair+table+lamp all match</td></tr>
+      <tr><td><b>Builder</b></td><td>"Subway sandwich — build step by step"</td><td>Subway order customization</td></tr>
+      <tr><td><b>Prototype</b></td><td>"Photocopy instead of rewriting"</td><td>Ctrl+C, Ctrl+V</td></tr>
+      <tr><td><b>Adapter</b></td><td>"Travel plug adapter"</td><td>3-pin to 2-pin adapter</td></tr>
+      <tr><td><b>Decorator</b></td><td>"Gift wrap layers — add without opening"</td><td>Stacking coffee toppings</td></tr>
+      <tr><td><b>Facade</b></td><td>"TV remote — one button, many devices"</td><td>Home theater remote</td></tr>
+      <tr><td><b>Proxy</b></td><td>"Receptionist before the boss"</td><td>Corporate receptionist</td></tr>
+      <tr><td><b>Strategy</b></td><td>"GPS: same destination, different route"</td><td>Google Maps route options</td></tr>
+      <tr><td><b>Observer</b></td><td>"YouTube subscribe — all notified"</td><td>YouTube channel notifications</td></tr>
+      <tr><td><b>Command</b></td><td>"Restaurant order slip — action as object"</td><td>Written order → cancel/redo</td></tr>
+      <tr><td><b>Template Method</b></td><td>"Recipe skeleton — fill in the steps"</td><td>Cooking recipe</td></tr>
+      <tr><td><b>State</b></td><td>"Traffic light — behavior by state"</td><td>Traffic light lifecycle</td></tr>
+      <tr><td><b>Chain</b></td><td>"Support escalation — pass up the chain"</td><td>L1 → L2 → Manager</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">The 5-second test for the most confused pairs</div>
+    <table>
+      <tr><th>Confused between…</th><th>Ask this</th><th>YES →</th><th>NO →</th></tr>
+      <tr><td>Adapter or Decorator?</td><td>Does the interface CHANGE?</td><td>Adapter</td><td>Decorator</td></tr>
+      <tr><td>Decorator or Proxy?</td><td>Stacking multiple layers of behavior?</td><td>Decorator</td><td>Proxy</td></tr>
+      <tr><td>Strategy or State?</td><td>Does CLIENT set the behavior explicitly?</td><td>Strategy</td><td>State</td></tr>
+      <tr><td>Factory or Builder?</td><td>Multiple optional steps to construct?</td><td>Builder</td><td>Factory</td></tr>
+      <tr><td>Observer or Chain?</td><td>Should ALL handlers receive it?</td><td>Observer</td><td>Chain</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  var secs = document.querySelectorAll('.sec');
+  for (var i = 0; i < secs.length; i++) {
+    secs[i].classList.remove('active');
+  }
+  document.getElementById('sec-' + id).classList.add('active');
+
+  var btns = document.querySelectorAll('.nav button');
+  for (var j = 0; j < btns.length; j++) {
+    btns[j].classList.remove('active');
+    if (btns[j].getAttribute('onclick') === "show('" + id + "')") {
+      btns[j].classList.add('active');
+    }
+  }
+}
+</script>
+</body>
+</html>
