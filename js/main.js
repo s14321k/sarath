@@ -212,8 +212,30 @@
         let runnerMeta = null;
         let runnerOutput = null;
         let runnerRunButton = null;
+        let runnerVisualizeButton = null;
+        let runnerForceVisualizeButton = null;
+        let runnerSaveVisualButton = null;
+        let runnerHistoryButton = null;
+        let runnerAiSettingsButton = null;
+        let runnerVisualMode = null;
+        let runnerAudienceLevel = null;
+        let runnerVisualization = null;
+        let runnerHistoryContainer = null;
         let runnerCode = '';
         let runnerLanguage = null;
+        let currentVisualization = null;
+        let currentVisualizationSource = '';
+        let currentVisualizationHistory = [];
+        let aiSettingsModal = null;
+        let aiProviderInput = null;
+        let aiBaseUrlInput = null;
+        let aiModelInput = null;
+        let aiApiKeyInput = null;
+        let aiProviderHelp = null;
+        let aiConfigStatus = null;
+        let aiConfigCache = null;
+        let aiConfigLoadedForUser = '';
+        const AI_PREFS_KEY = 'aiVisualPrefs:v1';
 
         function fallbackCopy(text) {
             const area = document.createElement('textarea');
@@ -284,6 +306,696 @@
             return source;
         }
 
+        function getCurrentUser() {
+            return sessionStorage.getItem('visitorName') || '';
+        }
+
+        function getSessionToken() {
+            return sessionStorage.getItem('visitSessionToken') || '';
+        }
+
+        function requiresSessionUpgrade() {
+            return Boolean(sessionStorage.getItem('visitRecorded') && getCurrentUser() && !getSessionToken());
+        }
+
+        function redirectToReLogin(message) {
+            if (message) {
+                try { sessionStorage.setItem('welcomeMessage', message); } catch {}
+            }
+            try {
+                sessionStorage.removeItem('visitRecorded');
+                sessionStorage.removeItem('visitorName');
+                sessionStorage.removeItem('knownUser');
+                sessionStorage.removeItem('visitSessionToken');
+            } catch {}
+            const indexUrl = new URL('../index.html', window.location.href);
+            indexUrl.searchParams.set('next', window.location.href);
+            window.location.replace(indexUrl.toString());
+        }
+
+        function readAiPrefs() {
+            try {
+                const raw = localStorage.getItem(AI_PREFS_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function writeAiPrefs(next) {
+            try {
+                localStorage.setItem(AI_PREFS_KEY, JSON.stringify(next || {}));
+            } catch {}
+        }
+
+        async function callVisitApi(payload) {
+            const endpoint = window.VISIT_ENDPOINT || '';
+            if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+            }
+            return data;
+        }
+
+        function setAiConfigStatus(message, isError) {
+            if (!aiConfigStatus) return;
+            aiConfigStatus.textContent = message || '';
+            aiConfigStatus.classList.toggle('is-error', Boolean(isError));
+        }
+
+        function applyAiProviderDefaults(forceModel) {
+            if (!aiProviderInput || !aiBaseUrlInput || !aiModelInput) return;
+            const provider = aiProviderInput.value || 'openai';
+            if (provider === 'openai') {
+                if (!aiBaseUrlInput.value.trim()) {
+                    aiBaseUrlInput.value = 'https://api.openai.com/v1';
+                }
+                if (forceModel || !aiModelInput.value.trim()) {
+                    aiModelInput.value = 'gpt-5.5';
+                }
+            } else if (provider === 'openrouter') {
+                if (forceModel || !aiBaseUrlInput.value.trim()) {
+                    aiBaseUrlInput.value = 'https://openrouter.ai/api/v1';
+                }
+                if (forceModel || !aiModelInput.value.trim()) {
+                    aiModelInput.value = 'openai/gpt-4.1-mini';
+                }
+            } else if (provider === 'groq') {
+                if (forceModel || !aiBaseUrlInput.value.trim()) {
+                    aiBaseUrlInput.value = 'https://api.groq.com/openai/v1';
+                }
+                if (forceModel || !aiModelInput.value.trim()) {
+                    aiModelInput.value = 'llama-3.1-8b-instant';
+                }
+            } else if (provider === 'together') {
+                if (forceModel || !aiBaseUrlInput.value.trim()) {
+                    aiBaseUrlInput.value = 'https://api.together.xyz/v1';
+                }
+                if (forceModel || !aiModelInput.value.trim()) {
+                    aiModelInput.value = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo';
+                }
+            } else if (provider === 'anthropic') {
+                if (forceModel || !aiBaseUrlInput.value.trim()) {
+                    aiBaseUrlInput.value = 'https://api.anthropic.com/v1';
+                }
+                if (forceModel || !aiModelInput.value.trim()) {
+                    aiModelInput.value = 'claude-3-5-sonnet-latest';
+                }
+            } else if (provider === 'gemini') {
+                if (forceModel || !aiBaseUrlInput.value.trim()) {
+                    aiBaseUrlInput.value = 'https://generativelanguage.googleapis.com/v1beta';
+                }
+                if (forceModel || !aiModelInput.value.trim()) {
+                    aiModelInput.value = 'gemini-2.5-flash';
+                }
+            }
+            updateAiProviderHelp();
+        }
+
+        function updateAiUiState() {
+            const hasConfig = Boolean(aiConfigCache?.hasApiKey && aiConfigCache?.model);
+            if (runnerVisualizeButton) {
+                runnerVisualizeButton.disabled = false;
+                runnerVisualizeButton.textContent = 'Visualize Logic';
+            }
+            if (runnerForceVisualizeButton) {
+                runnerForceVisualizeButton.disabled = !hasConfig;
+                runnerForceVisualizeButton.textContent = hasConfig ? 'Use AI Again' : 'AI Setup Required';
+            }
+            if (runnerSaveVisualButton) {
+                runnerSaveVisualButton.disabled = !currentVisualization;
+            }
+            if (runnerVisualization && !hasConfig && !runnerVisualization.innerHTML.trim()) {
+                runnerVisualization.innerHTML = '<div class="logic-empty">Add AI settings to generate a visual explanation for this program.</div>';
+            }
+        }
+
+        function fillAiSettingsForm() {
+            if (!aiProviderInput || !aiBaseUrlInput || !aiModelInput || !aiApiKeyInput) return;
+            aiProviderInput.value = aiConfigCache?.provider || 'openai';
+            aiBaseUrlInput.value = aiConfigCache?.baseUrl || '';
+            aiModelInput.value = aiConfigCache?.model || '';
+            aiApiKeyInput.value = '';
+            applyAiProviderDefaults(false);
+            setAiConfigStatus(aiConfigCache?.hasApiKey ? 'API key saved for this user. Leave blank to keep it unchanged.' : 'Enter an API key and model to enable visualization.', false);
+        }
+
+        function updateAiProviderHelp() {
+            if (!aiProviderHelp || !aiProviderInput) return;
+            const provider = aiProviderInput.value || 'openai';
+            let title = 'Provider notes';
+            let body = 'Save the API key once for this authenticated user. It stays on the backend in encrypted form.';
+            if (provider === 'gemini') {
+                title = 'Gemini';
+                body = 'Create a Gemini API key in Google AI Studio. The key belongs to a Google Cloud project. For stronger control, restrict it to the Generative Language API in Google Cloud Console. Recommended model: gemini-2.5-flash.';
+            } else if (provider === 'openai') {
+                title = 'OpenAI';
+                body = 'Use an OpenAI API key from platform.openai.com. ChatGPT subscription access does not automatically include API quota. Recommended model: gpt-5.5.';
+            } else if (provider === 'anthropic') {
+                title = 'Anthropic';
+                body = 'Use an Anthropic Console API key. Recommended model: claude-3-5-sonnet-latest.';
+            } else if (provider === 'openrouter') {
+                title = 'OpenRouter';
+                body = 'Use an OpenRouter API key and an OpenRouter model id such as openai/gpt-4.1-mini or a supported free-tier model if available on your account.';
+            } else if (provider === 'groq') {
+                title = 'Groq';
+                body = 'Use a Groq API key and a Groq-supported model id. Recommended default: llama-3.1-8b-instant.';
+            } else if (provider === 'together') {
+                title = 'Together';
+                body = 'Use a Together API key and a Together model id. Recommended default: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo.';
+            }
+            aiProviderHelp.innerHTML = `<strong>${escapeHtml(title)}:</strong> ${escapeHtml(body)}`;
+        }
+
+        async function loadAiConfig(forceReload) {
+            const user = getCurrentUser();
+            const sessionToken = getSessionToken();
+            if (requiresSessionUpgrade()) {
+                redirectToReLogin('Please log in again to use AI features.');
+                return null;
+            }
+            if (!user || !sessionToken) {
+                aiConfigCache = null;
+                aiConfigLoadedForUser = '';
+                updateAiUiState();
+                return null;
+            }
+            if (!forceReload && aiConfigCache && aiConfigLoadedForUser === user) {
+                return aiConfigCache;
+            }
+            try {
+                const data = await callVisitApi({
+                    eventType: 'ai_config_get',
+                    user,
+                    sessionToken
+                });
+                aiConfigCache = {
+                    hasApiKey: Boolean(data?.hasApiKey),
+                    provider: data?.provider || 'openai',
+                    model: data?.model || '',
+                    baseUrl: data?.baseUrl || '',
+                    updatedAt: data?.updatedAt || ''
+                };
+                aiConfigLoadedForUser = user;
+            } catch {
+                aiConfigCache = null;
+                aiConfigLoadedForUser = user;
+            }
+            fillAiSettingsForm();
+            updateAiUiState();
+            return aiConfigCache;
+        }
+
+        function ensureAiSettingsModal() {
+            if (aiSettingsModal) return;
+            aiSettingsModal = document.createElement('div');
+            aiSettingsModal.className = 'ai-settings-modal hidden';
+            aiSettingsModal.innerHTML = `
+                <div class="ai-settings-backdrop" data-ai-close="1"></div>
+                <section class="ai-settings-panel" role="dialog" aria-modal="true" aria-label="AI settings">
+                    <div class="ai-settings-header">
+                        <div>
+                            <div class="ai-settings-title">AI Settings</div>
+                            <div class="ai-settings-subtitle">Saved per authenticated user</div>
+                        </div>
+                        <button type="button" class="code-runner-button secondary" data-ai-close="1">Close</button>
+                    </div>
+                    <div class="ai-settings-body">
+                        <label class="code-runner-label" for="aiProviderInput">Provider</label>
+                        <select id="aiProviderInput" class="code-runner-select">
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Claude / Anthropic</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="openrouter">OpenRouter</option>
+                            <option value="groq">Groq</option>
+                            <option value="together">Together</option>
+                        </select>
+                        <label class="code-runner-label" for="aiBaseUrlInput">Base URL</label>
+                        <input id="aiBaseUrlInput" class="code-runner-text" type="text" placeholder="https://api.openai.com/v1">
+                        <label class="code-runner-label" for="aiModelInput">Model</label>
+                        <input id="aiModelInput" class="code-runner-text" type="text" placeholder="gpt-4.1-mini">
+                        <label class="code-runner-label" for="aiApiKeyInput">API Key</label>
+                        <input id="aiApiKeyInput" class="code-runner-text" type="password" placeholder="sk-...">
+                        <div class="ai-provider-help" data-ai-provider-help></div>
+                        <div class="ai-settings-status" data-ai-config-status></div>
+                        <div class="ai-settings-actions">
+                            <button type="button" class="code-runner-button primary" data-ai-action="save">Save</button>
+                            <button type="button" class="code-runner-button secondary" data-ai-action="refresh">Refresh</button>
+                            <button type="button" class="code-runner-button secondary" data-ai-action="delete">Remove</button>
+                        </div>
+                    </div>
+                </section>
+            `;
+            document.body.appendChild(aiSettingsModal);
+            aiProviderInput = aiSettingsModal.querySelector('#aiProviderInput');
+            aiBaseUrlInput = aiSettingsModal.querySelector('#aiBaseUrlInput');
+            aiModelInput = aiSettingsModal.querySelector('#aiModelInput');
+            aiApiKeyInput = aiSettingsModal.querySelector('#aiApiKeyInput');
+            aiProviderHelp = aiSettingsModal.querySelector('[data-ai-provider-help]');
+            aiConfigStatus = aiSettingsModal.querySelector('[data-ai-config-status]');
+            aiProviderInput?.addEventListener('change', () => applyAiProviderDefaults(true));
+
+            aiSettingsModal.addEventListener('click', async (ev) => {
+                if (ev.target.closest('[data-ai-close="1"]')) {
+                    closeAiSettingsModal();
+                    return;
+                }
+                const action = ev.target.closest('[data-ai-action]')?.dataset.aiAction;
+                if (!action) return;
+                if (action === 'refresh') {
+                    await loadAiConfig(true);
+                    fillAiSettingsForm();
+                    return;
+                }
+                if (action === 'save') {
+                    await saveAiConfig();
+                    return;
+                }
+                if (action === 'delete') {
+                    await deleteAiConfig();
+                }
+            });
+        }
+
+        function openAiSettingsModal() {
+            if (requiresSessionUpgrade()) {
+                redirectToReLogin('Please log in again to use AI features.');
+                return;
+            }
+            ensureAiSettingsModal();
+            fillAiSettingsForm();
+            aiSettingsModal.classList.remove('hidden');
+            document.body.classList.add('ai-settings-open');
+            setTimeout(() => aiModelInput?.focus(), 0);
+        }
+
+        function closeAiSettingsModal() {
+            if (!aiSettingsModal) return;
+            aiSettingsModal.classList.add('hidden');
+            document.body.classList.remove('ai-settings-open');
+        }
+
+        async function saveAiConfig() {
+            const user = getCurrentUser();
+            const sessionToken = getSessionToken();
+            if (requiresSessionUpgrade()) {
+                redirectToReLogin('Please log in again to use AI features.');
+                return;
+            }
+            if (!user || !sessionToken) {
+                setAiConfigStatus('Login is required before saving AI settings.', true);
+                return;
+            }
+            const payload = {
+                eventType: 'ai_config_save',
+                user,
+                sessionToken,
+                provider: aiProviderInput?.value || 'openai',
+                baseUrl: aiBaseUrlInput?.value || '',
+                model: aiModelInput?.value || '',
+                apiKey: aiApiKeyInput?.value || ''
+            };
+            if (!payload.model.trim()) {
+                setAiConfigStatus('Model is required.', true);
+                return;
+            }
+            setAiConfigStatus('Saving AI settings...', false);
+            try {
+                await callVisitApi(payload);
+                await loadAiConfig(true);
+                fillAiSettingsForm();
+                setAiConfigStatus('AI settings saved.', false);
+            } catch (error) {
+                setAiConfigStatus(error instanceof Error ? error.message : 'Failed to save AI settings.', true);
+            }
+        }
+
+        async function deleteAiConfig() {
+            const user = getCurrentUser();
+            const sessionToken = getSessionToken();
+            if (requiresSessionUpgrade()) {
+                redirectToReLogin('Please log in again to use AI features.');
+                return;
+            }
+            if (!user || !sessionToken) {
+                setAiConfigStatus('Login is required before deleting AI settings.', true);
+                return;
+            }
+            setAiConfigStatus('Removing AI settings...', false);
+            try {
+                await callVisitApi({
+                    eventType: 'ai_config_delete',
+                    user,
+                    sessionToken
+                });
+                aiConfigCache = {
+                    hasApiKey: false,
+                    provider: 'openai',
+                    model: '',
+                    baseUrl: '',
+                    updatedAt: ''
+                };
+                fillAiSettingsForm();
+                updateAiUiState();
+                setAiConfigStatus('AI settings removed.', false);
+            } catch (error) {
+                setAiConfigStatus(error instanceof Error ? error.message : 'Failed to remove AI settings.', true);
+            }
+        }
+
+        function renderVisualization(data) {
+            if (!runnerVisualization) return;
+            currentVisualization = data && typeof data === 'object' ? data : null;
+            if (runnerSaveVisualButton) runnerSaveVisualButton.disabled = !currentVisualization;
+            const steps = Array.isArray(data?.steps) ? data.steps : [];
+            const flow = Array.isArray(data?.flow) ? data.flow : [];
+            if (!steps.length) {
+                runnerVisualization.innerHTML = '<div class="logic-empty">No visual steps were returned.</div>';
+                return;
+            }
+
+            const phaseButtons = steps.map((step, index) => (
+                `<button type="button" class="logic-phase-btn${index === 0 ? ' active' : ''}" data-logic-step="${index}">${escapeHtml(step.label || `Step ${index + 1}`)}</button>`
+            )).join('');
+
+            const toneClass = (tone) => {
+                const value = String(tone || '').trim();
+                return value ? ` logic-tone-${escapeHtml(value)}` : '';
+            };
+
+            const stateCards = (step) => Array.isArray(step?.state) && step.state.length
+                ? step.state.map((entry) => `
+                    <div class="logic-state-card">
+                        <div class="logic-state-name">${escapeHtml(entry.name || '')}</div>
+                        <div class="logic-state-value">${escapeHtml(String(entry.value ?? ''))}</div>
+                        <div class="logic-state-role">${escapeHtml(entry.role || '')}</div>
+                    </div>
+                `).join('')
+                : '<div class="logic-empty small">No tracked variables for this step.</div>';
+
+            const stepStats = (step) => Array.isArray(step?.stats) && step.stats.length
+                ? step.stats.map((entry) => `
+                    <div class="logic-stat-card${toneClass(entry.tone)}">
+                        <div class="logic-stat-label">${escapeHtml(entry.label || '')}</div>
+                        <div class="logic-stat-value">${escapeHtml(String(entry.value ?? ''))}</div>
+                    </div>
+                `).join('')
+                : '<div class="logic-empty small">No summary metrics for this step.</div>';
+
+            const stepCells = (step) => Array.isArray(step?.cells) && step.cells.length
+                ? step.cells.map((entry) => `
+                    <div class="logic-cell${toneClass(entry.tone)}">
+                        <div class="logic-cell-index">${escapeHtml(entry.index || '')}</div>
+                        <div class="logic-cell-value">${escapeHtml(String(entry.value ?? ''))}</div>
+                        <div class="logic-cell-tag">${escapeHtml(entry.tag || '')}</div>
+                    </div>
+                `).join('')
+                : '<div class="logic-empty small">No sequence view for this step.</div>';
+
+            const flowHtml = flow.length
+                ? flow.map((item) => `<div class="logic-flow-item logic-flow-${escapeHtml(item.type || 'process')}">${escapeHtml(item.text || '')}</div>`).join('')
+                : '<div class="logic-empty small">No flow outline returned.</div>';
+
+            const firstExplanation = escapeHtml(steps[0].explanation || '');
+            const firstFocus = escapeHtml(steps[0].focus || '');
+
+            runnerVisualization.innerHTML = `
+                <div class="logic-visual-shell">
+                    <div class="logic-visual-header">
+                        <div>
+                            <div class="logic-visual-title">${escapeHtml(data.title || 'Program Logic')}</div>
+                            <div class="logic-visual-summary">${escapeHtml(data.summary || '')}</div>
+                        </div>
+                        <div class="logic-complexity">
+                            <span>Time: ${escapeHtml(data?.complexity?.time || 'n/a')}</span>
+                            <span>Space: ${escapeHtml(data?.complexity?.space || 'n/a')}</span>
+                        </div>
+                    </div>
+                    <div class="logic-phase-row">${phaseButtons}</div>
+                    <div class="logic-step-panel">
+                        <div class="logic-step-panel-title" data-logic-section>${escapeHtml(steps[0].sectionTitle || 'Current View')}</div>
+                        <div class="logic-cell-row" data-logic-cells>${stepCells(steps[0])}</div>
+                        <div class="logic-stat-row" data-logic-stats>${stepStats(steps[0])}</div>
+                    </div>
+                    <div class="logic-step-view">
+                        <div class="logic-step-explanation${firstExplanation ? '' : ' hidden'}" data-logic-explanation>${firstExplanation}</div>
+                        <div class="logic-step-focus${firstFocus ? '' : ' hidden'}" data-logic-focus>${firstFocus}</div>
+                        <div class="logic-state-grid" data-logic-state>${stateCards(steps[0])}</div>
+                    </div>
+                    <div class="logic-flow-panel">${flowHtml}</div>
+                </div>
+            `;
+
+            const buttons = runnerVisualization.querySelectorAll('[data-logic-step]');
+            const explanation = runnerVisualization.querySelector('[data-logic-explanation]');
+            const focus = runnerVisualization.querySelector('[data-logic-focus]');
+            const state = runnerVisualization.querySelector('[data-logic-state]');
+            const section = runnerVisualization.querySelector('[data-logic-section]');
+            const cells = runnerVisualization.querySelector('[data-logic-cells]');
+            const stats = runnerVisualization.querySelector('[data-logic-stats]');
+            buttons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    const index = Number(button.dataset.logicStep);
+                    const step = steps[index] || steps[0];
+                    buttons.forEach((item) => item.classList.toggle('active', item === button));
+                    if (section) section.textContent = step?.sectionTitle || 'Current View';
+                    if (explanation) {
+                        explanation.textContent = step?.explanation || '';
+                        explanation.classList.toggle('hidden', !step?.explanation);
+                    }
+                    if (focus) {
+                        focus.textContent = step?.focus || '';
+                        focus.classList.toggle('hidden', !step?.focus);
+                    }
+                    if (state) state.innerHTML = stateCards(step);
+                    if (cells) cells.innerHTML = stepCells(step);
+                    if (stats) stats.innerHTML = stepStats(step);
+                });
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function fetchApprovedVisualization(sourceCode) {
+            return callVisitApi({
+                eventType: 'ai_visualization_get',
+                language: runnerLanguage?.label?.toLowerCase() || '',
+                sourceCode
+            });
+        }
+
+        async function submitVisualizationForApproval() {
+            const user = getCurrentUser();
+            const sessionToken = getSessionToken();
+            if (requiresSessionUpgrade()) {
+                redirectToReLogin('Please log in again to use AI features.');
+                return;
+            }
+            if (!user || !sessionToken) {
+                if (runnerVisualization) {
+                    runnerVisualization.innerHTML = '<div class="logic-empty">Login is required before saving a visualization for approval.</div>';
+                }
+                return;
+            }
+            if (!currentVisualization) return;
+            const sourceCode = runnerEditor?.value || runnerCode;
+            if (runnerStatus) runnerStatus.textContent = 'Submitting visualization for admin approval...';
+            try {
+                const result = await callVisitApi({
+                    eventType: 'ai_visualization_submit',
+                    user,
+                    sessionToken,
+                    language: runnerLanguage?.label?.toLowerCase() || '',
+                    sourceCode,
+                    visualization: currentVisualization
+                });
+                if (runnerStatus) {
+                    if (result?.duplicate) {
+                        const status = String(result?.status || '');
+                        runnerStatus.textContent = status === 'approved_exists'
+                            ? 'This exact visualization is already approved.'
+                            : status === 'rejected'
+                                ? 'This exact visualization was already rejected. Submit a changed version.'
+                                : 'This exact visualization is already pending approval.';
+                    } else {
+                        runnerStatus.textContent = 'Visualization submitted for admin approval.';
+                    }
+                }
+            } catch (error) {
+                if (runnerStatus) runnerStatus.textContent = error instanceof Error ? error.message : 'Failed to submit visualization.';
+            }
+        }
+
+        async function fetchVisualizationHistory(sourceCode) {
+            return callVisitApi({
+                eventType: 'ai_visualization_history',
+                language: runnerLanguage?.label?.toLowerCase() || '',
+                sourceCode
+            });
+        }
+
+        function summarizeVisualization(data) {
+            const steps = Array.isArray(data?.steps) ? data.steps : [];
+            return {
+                title: data?.title || 'Program Logic',
+                summary: data?.summary || '',
+                time: data?.complexity?.time || 'n/a',
+                space: data?.complexity?.space || 'n/a',
+                stepCount: String(steps.length || 0),
+                stepLabels: steps.map((step) => step?.label || '').filter(Boolean).join(', ') || 'n/a'
+            };
+        }
+
+        function renderVisualizationHistoryComparison(items) {
+            if (!runnerHistoryContainer) return;
+            if (!items.length) {
+                runnerHistoryContainer.innerHTML = '<div class="logic-empty">No approved history yet for this program.</div>';
+                return;
+            }
+            const baseline = currentVisualization || items[0]?.visualization || {};
+            const summary = summarizeVisualization(baseline);
+            const currentId = items[0]?.id || 'current';
+            const optionHtml = items.map((item, index) => {
+                const label = index === 0 ? 'Current approved' : `Approved ${index + 1}`;
+                const when = item?.approvedAt ? new Date(item.approvedAt).toLocaleString() : '';
+                return `<option value="${escapeHtml(item.id || '')}">${escapeHtml(label)}${when ? ` - ${escapeHtml(when)}` : ''}</option>`;
+            }).join('');
+            runnerHistoryContainer.innerHTML = `
+                <div class="logic-history-shell">
+                    <div class="logic-history-toolbar">
+                        <div class="logic-history-title">Approved History Comparison</div>
+                        <select class="code-runner-select logic-history-select" data-history-select>${optionHtml}</select>
+                    </div>
+                    <div class="logic-history-compare" data-history-compare></div>
+                </div>
+            `;
+            const compareEl = runnerHistoryContainer.querySelector('[data-history-compare]');
+            const selectEl = runnerHistoryContainer.querySelector('[data-history-select]');
+
+            const renderCompare = (selectedId) => {
+                const selected = items.find((item) => item.id === selectedId) || items[0];
+                const other = summarizeVisualization(selected?.visualization || {});
+                compareEl.innerHTML = `
+                    <div class="logic-history-card">
+                        <div class="logic-history-card-title">Current View</div>
+                        <div class="logic-history-grid">
+                            <div><span>Title</span><strong>${escapeHtml(summary.title)}</strong></div>
+                            <div><span>Time</span><strong>${escapeHtml(summary.time)}</strong></div>
+                            <div><span>Space</span><strong>${escapeHtml(summary.space)}</strong></div>
+                            <div><span>Steps</span><strong>${escapeHtml(summary.stepCount)}</strong></div>
+                        </div>
+                        <div class="logic-history-body">${escapeHtml(summary.summary)}</div>
+                        <div class="logic-history-steps">${escapeHtml(summary.stepLabels)}</div>
+                    </div>
+                    <div class="logic-history-card">
+                        <div class="logic-history-card-title">${escapeHtml(selected?.approvedAt ? `Approved ${new Date(selected.approvedAt).toLocaleDateString()}` : 'Selected History')}</div>
+                        <div class="logic-history-grid">
+                            <div><span>Title</span><strong>${escapeHtml(other.title)}</strong></div>
+                            <div><span>Time</span><strong>${escapeHtml(other.time)}</strong></div>
+                            <div><span>Space</span><strong>${escapeHtml(other.space)}</strong></div>
+                            <div><span>Steps</span><strong>${escapeHtml(other.stepCount)}</strong></div>
+                        </div>
+                        <div class="logic-history-body">${escapeHtml(other.summary)}</div>
+                        <div class="logic-history-steps">${escapeHtml(other.stepLabels)}</div>
+                    </div>
+                `;
+            };
+
+            renderCompare(currentId);
+            if (selectEl) {
+                selectEl.value = currentId;
+                selectEl.addEventListener('change', () => renderCompare(selectEl.value));
+            }
+        }
+
+        async function openVisualizationHistory() {
+            if (!runnerHistoryContainer) return;
+            const sourceCode = runnerEditor?.value || runnerCode;
+            runnerHistoryContainer.innerHTML = '<div class="logic-empty">Loading approved history...</div>';
+            try {
+                const result = await fetchVisualizationHistory(sourceCode);
+                currentVisualizationHistory = Array.isArray(result?.items) ? result.items : [];
+                renderVisualizationHistoryComparison(currentVisualizationHistory);
+            } catch (error) {
+                runnerHistoryContainer.innerHTML = `<div class="logic-empty">History failed: ${escapeHtml(error instanceof Error ? error.message : 'Unknown error')}</div>`;
+            }
+        }
+
+        async function visualizeCurrentCode(forceAi) {
+            const user = getCurrentUser();
+            const sessionToken = getSessionToken();
+            const sourceCode = runnerEditor?.value || runnerCode;
+            if (!forceAi) {
+                if (runnerVisualization) {
+                    runnerVisualization.innerHTML = '<div class="logic-empty">Loading visualization...</div>';
+                }
+                try {
+                    const cached = await fetchApprovedVisualization(sourceCode);
+                    if (cached?.found && cached?.visualization) {
+                        currentVisualizationSource = 'approved';
+                        if (runnerStatus) runnerStatus.textContent = 'Showing approved visualization.';
+                        renderVisualization(cached.visualization || {});
+                        return;
+                    }
+                } catch {}
+            }
+            if (requiresSessionUpgrade()) {
+                redirectToReLogin('Please log in again to use AI features.');
+                return;
+            }
+            if (!user || !sessionToken) {
+                if (runnerVisualization) {
+                    runnerVisualization.innerHTML = '<div class="logic-empty">No approved visualization found. Log in to generate one with AI.</div>';
+                }
+                return;
+            }
+            await loadAiConfig(false);
+            if (!aiConfigCache?.hasApiKey || !aiConfigCache?.model) {
+                openAiSettingsModal();
+                if (runnerVisualization) {
+                    runnerVisualization.innerHTML = '<div class="logic-empty">No approved visualization found. Save AI settings to generate one.</div>';
+                }
+                return;
+            }
+            const prefs = readAiPrefs();
+            if (runnerVisualization) {
+                runnerVisualization.innerHTML = '<div class="logic-empty">Generating visual explanation...</div>';
+            }
+            try {
+                const result = await callVisitApi({
+                    eventType: 'ai_visualize',
+                    user,
+                    sessionToken,
+                    language: runnerLanguage?.label?.toLowerCase() || '',
+                    sourceCode,
+                    stdin: runnerInput?.value || '',
+                    programOutput: runnerOutput?.textContent || '',
+                    visualMode: runnerVisualMode?.value || prefs.visualMode || 'step-by-step',
+                    audienceLevel: runnerAudienceLevel?.value || prefs.audienceLevel || 'interview'
+                });
+                currentVisualizationSource = 'ai';
+                if (runnerStatus) runnerStatus.textContent = 'AI visualization ready. Save for approval if it looks good.';
+                renderVisualization(result?.visualization || {});
+            } catch (error) {
+                if (runnerVisualization) {
+                    runnerVisualization.innerHTML = `<div class="logic-empty">Visualization failed: ${escapeHtml(error instanceof Error ? error.message : 'Unknown error')}</div>`;
+                }
+            }
+        }
+
         function ensureRunnerModal() {
             if (runnerModal) return;
             runnerModal = document.createElement('div');
@@ -297,6 +1009,11 @@
                             <div class="code-runner-status" data-runner-status>Ready</div>
                         </div>
                         <div class="code-runner-actions">
+                            <button type="button" class="code-runner-button secondary" data-runner-action="ai-settings">AI Settings</button>
+                            <button type="button" class="code-runner-button secondary" data-runner-action="visualize">Visualize Logic</button>
+                            <button type="button" class="code-runner-button secondary" data-runner-action="visualize-ai">Use AI Again</button>
+                            <button type="button" class="code-runner-button secondary" data-runner-action="save-visual" disabled>Save for Approval</button>
+                            <button type="button" class="code-runner-button secondary" data-runner-action="history">History</button>
                             <button type="button" class="code-runner-button secondary" data-runner-action="open-ide">Open IDE</button>
                             <button type="button" class="code-runner-button secondary" data-runner-close="1">Close</button>
                         </div>
@@ -307,6 +1024,16 @@
                         <label class="code-runner-label" for="codeRunnerInput">Program input</label>
                         <textarea id="codeRunnerInput" class="code-runner-input" placeholder="Optional stdin"></textarea>
                         <div class="code-runner-controls">
+                            <select class="code-runner-select" id="codeRunnerVisualMode">
+                                <option value="step-by-step">Step by Step</option>
+                                <option value="flowchart">Flowchart</option>
+                                <option value="dry-run">Dry Run</option>
+                            </select>
+                            <select class="code-runner-select" id="codeRunnerAudience">
+                                <option value="interview">Interview</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="deep-dive">Deep Dive</option>
+                            </select>
                             <button type="button" class="code-runner-button primary" data-runner-action="run">Run</button>
                         </div>
                         <div class="code-runner-output-header">
@@ -314,6 +1041,10 @@
                             <div class="code-runner-meta" data-runner-meta></div>
                         </div>
                         <pre id="codeRunnerOutput" class="code-runner-output"></pre>
+                        <div class="logic-visual-container" id="logicVisualContainer">
+                            <div class="logic-empty">Add AI settings to generate a visual explanation for this program.</div>
+                        </div>
+                        <div class="logic-history-container" id="logicHistoryContainer"></div>
                     </div>
                 </section>
             `;
@@ -325,6 +1056,29 @@
             runnerMeta = runnerModal.querySelector('[data-runner-meta]');
             runnerOutput = runnerModal.querySelector('#codeRunnerOutput');
             runnerRunButton = runnerModal.querySelector('[data-runner-action="run"]');
+            runnerVisualizeButton = runnerModal.querySelector('[data-runner-action="visualize"]');
+            runnerForceVisualizeButton = runnerModal.querySelector('[data-runner-action="visualize-ai"]');
+            runnerSaveVisualButton = runnerModal.querySelector('[data-runner-action="save-visual"]');
+            runnerHistoryButton = runnerModal.querySelector('[data-runner-action="history"]');
+            runnerAiSettingsButton = runnerModal.querySelector('[data-runner-action="ai-settings"]');
+            runnerVisualMode = runnerModal.querySelector('#codeRunnerVisualMode');
+            runnerAudienceLevel = runnerModal.querySelector('#codeRunnerAudience');
+            runnerVisualization = runnerModal.querySelector('#logicVisualContainer');
+            runnerHistoryContainer = runnerModal.querySelector('#logicHistoryContainer');
+
+            const prefs = readAiPrefs();
+            if (runnerVisualMode && prefs.visualMode) runnerVisualMode.value = prefs.visualMode;
+            if (runnerAudienceLevel && prefs.audienceLevel) runnerAudienceLevel.value = prefs.audienceLevel;
+            runnerVisualMode?.addEventListener('change', () => writeAiPrefs({
+                ...readAiPrefs(),
+                visualMode: runnerVisualMode.value,
+                audienceLevel: runnerAudienceLevel?.value || 'interview'
+            }));
+            runnerAudienceLevel?.addEventListener('change', () => writeAiPrefs({
+                ...readAiPrefs(),
+                visualMode: runnerVisualMode?.value || 'step-by-step',
+                audienceLevel: runnerAudienceLevel.value
+            }));
 
             runnerModal.addEventListener('click', (ev) => {
                 if (ev.target.closest('[data-runner-close="1"]')) {
@@ -334,6 +1088,16 @@
                 const action = ev.target.closest('[data-runner-action]')?.dataset.runnerAction;
                 if (action === 'run') {
                     runCurrentCode();
+                } else if (action === 'visualize') {
+                    visualizeCurrentCode(false);
+                } else if (action === 'visualize-ai') {
+                    visualizeCurrentCode(true);
+                } else if (action === 'save-visual') {
+                    submitVisualizationForApproval();
+                } else if (action === 'history') {
+                    openVisualizationHistory();
+                } else if (action === 'ai-settings') {
+                    openAiSettingsModal();
                 } else if (action === 'open-ide') {
                     openJudge0Ide();
                 }
@@ -380,12 +1144,23 @@
             ensureRunnerModal();
             runnerCode = codeText;
             runnerLanguage = language;
+            currentVisualization = null;
+            currentVisualizationSource = '';
+            currentVisualizationHistory = [];
             runnerTitle.textContent = `Run ${language.label}`;
             if (runnerEditor) runnerEditor.value = codeText;
             setRunnerMeta(null);
             setRunnerState(`Ready to run on Judge0 CE (${language.label})`, '', false);
             runnerModal.classList.remove('hidden');
             document.body.classList.add('code-runner-open');
+            if (runnerVisualization) {
+                runnerVisualization.innerHTML = '<div class="logic-empty">Check approved visualization or use AI to generate one.</div>';
+            }
+            if (runnerHistoryContainer) {
+                runnerHistoryContainer.innerHTML = '';
+            }
+            loadAiConfig(false);
+            updateAiUiState();
             setTimeout(() => runnerEditor?.focus(), 0);
         }
 

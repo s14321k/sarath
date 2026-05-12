@@ -148,6 +148,10 @@ body {
     background: var(--accent-light);
 }
 
+.stats-header button.secondary {
+    background: rgba(255, 255, 255, 0.08);
+}
+
 .stats-header button:disabled {
     opacity: 0.7;
     cursor: wait;
@@ -323,6 +327,133 @@ body {
     border-radius: 50%;
     flex: 0 0 10px;
 }
+
+.approvals-view.hidden {
+    display: none;
+}
+
+.approvals-grid {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 16px;
+}
+
+.approval-list-card,
+.approval-preview-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.approval-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.approval-item {
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text);
+    cursor: pointer;
+}
+
+.approval-item.active {
+    border-color: rgba(233, 69, 96, 0.35);
+    background: rgba(233, 69, 96, 0.12);
+}
+
+.approval-item-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.approval-item-meta,
+.approval-preview-meta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.approval-actions {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0 14px;
+}
+
+.approval-actions button,
+#approvalsRefresh {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.approval-actions button.secondary {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.approval-preview {
+    min-height: 280px;
+}
+
+.logic-empty {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+}
+
+.logic-empty.small {
+    font-size: 12px;
+}
+
+.logic-visual-shell { display: flex; flex-direction: column; gap: 14px; }
+.logic-visual-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.logic-visual-title { font-size: 18px; font-weight: 700; color: var(--text); }
+.logic-visual-summary { margin-top: 4px; font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+.logic-complexity { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #98d8c8; white-space: nowrap; }
+.logic-phase-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.logic-phase-btn { min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: var(--text-dim); cursor: pointer; font-size: 12px; font-weight: 600; }
+.logic-phase-btn.active { border-color: rgba(108,138,255,0.42); background: rgba(108,138,255,0.16); color: #9db3ff; }
+.logic-step-panel { padding: 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; background: rgba(255,255,255,0.04); }
+.logic-step-panel-title { margin-bottom: 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+.logic-cell-row { display: flex; gap: 6px; flex-wrap: wrap; min-height: 56px; align-items: center; }
+.logic-cell { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; min-width: 48px; padding: 6px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(10,10,21,0.86); color: var(--text); font: 13px/1.2 'JetBrains Mono', monospace; }
+.logic-cell-index, .logic-cell-tag { font-size: 9px; line-height: 1.2; color: var(--text-dim); min-height: 11px; }
+.logic-cell-value { margin: 2px 0; white-space: pre-wrap; word-break: break-word; }
+.logic-stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap: 10px; margin-top: 14px; }
+.logic-stat-card { padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(10,10,21,0.86); }
+.logic-stat-label { font-size: 11px; color: var(--text-dim); }
+.logic-stat-value { margin-top: 6px; font: 14px/1.5 'JetBrains Mono', monospace; color: var(--text); }
+.logic-step-view { display: flex; flex-direction: column; gap: 10px; }
+.logic-step-explanation, .logic-step-focus { padding: 12px 14px; border-radius: 10px; background: rgba(10,10,21,0.86); color: var(--text); font-size: 13px; line-height: 1.6; }
+.logic-step-focus { color: #87ceeb; }
+.logic-state-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 10px; }
+.logic-state-card { padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); }
+.logic-state-name { font-size: 12px; color: var(--text-dim); }
+.logic-state-value { margin-top: 6px; font: 14px/1.5 'JetBrains Mono', monospace; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.logic-state-role { margin-top: 6px; font-size: 11px; color: #ffa07a; text-transform: uppercase; }
+.logic-flow-panel { display: flex; flex-direction: column; gap: 8px; }
+.logic-flow-item { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); font-size: 12px; color: var(--text); }
+.logic-flow-start, .logic-flow-end { border-color: rgba(78,240,176,0.3); color: #7ee787; }
+.logic-flow-decision { border-color: rgba(240,164,78,0.34); color: #f0a44e; }
+.logic-flow-loop { border-color: rgba(108,138,255,0.34); color: #9db3ff; }
+.logic-tone-accent { border-color: rgba(108,138,255,0.42); color: #9db3ff; background: rgba(108,138,255,0.12); }
+.logic-tone-green { border-color: rgba(78,240,176,0.34); color: #7ee787; background: rgba(78,240,176,0.1); }
+.logic-tone-amber { border-color: rgba(240,164,78,0.34); color: #f0a44e; background: rgba(240,164,78,0.1); }
+.logic-tone-red { border-color: rgba(240,112,112,0.34); color: #ff9c9c; background: rgba(240,112,112,0.1); }
+.logic-tone-purple { border-color: rgba(192,132,252,0.34); color: #d2a8ff; background: rgba(192,132,252,0.1); }
+.logic-tone-dim { opacity: 0.45; }
+.hidden { display: none; }
 
 .messages-view.hidden {
     display: none;

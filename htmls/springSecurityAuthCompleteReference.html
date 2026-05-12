@@ -1,0 +1,1058 @@
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualize Widget</title>
+<style>
+:root{
+  --font-sans:Inter,"Segoe UI",Arial,sans-serif;
+  --font-mono:"JetBrains Mono","Cascadia Code","Fira Code",Consolas,monospace;
+  --border-radius-lg:20px;
+  --color-text-primary:#e2e8f0;
+  --color-text-secondary:#cbd5e1;
+  --color-text-tertiary:#94a3b8;
+  --color-text-info:#dbeafe;
+  --color-text-warning:#fde68a;
+  --color-text-danger:#fecaca;
+  --color-text-success:#bbf7d0;
+  --color-border-tertiary:rgba(148,163,184,.18);
+  --color-border-secondary:rgba(148,163,184,.32);
+  --color-border-info:rgba(59,130,246,.45);
+  --color-border-warning:rgba(245,158,11,.45);
+  --color-border-danger:rgba(239,68,68,.45);
+  --color-border-success:rgba(16,185,129,.45);
+  --color-background-secondary:rgba(15,23,42,.7);
+  --color-background-tertiary:rgba(30,41,59,.72);
+  --color-background-info:rgba(30,64,175,.2);
+  --color-background-warning:rgba(120,53,15,.22);
+  --color-background-danger:rgba(127,29,29,.2);
+  --color-background-success:rgba(6,95,70,.22);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--font-sans);
+  background:
+    radial-gradient(circle at top left, rgba(59,130,246,.24), transparent 30%),
+    radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 28%),
+    linear-gradient(180deg,#020617 0%,#0f172a 42%,#111827 100%);
+  color:var(--color-text-primary);
+  min-height:100vh;
+}
+.page{padding:40px 20px 56px;max-width:1180px;margin:0 auto}
+.section-label{font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:6px}
+.flow-card{border-radius:var(--border-radius-lg);border:1px solid var(--color-border-tertiary);margin-bottom:28px;overflow:hidden;background:linear-gradient(180deg, rgba(15,23,42,.92), rgba(15,23,42,.76));box-shadow:0 18px 45px rgba(2,6,23,.28);backdrop-filter:blur(10px)}
+.flow-header{padding:16px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--color-border-tertiary)}
+.badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px}
+.flow-body{padding:22px}
+.flow-body p{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:14px}
+.example-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:5px 10px;border-radius:999px;background:rgba(15,23,42,.56);color:var(--color-text-secondary);margin-right:6px;margin-bottom:6px;border:1px solid var(--color-border-tertiary)}
+
+svg.flow{width:100%;overflow:visible}
+
+.step-row{display:flex;align-items:center;gap:0;margin:12px 0;flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px}
+.step-box{flex:1;min-width:100px;border-radius:14px;padding:12px 10px;text-align:center;border:1px solid var(--color-border-tertiary);background:linear-gradient(180deg, rgba(30,41,59,.96), rgba(15,23,42,.9));position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.step-box .icon{font-size:18px;line-height:1}
+.step-box .label{font-size:10px;font-weight:600;margin-top:5px;color:var(--color-text-primary);line-height:1.2}
+.step-box .sub{font-size:9px;color:var(--color-text-tertiary);margin-top:2px;line-height:1.2}
+.arrow-mid{flex:0 0 28px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1px}
+.arrow-mid .alabel{font-size:8px;color:var(--color-text-tertiary);white-space:nowrap;text-align:center}
+.arrow-mid svg{flex:0 0 auto}
+
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+.mini-card{border-radius:16px;padding:14px;border:1px solid var(--color-border-tertiary);background:linear-gradient(180deg, rgba(30,41,59,.85), rgba(15,23,42,.8));box-shadow:0 10px 24px rgba(2,6,23,.18)}
+.mini-card h4{font-size:12px;font-weight:500;margin-bottom:6px}
+.mini-card p{font-size:11px;color:var(--color-text-secondary);line-height:1.5}
+.mini-card ul{font-size:11px;color:var(--color-text-secondary);padding-left:14px;line-height:1.7}
+
+.code-block{font-family:var(--font-mono);font-size:11px;background:rgba(2,6,23,.7);border:1px solid rgba(71,85,105,.45);border-radius:12px;padding:12px 14px;margin:8px 0;line-height:1.6;overflow-x:auto}
+.c-k{color:#7c6af7} .c-s{color:#10b981} .c-n{color:#e07b39} .c-c{color:var(--color-text-tertiary);font-style:italic}
+
+.divider{height:1px;background:linear-gradient(90deg, transparent, var(--color-border-secondary), transparent);margin:24px 0}
+.tag{display:inline-block;font-size:9px;font-weight:700;padding:4px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:1px}
+.tag-blue{background:#dbeafe;color:#1d4ed8} 
+.tag-green{background:#d1fae5;color:#065f46}
+.tag-amber{background:#fef3c7;color:#92400e}
+.tag-red{background:#fee2e2;color:#991b1b}
+.tag-purple{background:#ede9fe;color:#5b21b6}
+@media (prefers-color-scheme:dark){
+.tag-blue{background:#1e3a5f;color:#93c5fd}
+.tag-green{background:#064e3b;color:#6ee7b7}
+.tag-amber{background:#451a03;color:#fcd34d}
+.tag-red{background:#450a0a;color:#fca5a5}
+.tag-purple{background:#2e1065;color:#c4b5fd}
+}
+
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin-top:10px;overflow:hidden;border:1px solid var(--color-border-tertiary);border-radius:14px}
+th{text-align:left;padding:10px 12px;font-weight:600;font-size:11px;color:var(--color-text-secondary);border-bottom:1px solid var(--color-border-tertiary);background:rgba(30,41,59,.88)}
+td{padding:10px 12px;border-bottom:1px solid var(--color-border-tertiary);vertical-align:top;color:var(--color-text-secondary);font-size:11px;line-height:1.5;background:rgba(15,23,42,.6)}
+tr:last-child td{border-bottom:none}
+td:first-child{font-weight:500;color:var(--color-text-primary)}
+
+.h1{font-size:36px;font-weight:700;line-height:1.05;margin-bottom:10px;color:#f8fafc}
+.h2{font-size:15px;font-weight:500}
+.h3{font-size:13px;font-weight:600;margin-bottom:8px}
+
+.highlight-box{border-radius:14px;padding:12px 14px;margin:10px 0;font-size:11px;line-height:1.6;border:1px solid transparent;border-left:3px solid}
+.hl-blue{background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info)}
+.hl-amber{background:var(--color-background-warning);border-color:var(--color-border-warning);color:var(--color-text-warning)}
+.hl-red{background:var(--color-background-danger);border-color:var(--color-border-danger);color:var(--color-text-danger)}
+.hl-green{background:var(--color-background-success);border-color:var(--color-border-success);color:var(--color-text-success)}
+
+.jwt-parts{display:flex;gap:2px;font-family:var(--font-mono);font-size:10px;flex-wrap:wrap;margin:8px 0}
+.jwt-part{padding:4px 8px;border-radius:4px;line-height:1.3}
+.jwt-h{background:#dbeafe;color:#1e3a5f} .jwt-p{background:#d1fae5;color:#064e3b} .jwt-s{background:#fce7f3;color:#831843}
+@media (prefers-color-scheme:dark){.jwt-h{background:#1e3a5f;color:#bfdbfe} .jwt-p{background:#064e3b;color:#a7f3d0} .jwt-s{background:#4a044e;color:#f9a8d4}}
+
+.flow-num{font-size:11px;font-weight:500;opacity:.6;margin-right:2px}
+.sep{color:var(--color-border-secondary);margin:0 6px}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.section-title{font-size:20px;font-weight:700;margin:36px 0 12px;padding-top:24px;border-top:1px solid rgba(148,163,184,.16);display:flex;align-items:center;gap:10px;color:#f8fafc}
+.section-title:first-of-type{border-top:none;padding-top:0;margin-top:0}
+.hero{
+  position:relative;
+  overflow:hidden;
+  padding:30px 32px;
+  margin-bottom:28px;
+  border:1px solid rgba(148,163,184,.18);
+  border-radius:28px;
+  background:linear-gradient(135deg, rgba(15,23,42,.94), rgba(30,41,59,.78));
+  box-shadow:0 24px 70px rgba(2,6,23,.45);
+}
+.hero:before,.hero:after{content:"";position:absolute;border-radius:999px;filter:blur(12px);opacity:.7}
+.hero:before{width:220px;height:220px;background:rgba(59,130,246,.18);top:-80px;right:-40px}
+.hero:after{width:180px;height:180px;background:rgba(168,85,247,.16);bottom:-90px;left:-40px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#bfdbfe;margin-bottom:12px}
+.eyebrow:before{content:"";width:34px;height:1px;background:linear-gradient(90deg, rgba(96,165,250,.1), rgba(96,165,250,.9))}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.75fr);gap:24px;align-items:end}
+.hero-copy p{max-width:760px}
+.hero-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stat-card{padding:14px 16px;border-radius:16px;border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.54);backdrop-filter:blur(10px)}
+.stat-card strong{display:block;font-size:22px;line-height:1;margin-bottom:6px;color:#f8fafc}
+.stat-card span{font-size:11px;color:var(--color-text-tertiary);line-height:1.5}
+.system-card{margin:0 0 30px;border:1px solid rgba(148,163,184,.18);border-radius:28px;background:linear-gradient(180deg, rgba(15,23,42,.94), rgba(15,23,42,.82));box-shadow:0 20px 50px rgba(2,6,23,.28);overflow:hidden}
+.system-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-end;padding:24px 26px 14px}
+.system-head p{max-width:720px;font-size:13px;color:var(--color-text-secondary);line-height:1.6}
+.system-kpis{display:flex;gap:10px;flex-wrap:wrap}
+.system-kpi{min-width:112px;padding:10px 12px;border-radius:14px;background:rgba(30,41,59,.76);border:1px solid rgba(148,163,184,.16)}
+.system-kpi strong{display:block;font-size:12px;color:#f8fafc;margin-bottom:3px}
+.system-kpi span{font-size:10px;color:var(--color-text-tertiary)}
+.system-visual{padding:0 18px 18px}
+.system-svg{width:100%;height:auto;display:block;border-radius:22px;border:1px solid rgba(148,163,184,.12);background:radial-gradient(circle at top left, rgba(59,130,246,.14), transparent 28%),linear-gradient(180deg, rgba(2,6,23,.96), rgba(15,23,42,.95))}
+.system-legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 18px 20px}
+.legend-item{padding:12px 14px;border-radius:14px;border:1px solid rgba(148,163,184,.16);background:rgba(15,23,42,.64)}
+.legend-item strong{display:block;font-size:11px;color:#f8fafc;margin-bottom:4px}
+.legend-item span{font-size:10px;color:var(--color-text-tertiary);line-height:1.5}
+code{font-family:var(--font-mono);background:rgba(15,23,42,.8);padding:1px 5px;border-radius:6px}
+.page-footer{font-size:10px;color:var(--color-text-tertiary);text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid rgba(148,163,184,.16)}
+@media(max-width:900px){.hero{padding:26px 22px}.hero-grid{grid-template-columns:1fr}.hero-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.h1{font-size:30px}}
+@media(max-width:900px){.system-head{display:block}.system-kpis{margin-top:14px}.system-legend{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.grid2,.grid3,.cols2,.cols3,.hero-stats,.system-legend{grid-template-columns:1fr}.step-row{flex-wrap:wrap}}
+</style>
+</head>
+
+<div class="page">
+<div class="hero">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <div class="eyebrow">Spring Security Complete Reference</div>
+      <div class="h1">Auth Flow Diagrams</div>
+      <p style="font-size:14px;color:var(--color-text-secondary);margin:0">JWT · OAuth2 · OIDC · ADFS · LDAP · Cookies · CSRF · CORS — mapped with practical flows, backend behavior, and system design choices.</p>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-card">
+        <strong>9</strong>
+        <span>core auth sections, from OAuth2 and ADFS through cookies, CSRF, and microservices.</span>
+      </div>
+      <div class="stat-card">
+        <strong>End-to-end</strong>
+        <span>visual breakdowns of request flow, token handling, and Spring Security validation points.</span>
+      </div>
+    </div>
+    </div>
+</div>
+
+<div class="system-card">
+  <div class="system-head">
+    <div>
+      <div class="eyebrow">Advanced Security System</div>
+      <div class="h2" style="font-size:22px;font-weight:700;color:#f8fafc;margin-bottom:8px">AuthN + AuthZ + policy enforcement across the request path</div>
+      <p>A zero-trust style flow where identity proofing, token issuance, policy evaluation, and service-side enforcement are separated but connected. Authentication establishes identity; authorization evaluates scope, role, attribute, and risk before protected data is released.</p>
+    </div>
+    <div class="system-kpis">
+      <div class="system-kpi"><strong>AuthN</strong><span>OIDC, MFA, device trust</span></div>
+      <div class="system-kpi"><strong>AuthZ</strong><span>RBAC + ABAC + policy</span></div>
+      <div class="system-kpi"><strong>Audit</strong><span>Decision and trace logging</span></div>
+    </div>
+  </div>
+  <div class="system-visual">
+    <svg class="system-svg" viewBox="0 0 1160 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Advanced security architecture with authentication and authorization flow">
+      <defs>
+        <linearGradient id="panelA" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#1e293b"/></linearGradient>
+        <linearGradient id="blueLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#2563eb"/></linearGradient>
+        <linearGradient id="violetLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient>
+        <linearGradient id="greenLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#059669"/></linearGradient>
+        <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#38bdf8" stroke-width="1.5"/></marker>
+        <marker id="arrowViolet" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#a78bfa" stroke-width="1.5"/></marker>
+        <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M1 1L8 5L1 9" fill="none" stroke="#34d399" stroke-width="1.5"/></marker>
+      </defs>
+      <rect x="28" y="28" width="1104" height="504" rx="28" fill="rgba(15,23,42,.45)" stroke="rgba(148,163,184,.14)"/>
+      <rect x="70" y="96" width="170" height="92" rx="18" fill="url(#panelA)" stroke="#38bdf8" stroke-opacity=".55"/>
+      <text x="92" y="128" fill="#e0f2fe" font-size="16" font-weight="700">Client App</text>
+      <text x="92" y="151" fill="#93c5fd" font-size="12">Browser / mobile / SPA</text>
+      <text x="92" y="171" fill="#94a3b8" font-size="11">Starts login and sends bearer token</text>
+      <rect x="300" y="70" width="195" height="118" rx="18" fill="url(#panelA)" stroke="#60a5fa" stroke-opacity=".45"/>
+      <text x="324" y="103" fill="#eff6ff" font-size="16" font-weight="700">Identity Provider</text>
+      <text x="324" y="126" fill="#bfdbfe" font-size="12">OIDC / OAuth2 / Federation</text>
+      <text x="324" y="148" fill="#94a3b8" font-size="11">Passwordless, MFA, device, risk</text>
+      <rect x="322" y="158" width="70" height="18" rx="9" fill="rgba(56,189,248,.14)" stroke="rgba(56,189,248,.4)"/>
+      <text x="338" y="171" fill="#93c5fd" font-size="10">AuthN</text>
+      <rect x="399" y="158" width="76" height="18" rx="9" fill="rgba(167,139,250,.14)" stroke="rgba(167,139,250,.4)"/>
+      <text x="417" y="171" fill="#c4b5fd" font-size="10">Token mint</text>
+      <rect x="560" y="84" width="180" height="90" rx="18" fill="url(#panelA)" stroke="#a78bfa" stroke-opacity=".5"/>
+      <text x="583" y="116" fill="#f5f3ff" font-size="16" font-weight="700">API Gateway</text>
+      <text x="583" y="139" fill="#ddd6fe" font-size="12">JWT validation + routing</text>
+      <text x="583" y="159" fill="#94a3b8" font-size="11">Rate limit, WAF, token binding</text>
+      <rect x="790" y="70" width="268" height="120" rx="18" fill="url(#panelA)" stroke="#34d399" stroke-opacity=".5"/>
+      <text x="816" y="103" fill="#ecfdf5" font-size="16" font-weight="700">Policy Decision Layer</text>
+      <text x="816" y="126" fill="#a7f3d0" font-size="12">RBAC + ABAC + context-aware rules</text>
+      <text x="816" y="148" fill="#94a3b8" font-size="11">Scopes, roles, tenant, resource, risk, purpose</text>
+      <rect x="815" y="157" width="64" height="18" rx="9" fill="rgba(52,211,153,.14)" stroke="rgba(52,211,153,.45)"/>
+      <text x="829" y="170" fill="#86efac" font-size="10">AuthZ</text>
+      <rect x="886" y="157" width="77" height="18" rx="9" fill="rgba(244,114,182,.12)" stroke="rgba(244,114,182,.35)"/>
+      <text x="902" y="170" fill="#f9a8d4" font-size="10">OPA / Cedar</text>
+      <rect x="218" y="268" width="216" height="108" rx="18" fill="url(#panelA)" stroke="#22c55e" stroke-opacity=".45"/>
+      <text x="242" y="301" fill="#ecfdf5" font-size="16" font-weight="700">Token Service</text>
+      <text x="242" y="324" fill="#bbf7d0" font-size="12">Access, refresh, claims enrichment</text>
+      <text x="242" y="346" fill="#94a3b8" font-size="11">JWKS signing, expiry, audience, nonce</text>
+      <rect x="480" y="252" width="190" height="126" rx="18" fill="url(#panelA)" stroke="#38bdf8" stroke-opacity=".45"/>
+      <text x="505" y="285" fill="#e0f2fe" font-size="16" font-weight="700">Protected Service</text>
+      <text x="505" y="308" fill="#7dd3fc" font-size="12">Spring Security resource server</text>
+      <text x="505" y="330" fill="#94a3b8" font-size="11">Method security, claim mapping, tenancy</text>
+      <rect x="505" y="340" width="70" height="18" rx="9" fill="rgba(56,189,248,.14)" stroke="rgba(56,189,248,.4)"/>
+      <text x="520" y="353" fill="#93c5fd" font-size="10">PEP</text>
+      <rect x="736" y="258" width="184" height="110" rx="18" fill="url(#panelA)" stroke="#f59e0b" stroke-opacity=".45"/>
+      <text x="760" y="291" fill="#fef3c7" font-size="16" font-weight="700">Audit + SIEM</text>
+      <text x="760" y="314" fill="#fde68a" font-size="12">Decision logs and traces</text>
+      <text x="760" y="336" fill="#94a3b8" font-size="11">Incident response and anomaly detection</text>
+      <rect x="950" y="252" width="122" height="126" rx="18" fill="url(#panelA)" stroke="#f472b6" stroke-opacity=".45"/>
+      <text x="973" y="286" fill="#fdf2f8" font-size="16" font-weight="700">Data</text>
+      <text x="973" y="309" fill="#f9a8d4" font-size="12">PII / orders / admin ops</text>
+      <text x="973" y="331" fill="#94a3b8" font-size="11">Released only after policy pass</text>
+      <path d="M240 142H300" stroke="url(#blueLine)" stroke-width="4" fill="none" marker-end="url(#arrowBlue)" filter="url(#softGlow)"/>
+      <text x="246" y="132" fill="#7dd3fc" font-size="11">1. Login request</text>
+      <path d="M495 128H560" stroke="url(#violetLine)" stroke-width="4" fill="none" marker-end="url(#arrowViolet)" filter="url(#softGlow)"/>
+      <text x="503" y="118" fill="#c4b5fd" font-size="11">2. ID/access token</text>
+      <path d="M740 128H790" stroke="url(#greenLine)" stroke-width="4" fill="none" marker-end="url(#arrowGreen)" filter="url(#softGlow)"/>
+      <text x="745" y="118" fill="#86efac" font-size="11">3. Policy context</text>
+      <path d="M392 188C392 224 334 226 334 268" stroke="#60a5fa" stroke-width="3" fill="none" stroke-dasharray="7 6" marker-end="url(#arrowBlue)"/>
+      <text x="260" y="230" fill="#93c5fd" font-size="11">4. Claims + signing keys</text>
+      <path d="M650 174V252" stroke="#a78bfa" stroke-width="3" fill="none" stroke-dasharray="7 6" marker-end="url(#arrowViolet)"/>
+      <text x="660" y="216" fill="#c4b5fd" font-size="11">5. Forward bearer token</text>
+      <path d="M828 190V258" stroke="#34d399" stroke-width="3" fill="none" stroke-dasharray="7 6" marker-end="url(#arrowGreen)"/>
+      <text x="840" y="226" fill="#86efac" font-size="11">6. Allow / deny</text>
+      <path d="M670 315H736" stroke="#f59e0b" stroke-width="3" fill="none" marker-end="url(#arrowGreen)"/>
+      <text x="676" y="304" fill="#fde68a" font-size="11">7. Decision log</text>
+      <path d="M920 315H950" stroke="#f472b6" stroke-width="3" fill="none" marker-end="url(#arrowGreen)"/>
+      <text x="887" y="304" fill="#f9a8d4" font-size="11">8. Data release</text>
+      <circle cx="648" cy="315" r="10" fill="#38bdf8" filter="url(#softGlow)"/>
+      <circle cx="828" cy="315" r="10" fill="#34d399" filter="url(#softGlow)"/>
+      <circle cx="922" cy="315" r="10" fill="#f472b6" filter="url(#softGlow)"/>
+      <text x="70" y="434" fill="#f8fafc" font-size="18" font-weight="700">Security decision sequence</text>
+      <text x="70" y="459" fill="#94a3b8" font-size="12">AuthN proves identity. Tokens carry signed claims. AuthZ evaluates role, scope, tenant, device posture, resource sensitivity, and runtime policy before the service executes.</text>
+      <rect x="70" y="482" width="150" height="22" rx="11" fill="rgba(56,189,248,.12)" stroke="rgba(56,189,248,.35)"/>
+      <text x="85" y="497" fill="#93c5fd" font-size="10">Blue = identity + token trust</text>
+      <rect x="232" y="482" width="156" height="22" rx="11" fill="rgba(167,139,250,.12)" stroke="rgba(167,139,250,.35)"/>
+      <text x="247" y="497" fill="#c4b5fd" font-size="10">Violet = token propagation</text>
+      <rect x="400" y="482" width="170" height="22" rx="11" fill="rgba(52,211,153,.12)" stroke="rgba(52,211,153,.35)"/>
+      <text x="415" y="497" fill="#86efac" font-size="10">Green = authorization decision</text>
+    </svg>
+  </div>
+  <div class="system-legend">
+    <div class="legend-item"><strong>Authentication</strong><span>OIDC, MFA, device trust, risk signals, session continuity.</span></div>
+    <div class="legend-item"><strong>Authorization</strong><span>RBAC for coarse access, ABAC for contextual decisions, policy engine for dynamic rules.</span></div>
+    <div class="legend-item"><strong>Enforcement</strong><span>Gateway and service act as policy enforcement points, validating signatures and claims locally.</span></div>
+    <div class="legend-item"><strong>Observability</strong><span>Every allow and deny can be logged to SIEM with trace context for incident review.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: OAUTH2 + OIDC + JWT -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-blue">01</span>
+  OAuth2 + OIDC + JWT Flow
+  <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">Recommended for modern apps</span>
+</div>
+
+<div class="flow-card">
+<div class="flow-header" style="background:var(--color-background-info)">
+  <div>
+    <div class="h3" style="color:var(--color-text-info);margin-bottom:2px">Real-world examples</div>
+    <div>
+      <span class="example-chip">Google Login (Sign in with Google)</span>
+      <span class="example-chip">GitHub OAuth App</span>
+      <span class="example-chip">Keycloak SSO</span>
+      <span class="example-chip">Auth0 + Spring Boot</span>
+      <span class="example-chip">Okta Enterprise</span>
+    </div>
+  </div>
+</div>
+<div class="flow-body">
+<p>User clicks "Login with Google" → browser redirects to Google's OAuth server → user grants consent → Google returns an auth code → your backend exchanges it for an <strong>ID token</strong> (who the user is) + <strong>Access token</strong> (what they can do). Spring Boot validates the JWT cryptographically — no DB call needed.</p>
+
+<div class="step-row">
+  <div class="step-box" style="border-color:#3b82f6">
+    <div class="icon">🖥️</div>
+    <div class="label">Angular App</div>
+    <div class="sub">User opens app</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="var(--color-text-tertiary)" stroke-width="1.5" marker-end="url(#a)"/><defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="var(--color-text-tertiary)" stroke-width="1.5"/></marker></defs></svg><div class="alabel">redirect</div></div>
+  <div class="step-box" style="border-color:#3b82f6">
+    <div class="icon">🔐</div>
+    <div class="label">Auth Server</div>
+    <div class="sub">Google / Auth0</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="var(--color-text-tertiary)" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">login page</div></div>
+  <div class="step-box" style="border-color:#3b82f6">
+    <div class="icon">👤</div>
+    <div class="label">User Login</div>
+    <div class="sub">Submit credentials</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="var(--color-text-tertiary)" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">auth code</div></div>
+  <div class="step-box" style="border-color:#3b82f6">
+    <div class="icon">🎟️</div>
+    <div class="label">Auth Code</div>
+    <div class="sub">One-time code</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="var(--color-text-tertiary)" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">exchange</div></div>
+  <div class="step-box" style="border-color:#3b82f6">
+    <div class="icon">📦</div>
+    <div class="label">JWT Tokens</div>
+    <div class="sub">ID + Access Token</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="var(--color-text-tertiary)" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">Bearer</div></div>
+  <div class="step-box" style="border-color:#10b981;background:var(--color-background-success)">
+    <div class="icon">✅</div>
+    <div class="label">Spring Boot</div>
+    <div class="sub">Validates via JWKS</div>
+  </div>
+</div>
+
+<div class="cols2" style="margin-top:14px">
+  <div class="mini-card">
+    <h4>What OAuth2 does</h4>
+    <p>Defines the <em>process</em> of getting a token — the flows (Auth Code, Client Credentials, etc.) and handshakes between parties. It does NOT define token format.</p>
+  </div>
+  <div class="mini-card">
+    <h4>What OIDC adds</h4>
+    <p>Sits on top of OAuth2. Adds <em>identity</em> — tells your app <strong>who</strong> the user is via an ID Token. Without OIDC, OAuth2 only tells you <strong>what</strong> the app can access.</p>
+  </div>
+</div>
+<div class="highlight-box hl-blue" style="margin-top:10px">
+  <strong>Key insight:</strong> Spring Boot's resource server never contacts the Auth Server per request. It verifies the JWT signature using the <code>/.well-known/jwks.json</code> public keys — downloaded once, cached. Fully stateless.
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: ADFS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-amber">02</span>
+  ADFS Enterprise Flow
+  <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">Corporate / Microsoft environments</span>
+</div>
+
+<div class="flow-card">
+<div class="flow-header" style="background:var(--color-background-warning)">
+  <div>
+    <div class="h3" style="color:var(--color-text-warning);margin-bottom:2px">Real-world examples</div>
+    <div>
+      <span class="example-chip">Microsoft 365 Enterprise SSO</span>
+      <span class="example-chip">Windows domain login to internal portal</span>
+      <span class="example-chip">Bank employee intranet (Active Directory)</span>
+      <span class="example-chip">Hospital staff portal</span>
+    </div>
+  </div>
+</div>
+<div class="flow-body">
+<p>ADFS = <strong>Active Directory Federation Services</strong> — Microsoft's on-premise identity provider. An employee on the Windows corporate network opens an internal app. ADFS intercepts the request, shows the Windows login page, authenticates against Active Directory (LDAP), and issues a token. The employee never has a separate app username/password — they use their Windows credentials.</p>
+
+<div class="step-row">
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🏢</div>
+    <div class="label">Employee</div>
+    <div class="sub">Accesses portal</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/><defs><marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#f59e0b" stroke-width="1.5"/></marker></defs></svg><div class="alabel">redirect</div></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🏛️</div>
+    <div class="label">ADFS Server</div>
+    <div class="sub">Windows login page</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg><div class="alabel">LDAP query</div></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🗂️</div>
+    <div class="label">Active Directory</div>
+    <div class="sub">Verify user + groups</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg><div class="alabel">verified</div></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🎟️</div>
+    <div class="label">Token Issued</div>
+    <div class="sub">JWT or SAML</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg><div class="alabel">validate</div></div>
+  <div class="step-box" style="border-color:#10b981;background:var(--color-background-success)">
+    <div class="icon">✅</div>
+    <div class="label">Spring Security</div>
+    <div class="sub">Grants access</div>
+  </div>
+</div>
+
+<div class="cols2" style="margin-top:14px">
+  <div class="mini-card">
+    <h4>JWT path (modern ADFS)</h4>
+    <p>ADFS 4.0+ (Server 2016+) supports OIDC. Spring Boot configures a standard <code>JwtDecoder</code> pointing at the ADFS OIDC endpoint. Works exactly like any OAuth2 IdP.</p>
+  </div>
+  <div class="mini-card">
+    <h4>SAML path (legacy ADFS)</h4>
+    <p>Older setups issue SAML assertions. Spring Security SAML extension (or Spring Security 6 SAML2) parses the XML assertion and maps claims to <code>Authentication</code>. Heavier but required for legacy.</p>
+  </div>
+</div>
+<div class="highlight-box hl-amber">
+  <strong>ADFS vs Azure AD (Entra ID):</strong> ADFS is the on-premise version. Azure AD / Entra ID is the cloud version. Same concepts, but Azure AD is easier (managed, auto-scales) and Microsoft recommends it for new projects.
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: LDAP + IdP Architecture -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-purple">03</span>
+  LDAP + IdP Architecture
+  <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">Directory-backed identity</span>
+</div>
+
+<div class="flow-card">
+<div class="flow-header" style="background:var(--color-background-tertiary)">
+  <div>
+    <div class="h3" style="margin-bottom:2px">Real-world examples</div>
+    <div>
+      <span class="example-chip">University SSO (OpenLDAP + Keycloak)</span>
+      <span class="example-chip">On-premise enterprise with Keycloak</span>
+      <span class="example-chip">Linux sysadmin portal (389 Directory Server)</span>
+    </div>
+  </div>
+</div>
+<div class="flow-body">
+<p>LDAP (<em>Lightweight Directory Access Protocol</em>) is a protocol for reading a directory of users and groups (like a phone book for IT). OpenLDAP and Active Directory both speak LDAP. The key architectural rule: <strong>Spring Boot NEVER talks to LDAP directly</strong>. An IdP like Keycloak federates with LDAP, translates groups into JWT roles, and Spring Boot only ever sees a JWT.</p>
+
+<div class="step-row">
+  <div class="step-box" style="border-color:#a855f7">
+    <div class="icon">🌐</div>
+    <div class="label">Angular App</div>
+    <div class="sub">Initiates login</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#a855f7" stroke-width="1.5" marker-end="url(#c)"/><defs><marker id="c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#a855f7" stroke-width="1.5"/></marker></defs></svg></div>
+  <div class="step-box" style="border-color:#a855f7">
+    <div class="icon">🔑</div>
+    <div class="label">Keycloak</div>
+    <div class="sub">LDAP federation</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#a855f7" stroke-width="1.5" marker-end="url(#c)"/></svg><div class="alabel">LDAP query</div></div>
+  <div class="step-box" style="border-color:#a855f7">
+    <div class="icon">📂</div>
+    <div class="label">LDAP Server</div>
+    <div class="sub">OpenLDAP / AD DS</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#a855f7" stroke-width="1.5" marker-end="url(#c)"/></svg><div class="alabel">groups</div></div>
+  <div class="step-box" style="border-color:#a855f7">
+    <div class="icon">🏷️</div>
+    <div class="label">Claims Mapped</div>
+    <div class="sub">Groups → JWT roles</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#a855f7" stroke-width="1.5" marker-end="url(#c)"/></svg></div>
+  <div class="step-box" style="border-color:#10b981;background:var(--color-background-success)">
+    <div class="icon">✅</div>
+    <div class="label">Spring Boot</div>
+    <div class="sub">Validates JWT only</div>
+  </div>
+</div>
+
+<div class="cols2" style="margin-top:14px">
+  <div class="mini-card">
+    <h4>LDAP group → JWT role mapping</h4>
+    <div class="code-block"><span class="c-c">// Keycloak maps LDAP group to role</span>
+LDAP: cn=devteam,ou=groups,dc=corp,dc=com
+        ↓ Keycloak mapper
+JWT:  "roles": ["ROLE_DEVELOPER"]
+
+<span class="c-c">// Spring Boot reads role from JWT</span>
+<span class="c-k">@PreAuthorize</span>(<span class="c-s">"hasRole('DEVELOPER')"</span>)
+<span class="c-k">public</span> String devEndpoint() { ... }</div>
+  </div>
+  <div class="mini-card">
+    <h4>Why not query LDAP directly from Spring?</h4>
+    <ul>
+      <li>Tight coupling — LDAP schema changes break app</li>
+      <li>LDAP connection pool per request = slow</li>
+      <li>No SSO across multiple apps</li>
+      <li>JWT is stateless; LDAP is stateful</li>
+    </ul>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: JWT ANATOMY -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-blue">04</span>
+  JWT Token — Anatomy &amp; Lifecycle
+</div>
+
+<div class="flow-card">
+<div class="flow-body">
+
+<p>A JWT is three Base64URL-encoded sections joined by dots. The server <strong>never stores it</strong> — it just verifies the signature. If the signature is valid, the claims are trusted.</p>
+
+<div class="jwt-parts">
+  <div class="jwt-part jwt-h">eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9</div>
+  <div style="display:flex;align-items:center;color:var(--color-text-tertiary);font-weight:700">.</div>
+  <div class="jwt-part jwt-p">eyJzdWIiOiJ1c2VyXzEyMyIsImVtYWlsIjoiYWxpY2VAY29ycC5jb20iLCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImV4cCI6MTcwMDAwMDAwMCwiaXNzIjoiaHR0cHM6Ly9hdXRoLmNvcnAuY29tIiwiYXVkIjoiYXBpLXNlcnZlciJ9</div>
+  <div style="display:flex;align-items:center;color:var(--color-text-tertiary);font-weight:700">.</div>
+  <div class="jwt-part jwt-s">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</div>
+</div>
+<div style="display:flex;gap:8px;font-size:10px;margin-bottom:12px">
+  <span class="jwt-part jwt-h">Header</span>
+  <span class="jwt-part jwt-p">Payload (Claims)</span>
+  <span class="jwt-part jwt-s">Signature</span>
+</div>
+
+<div class="grid3" style="margin-bottom:14px">
+  <div class="mini-card" style="border-top:3px solid #3b82f6">
+    <h4 style="color:var(--color-text-info)">Header</h4>
+    <div class="code-block" style="margin-top:6px">{
+  <span class="c-s">"alg"</span>: <span class="c-n">"RS256"</span>,
+  <span class="c-s">"typ"</span>: <span class="c-n">"JWT"</span>
+}
+<span class="c-c">// RS256 = RSA + SHA256
+// Use RS256 (asymmetric) in prod
+// Never HS256 in distributed systems</span></div>
+  </div>
+  <div class="mini-card" style="border-top:3px solid #10b981">
+    <h4 style="color:var(--color-text-success)">Payload (Claims)</h4>
+    <div class="code-block" style="margin-top:6px">{
+  <span class="c-s">"sub"</span>: <span class="c-n">"user_123"</span>,       <span class="c-c">// subject</span>
+  <span class="c-s">"email"</span>: <span class="c-n">"alice@corp.com"</span>,
+  <span class="c-s">"roles"</span>: [<span class="c-n">"ROLE_ADMIN"</span>],
+  <span class="c-s">"exp"</span>: <span class="c-n">1700000000</span>,    <span class="c-c">// expiry</span>
+  <span class="c-s">"iss"</span>: <span class="c-n">"https://auth.corp.com"</span>,
+  <span class="c-s">"aud"</span>: <span class="c-n">"api-server"</span>   <span class="c-c">// audience</span>
+}</div>
+  </div>
+  <div class="mini-card" style="border-top:3px solid #f43f5e">
+    <h4 style="color:#f43f5e">Signature</h4>
+    <div class="code-block" style="margin-top:6px"><span class="c-c">// RS256:</span>
+RSASSA_PKCS1_v1_5(
+  SHA256(base64(header)
+    + "." +
+    base64(payload)),
+  privateKey
+)
+<span class="c-c">// Spring verifies with publicKey
+// from JWKS endpoint</span></div>
+  </div>
+</div>
+
+<table>
+  <tr><th>Claim</th><th>Full name</th><th>Purpose</th><th>Spring Boot behaviour</th></tr>
+  <tr><td>sub</td><td>Subject</td><td>Unique user ID</td><td>Maps to <code>Authentication.getName()</code></td></tr>
+  <tr><td>exp</td><td>Expiration</td><td>Unix timestamp when token expires</td><td>Automatically rejected if expired</td></tr>
+  <tr><td>iss</td><td>Issuer</td><td>Who issued the token (auth server URL)</td><td>Validated against <code>spring.security.oauth2.resourceserver.jwt.issuer-uri</code></td></tr>
+  <tr><td>aud</td><td>Audience</td><td>Who the token is intended for</td><td>Validated to prevent token reuse across services</td></tr>
+  <tr><td>iat</td><td>Issued At</td><td>When token was created</td><td>Used for <code>not-before</code> validation</td></tr>
+  <tr><td>roles / authorities</td><td>Custom claim</td><td>User's permissions</td><td>Mapped via <code>JwtAuthenticationConverter</code></td></tr>
+</table>
+
+<div class="highlight-box hl-amber" style="margin-top:12px">
+  <strong>Security warning:</strong> JWT payloads are Base64URL-encoded, NOT encrypted. Anyone who intercepts the token can read all claims. Never put secrets, passwords, or PII in the payload unless you use JWE (JSON Web Encryption). Always use HTTPS.
+</div>
+
+<div class="divider"></div>
+<div class="h3">Token Lifecycle States</div>
+<div class="step-row" style="margin-top:10px">
+  <div class="step-box" style="border-color:var(--color-border-secondary)">
+    <div class="label">No Token</div>
+    <div class="sub">Not logged in</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">login</div></div>
+  <div class="step-box" style="border-color:#10b981">
+    <div class="label" style="color:#10b981">Authenticated</div>
+    <div class="sub">access_token valid</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg><div class="alabel">exp hit</div></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="label" style="color:#f59e0b">Expired</div>
+    <div class="sub">access_token expired</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#10b981" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel" style="color:#10b981">refresh ok</div></div>
+  <div class="step-box" style="border-color:#10b981">
+    <div class="label" style="color:#10b981">Refreshed</div>
+    <div class="sub">New access_token</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#ef4444" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel" style="color:#ef4444">refresh expired</div></div>
+  <div class="step-box" style="border-color:#ef4444">
+    <div class="label" style="color:#ef4444">Re-login</div>
+    <div class="sub">Both tokens expired</div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: COOKIES + CSRF + CORS — COMBINED -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-amber">05</span>
+  Cookies · CSRF · CORS — How They Interact
+</div>
+
+<div class="flow-card">
+<div class="flow-header" style="background:var(--color-background-warning)">
+  <div>
+    <div class="h3" style="color:var(--color-text-warning);margin-bottom:2px">Real-world examples</div>
+    <div>
+      <span class="example-chip">Traditional Spring MVC + Thymeleaf</span>
+      <span class="example-chip">Angular SPA calling Spring REST API</span>
+      <span class="example-chip">React app on port 3000 → Spring on 8080</span>
+    </div>
+  </div>
+</div>
+<div class="flow-body">
+
+<div class="highlight-box hl-blue" style="margin-bottom:14px">
+  <strong>The triangle you must understand:</strong> Cookies carry auth tokens automatically with every request (convenient). CORS controls which origins can make requests (browser enforcement). CSRF exploits the "automatically sent" behaviour of cookies (the attack). The three are deeply linked.
+</div>
+
+<!-- COOKIES -->
+<div class="h3" style="margin-bottom:8px">Cookie Properties Reference</div>
+<table>
+  <tr><th>Property</th><th>What it does</th><th>Attack it prevents</th><th>Spring Boot setting</th></tr>
+  <tr><td>HttpOnly</td><td>JS cannot read the cookie (<code>document.cookie</code> returns nothing)</td><td>XSS token theft — attacker script can't steal the token</td><td><code>cookie.setHttpOnly(true)</code></td></tr>
+  <tr><td>Secure</td><td>Cookie only sent over HTTPS, never plain HTTP</td><td>Network sniffing / MITM — cookie not exposed on plain connections</td><td><code>cookie.setSecure(true)</code></td></tr>
+  <tr><td>SameSite=Strict</td><td>Cookie never sent on cross-site requests, including top-level navigations (clicking a link)</td><td>CSRF — bank.com can't be triggered by evil.com</td><td><code>cookie.setAttribute("SameSite","Strict")</code></td></tr>
+  <tr><td>SameSite=Lax</td><td>Cookie sent on top-level navigations (GET) but not cross-site POST/AJAX</td><td>Partial CSRF protection, better UX than Strict</td><td>Default in modern browsers</td></tr>
+  <tr><td>SameSite=None</td><td>Cookie sent on all cross-site requests — must be paired with Secure</td><td>Enables cross-site scenarios (iframes, payment widgets) — use carefully</td><td>Requires <code>Secure</code> flag</td></tr>
+  <tr><td>maxAge=0</td><td>Immediately expires / deletes the cookie</td><td>Logout mechanism — removes session</td><td>Used in logout handler</td></tr>
+</table>
+
+<div class="divider"></div>
+
+<!-- CORS -->
+<div class="h3" style="margin-bottom:8px">CORS — Cross-Origin Resource Sharing</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">CORS is a <strong>browser security feature</strong>. It does nothing on the server — the browser blocks the response from reaching JavaScript if the server doesn't include the right headers. Direct API calls (curl, Postman) ignore CORS entirely.</p>
+
+<div class="cols2">
+<div>
+<div class="mini-card" style="margin-bottom:10px;border-color:#10b981">
+  <h4 style="color:var(--color-text-success)">Same-Origin (no CORS needed)</h4>
+  <div class="code-block">Frontend: https://myapp.com
+Backend:  https://myapp.com/api
+<span class="c-c">// Same protocol + domain + port
+// Browser allows freely
+// Cookies work automatically</span></div>
+</div>
+<div class="mini-card" style="border-color:#f59e0b">
+  <h4 style="color:var(--color-text-warning)">Cross-Origin (CORS required)</h4>
+  <div class="code-block">Frontend: https://app.client.com   <span class="c-c">← different domain</span>
+Backend:  https://api.server.com
+<span class="c-c">// Browser sends preflight OPTIONS</span>
+<span class="c-c">// Server must respond with headers:</span>
+Access-Control-Allow-Origin: https://app.client.com
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: Content-Type, X-XSRF-TOKEN</div>
+</div>
+</div>
+<div>
+<div class="mini-card" style="border-color:#ef4444">
+  <h4 style="color:var(--color-text-danger)">Common CORS mistakes</h4>
+  <ul>
+    <li><code>Allow-Origin: *</code> + credentials — browser blocks this combination (spec forbids it)</li>
+    <li>Wildcard <code>*</code> in production — any site can make requests to your API</li>
+    <li>Skipping preflight response — browser will block the actual request</li>
+    <li>Exposing all headers — only expose what frontend actually needs</li>
+  </ul>
+</div>
+<div class="code-block" style="margin-top:10px"><span class="c-k">@Configuration</span>
+<span class="c-k">public class</span> CorsConfig {
+  <span class="c-k">@Bean</span>
+  <span class="c-k">public</span> CorsConfigurationSource source() {
+    CorsConfiguration cfg = <span class="c-k">new</span> CorsConfiguration();
+    cfg.setAllowedOrigins(List.of(
+      <span class="c-s">"https://app.client.com"</span>
+    ));
+    cfg.setAllowedMethods(List.of(<span class="c-s">"GET"</span>,<span class="c-s">"POST"</span>,<span class="c-s">"PUT"</span>));
+    cfg.setAllowCredentials(<span class="c-k">true</span>); <span class="c-c">// for cookies</span>
+    cfg.setExposedHeaders(List.of(<span class="c-s">"X-XSRF-TOKEN"</span>));
+    ...
+  }
+}</div>
+</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- CSRF -->
+<div class="h3" style="margin-bottom:8px">CSRF — Cross-Site Request Forgery</div>
+<p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px">CSRF exploits the fact that <strong>browsers automatically attach cookies</strong> to every request to a domain, even if the request originates from a different site.</p>
+
+<div class="cols2">
+<div class="mini-card" style="border-color:#ef4444">
+  <h4 style="color:var(--color-text-danger)">The CSRF attack scenario</h4>
+  <ol style="font-size:11px;color:var(--color-text-secondary);padding-left:14px;line-height:1.8">
+    <li>Alice logs into <code>bank.com</code> — session cookie stored</li>
+    <li>Alice visits <code>evil.com</code> (same browser)</li>
+    <li><code>evil.com</code> has hidden form: <code>POST bank.com/transfer?to=attacker&amount=1000</code></li>
+    <li>Browser auto-attaches Alice's <code>bank.com</code> cookie</li>
+    <li>Bank sees valid session — transfer executes</li>
+  </ol>
+  <div class="highlight-box hl-red" style="margin-top:8px">Alice never clicked anything on bank.com. The cookie did it.</div>
+</div>
+<div class="mini-card">
+  <h4>Spring Boot CSRF protection (Synchronizer Token Pattern)</h4>
+  <div class="code-block"><span class="c-c">// 1. Spring generates CSRF token</span>
+Set-Cookie: XSRF-TOKEN=abc123; SameSite=Lax
+<span class="c-c">// (readable by JS — not HttpOnly)</span>
+
+<span class="c-c">// 2. Angular reads cookie, sends as header</span>
+X-XSRF-TOKEN: abc123
+
+<span class="c-c">// 3. Spring validates header == cookie value</span>
+<span class="c-c">// evil.com cannot read the cookie (SameSite)
+// so cannot forge the header</span></div>
+  <div class="highlight-box hl-green" style="margin-top:8px">The double-submit cookie pattern: attacker can make the browser send the cookie, but cannot read it to forge the header.</div>
+</div>
+</div>
+
+<div class="cols2" style="margin-top:10px">
+<div class="mini-card">
+  <h4>When CSRF protection is NOT needed</h4>
+  <ul>
+    <li>Stateless JWT in <code>Authorization: Bearer</code> header — JS must explicitly set this header; browsers don't auto-attach it</li>
+    <li>API-only backend with no browser clients</li>
+    <li>SameSite=Strict cookies (no cross-site request will ever carry the cookie)</li>
+  </ul>
+</div>
+<div class="mini-card">
+  <h4>CSRF vs CORS — what's the difference?</h4>
+  <table style="margin-top:4px">
+    <tr><th>Aspect</th><th>CORS</th><th>CSRF</th></tr>
+    <tr><td>Enforced by</td><td>Browser</td><td>Your server</td></tr>
+    <tr><td>Prevents</td><td>Unauthorized read from cross-origin</td><td>Unauthorized state-changing action</td></tr>
+    <tr><td>Attacker goal</td><td>Read private data</td><td>Forge a request</td></tr>
+    <tr><td>Works against</td><td>XHR / fetch reads</td><td>Cookie-based sessions</td></tr>
+  </table>
+</div>
+</div>
+
+<div class="divider"></div>
+<!-- FULL COOKIE LOGIN FLOW -->
+<div class="h3" style="margin-bottom:8px">Complete Cookie Auth Flow</div>
+<div class="step-row">
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🖥️</div>
+    <div class="label">Frontend</div>
+    <div class="sub">POST /login</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg><div class="alabel">creds</div></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🌐</div>
+    <div class="label">Browser</div>
+    <div class="sub">CORS check</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg><div class="alabel">allowed</div></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🛡️</div>
+    <div class="label">Spring Boot</div>
+    <div class="sub">Validate credentials</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#b)"/></svg></div>
+  <div class="step-box" style="border-color:#f59e0b">
+    <div class="icon">🍪</div>
+    <div class="label">Cookies Set</div>
+    <div class="sub">HttpOnly + XSRF</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#10b981" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">validate</div></div>
+  <div class="step-box" style="border-color:#10b981;background:var(--color-background-success)">
+    <div class="icon">✅</div>
+    <div class="label">Secured</div>
+    <div class="sub">Response</div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 6: Microservices JWT Propagation -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-green">06</span>
+  Microservices JWT Propagation
+  <span style="font-size:11px;font-weight:400;color:var(--color-text-tertiary)">Service-to-service auth</span>
+</div>
+
+<div class="flow-card">
+<div class="flow-header" style="background:var(--color-background-success)">
+  <div>
+    <div class="h3" style="color:var(--color-text-success);margin-bottom:2px">Real-world examples</div>
+    <div>
+      <span class="example-chip">Netflix API gateway → downstream services</span>
+      <span class="example-chip">Spring Cloud Gateway + Feign clients</span>
+      <span class="example-chip">Kubernetes service mesh with JWT</span>
+    </div>
+  </div>
+</div>
+<div class="flow-body">
+<p>Each microservice validates the JWT independently — no shared session DB. The gateway validates once; downstream services receive the same JWT in the <code>Authorization</code> header and re-validate the signature (cheap, just crypto). User context travels with every request.</p>
+
+<div class="step-row">
+  <div class="step-box" style="border-color:#10b981">
+    <div class="icon">🖥️</div>
+    <div class="label">Client</div>
+    <div class="sub">Sends JWT</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#10b981" stroke-width="1.5" marker-end="url(#a)"/></svg></div>
+  <div class="step-box" style="border-color:#10b981">
+    <div class="icon">🚪</div>
+    <div class="label">API Gateway</div>
+    <div class="sub">Validates JWT</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#10b981" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">forward JWT</div></div>
+  <div class="step-box" style="border-color:#10b981">
+    <div class="icon">⚙️</div>
+    <div class="label">Service A</div>
+    <div class="sub">Business logic</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#10b981" stroke-width="1.5" marker-end="url(#a)"/></svg><div class="alabel">JWT propagated</div></div>
+  <div class="step-box" style="border-color:#10b981">
+    <div class="icon">⚙️</div>
+    <div class="label">Service B</div>
+    <div class="sub">Validates JWT</div>
+  </div>
+  <div class="arrow-mid"><svg width="28" height="16"><line x1="0" y1="8" x2="22" y2="8" stroke="#10b981" stroke-width="1.5" marker-end="url(#a)"/></svg></div>
+  <div class="step-box" style="border-color:#10b981;background:var(--color-background-success)">
+    <div class="icon">✅</div>
+    <div class="label">Authorized</div>
+    <div class="sub">RBAC enforced</div>
+  </div>
+</div>
+
+<div class="cols2" style="margin-top:12px">
+<div class="mini-card">
+  <h4>Service B validates exp, iss, aud, roles</h4>
+  <div class="code-block"><span class="c-c">// Feign client propagates JWT automatically</span>
+<span class="c-k">@FeignClient</span>(name = <span class="c-s">"service-b"</span>,
+  configuration = FeignJwtConfig.class)
+<span class="c-k">public interface</span> ServiceBClient {
+  <span class="c-k">@GetMapping</span>(<span class="c-s">"/data"</span>)
+  String getData();
+}
+
+<span class="c-c">// Config reads SecurityContext, adds header</span>
+request.header(<span class="c-s">"Authorization"</span>,
+  <span class="c-s">"Bearer "</span> + token);</div>
+</div>
+<div class="mini-card">
+  <h4>Service-to-service (no user context)</h4>
+  <p>When Service A calls Service B as itself (no user involved), use <strong>OAuth2 Client Credentials flow</strong>:</p>
+  <div class="code-block"><span class="c-c">// Service A gets its own token</span>
+POST /token
+  grant_type=client_credentials
+  client_id=service-a
+  client_secret=...
+
+<span class="c-c">// → access_token scoped to service-a
+// Service B validates scope, not user roles</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 7: Auth Method Comparison -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-purple">07</span>
+  Authentication Methods — Full Comparison
+</div>
+
+<div class="flow-card">
+<div class="flow-body">
+<table>
+  <tr><th>Method</th><th>How it works</th><th>Token storage</th><th>Stateless?</th><th>CSRF risk?</th><th>Best for</th><th>Avoid when</th></tr>
+  <tr>
+    <td>Basic Auth</td>
+    <td>Base64(user:pass) in every request header</td>
+    <td>Credentials re-sent each time</td>
+    <td>Yes</td>
+    <td>No (header, not cookie)</td>
+    <td>Internal tools, local dev, cron jobs</td>
+    <td>Public internet (credentials exposed on every request)</td>
+  </tr>
+  <tr>
+    <td>JWT Bearer</td>
+    <td><code>Authorization: Bearer eyJ...</code> header</td>
+    <td>localStorage or memory (JS-accessible)</td>
+    <td>Yes</td>
+    <td>No (browser doesn't auto-send headers)</td>
+    <td>Stateless REST APIs, SPAs, microservices</td>
+    <td>When you need instant revocation (JWT is valid until exp)</td>
+  </tr>
+  <tr>
+    <td>Cookie + JWT</td>
+    <td>JWT stored in HttpOnly cookie, auto-sent by browser</td>
+    <td>HttpOnly cookie (JS can't read it)</td>
+    <td>Yes (JWT)</td>
+    <td>Yes — need CSRF protection</td>
+    <td>Web apps where XSS protection is priority</td>
+    <td>Mobile apps or non-browser clients</td>
+  </tr>
+  <tr>
+    <td>Session (opaque)</td>
+    <td>JSESSIONID cookie → server looks up session in DB/Redis</td>
+    <td>Server-side session store</td>
+    <td>No</td>
+    <td>Yes — need CSRF protection</td>
+    <td>Traditional web apps, when you need instant logout</td>
+    <td>Microservices at scale (DB call per request)</td>
+  </tr>
+  <tr>
+    <td>OAuth2 + OIDC</td>
+    <td>Auth Code flow → access + refresh + ID tokens</td>
+    <td>Secure storage (HttpOnly cookie or PKCE)</td>
+    <td>Yes (JWT)</td>
+    <td>Depends on storage</td>
+    <td>Third-party login, enterprise SSO, public APIs</td>
+    <td>Simple internal tools (overkill)</td>
+  </tr>
+  <tr>
+    <td>API Key</td>
+    <td><code>X-API-KEY: abc123</code> header or query param</td>
+    <td>Client stores key securely</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>Machine-to-machine, public API access</td>
+    <td>User-facing apps (no identity, no expiry, hard to rotate)</td>
+  </tr>
+  <tr>
+    <td>mTLS</td>
+    <td>Client presents certificate; server verifies it</td>
+    <td>Certificate (file)</td>
+    <td>Yes</td>
+    <td>No</td>
+    <td>Service-to-service in zero-trust networks</td>
+    <td>Browser clients (certificate management is complex)</td>
+  </tr>
+</table>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 8: JWT vs OAuth2 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-blue">08</span>
+  JWT vs OAuth2 — What Each One Actually Is
+</div>
+
+<div class="flow-card">
+<div class="flow-body">
+<div class="cols2">
+<div class="mini-card" style="border-top:3px solid #3b82f6">
+  <h4 style="color:var(--color-text-info)">JWT — a token format</h4>
+  <p style="margin-bottom:8px">JWT is just a data container — a signed JSON object. It carries claims about a user. It has nothing to say about how you got it.</p>
+  <ul>
+    <li>Self-contained — no DB lookup to validate</li>
+    <li>Signed (RS256 or HS256) — tamper-proof</li>
+    <li>Can be used standalone, with OAuth2, or with SAML</li>
+    <li>Expires via <code>exp</code> claim</li>
+    <li><strong>Analogy:</strong> A signed boarding pass — it carries info, you just verify the signature</li>
+  </ul>
+</div>
+<div class="mini-card" style="border-top:3px solid #10b981">
+  <h4 style="color:var(--color-text-success)">OAuth2 — an authorization protocol</h4>
+  <p style="margin-bottom:8px">OAuth2 defines the <em>process</em> of obtaining a token — the multi-party dance between User, Client, Auth Server, and Resource Server.</p>
+  <ul>
+    <li>Defines flows: Auth Code, Client Credentials, Implicit, Device</li>
+    <li>Does NOT define token format (but usually issues JWT)</li>
+    <li>Separates: who grants access vs who verifies it</li>
+    <li>OIDC layer adds identity (ID Token = who the user is)</li>
+    <li><strong>Analogy:</strong> The airport boarding process — it's how you get the boarding pass</li>
+  </ul>
+</div>
+</div>
+<div class="highlight-box hl-blue" style="margin-top:12px">
+  <strong>Used together:</strong> OAuth2 defines the flow → Auth server issues a JWT → Spring Boot validates the JWT. You need both: OAuth2 for the secure issuance process, JWT for efficient stateless verification.
+</div>
+
+<div class="code-block" style="margin-top:10px"><span class="c-c"># application.yml — Spring Boot as a Resource Server</span>
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.corp.com          <span class="c-c"># OAuth2/OIDC discovery</span>
+          jwk-set-uri: https://auth.corp.com/jwks    <span class="c-c"># fetch public keys to verify JWT</span>
+
+<span class="c-c"># Spring Boot fetches jwks.json once, caches public keys
+# Every request: decode JWT → verify signature → check exp/iss/aud → done
+# Zero database calls</span></div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 9: Decision Tree -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-title">
+  <span class="tag tag-amber">09</span>
+  Which Auth Strategy Should You Pick?
+</div>
+
+<div class="flow-card">
+<div class="flow-body">
+<table>
+  <tr><th>Situation</th><th>Recommended approach</th><th>Why</th></tr>
+  <tr><td>Corporate Microsoft environment (Windows login)</td><td>ADFS → OIDC (JWT) or SAML</td><td>Employees use existing Windows credentials; ADFS integrates with Active Directory</td></tr>
+  <tr><td>"Login with Google/GitHub"</td><td>OAuth2 Authorization Code + OIDC + JWT</td><td>Standard social login; OIDC handles identity; JWT is stateless</td></tr>
+  <tr><td>University / on-premise with OpenLDAP</td><td>Keycloak LDAP federation → JWT</td><td>Keycloak translates LDAP groups to JWT roles; Spring Boot never touches LDAP</td></tr>
+  <tr><td>Internal SPA + Spring REST API</td><td>OAuth2 + JWT in HttpOnly cookie</td><td>XSS-safe storage; stateless JWT; add CSRF protection</td></tr>
+  <tr><td>Microservice-to-microservice (user context)</td><td>Propagate user's JWT via Authorization header</td><td>User identity travels with request; each service validates independently</td></tr>
+  <tr><td>Microservice-to-microservice (no user)</td><td>OAuth2 Client Credentials</td><td>Service authenticates as itself; scoped tokens; no user session needed</td></tr>
+  <tr><td>Public REST API for third-party developers</td><td>API Key + optional OAuth2</td><td>Simple for developers; API keys for basic access, OAuth2 for user-delegated access</td></tr>
+  <tr><td>Small internal tool / prototype</td><td>Spring Security form login (session) or Basic Auth</td><td>Low complexity; no need for an IdP</td></tr>
+</table>
+<div class="highlight-box hl-red" style="margin-top:12px">
+  <strong>Avoid:</strong> Raw JWT without an IdP (no revocation, no standard issuance) · OAuth 1.0 (deprecated) · Storing JWT in localStorage (XSS risk) · <code>Allow-Origin: *</code> with credentials · Disabling CSRF "because it's annoying"
+</div>
+</div>
+</div>
+
+<p class="page-footer">Spring Security · JWT · OAuth2 · OIDC · ADFS · LDAP · Cookies · CSRF · CORS — Quick Reference</p>
+</div>
+
+
+
+
+
+
+
+
+

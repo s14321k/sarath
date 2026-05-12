@@ -665,7 +665,9 @@ body {
         }
 
         .code-runner-editor,
-        .code-runner-input {
+        .code-runner-input,
+        .code-runner-text,
+        .code-runner-select {
             width: 100%;
             padding: 12px;
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -685,6 +687,17 @@ body {
         .code-runner-input {
             min-height: 110px;
             margin-bottom: 12px;
+        }
+
+        .code-runner-text,
+        .code-runner-select {
+            min-height: 44px;
+        }
+
+        .code-runner-select {
+            width: auto;
+            min-width: 150px;
+            padding-right: 36px;
         }
 
         .code-runner-button {
@@ -723,6 +736,455 @@ body {
             padding: 14px;
             border-radius: 10px;
             background: rgba(10, 10, 21, 0.92);
+        }
+
+        .logic-visual-container {
+            margin-top: 18px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .logic-empty {
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .logic-empty.small {
+            font-size: 12px;
+        }
+
+        .logic-visual-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .logic-visual-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .logic-visual-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .logic-visual-summary {
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .logic-complexity {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+            color: #98d8c8;
+            white-space: nowrap;
+        }
+
+        .logic-phase-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .logic-phase-btn {
+            min-height: 34px;
+            padding: 0 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .logic-phase-btn.active {
+            border-color: rgba(108, 138, 255, 0.42);
+            background: rgba(108, 138, 255, 0.16);
+            color: #9db3ff;
+        }
+
+        .logic-step-panel {
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .logic-step-panel-title {
+            margin-bottom: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .logic-cell-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            min-height: 56px;
+            align-items: center;
+        }
+
+        .logic-cell {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 48px;
+            padding: 6px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(10, 10, 21, 0.86);
+            color: var(--text);
+            font: 13px/1.2 'JetBrains Mono', monospace;
+        }
+
+        .logic-cell-index,
+        .logic-cell-tag {
+            font-size: 9px;
+            line-height: 1.2;
+            color: var(--text-dim);
+            min-height: 11px;
+        }
+
+        .logic-cell-value {
+            margin: 2px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .logic-stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .logic-stat-card {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 10, 21, 0.86);
+        }
+
+        .logic-stat-label {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .logic-stat-value {
+            margin-top: 6px;
+            font: 14px/1.5 'JetBrains Mono', monospace;
+            color: var(--text);
+        }
+
+        .logic-step-view {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .logic-step-explanation,
+        .logic-step-focus {
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(10, 10, 21, 0.86);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .logic-step-focus {
+            color: #87ceeb;
+        }
+
+        .logic-state-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+
+        .logic-state-card {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .logic-state-name {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .logic-state-value {
+            margin-top: 6px;
+            font: 14px/1.5 'JetBrains Mono', monospace;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .logic-state-role {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #ffa07a;
+            text-transform: uppercase;
+        }
+
+        .logic-flow-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .logic-flow-item {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .logic-flow-start,
+        .logic-flow-end {
+            border-color: rgba(78, 240, 176, 0.3);
+            color: #7ee787;
+        }
+
+        .logic-flow-decision {
+            border-color: rgba(240, 164, 78, 0.34);
+            color: #f0a44e;
+        }
+
+        .logic-flow-loop {
+            border-color: rgba(108, 138, 255, 0.34);
+            color: #9db3ff;
+        }
+
+        .logic-history-container {
+            margin-top: 16px;
+        }
+
+        .logic-history-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .logic-history-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .logic-history-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .logic-history-select {
+            min-width: 280px;
+        }
+
+        .logic-history-compare {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .logic-history-card {
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 10, 21, 0.86);
+        }
+
+        .logic-history-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .logic-history-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .logic-history-grid span {
+            display: block;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .logic-history-grid strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--text);
+        }
+
+        .logic-history-body,
+        .logic-history-steps {
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-dim);
+        }
+
+        .logic-history-steps {
+            margin-top: 10px;
+        }
+
+        .logic-tone-accent {
+            border-color: rgba(108, 138, 255, 0.42);
+            color: #9db3ff;
+            background: rgba(108, 138, 255, 0.12);
+        }
+
+        .logic-tone-green {
+            border-color: rgba(78, 240, 176, 0.34);
+            color: #7ee787;
+            background: rgba(78, 240, 176, 0.1);
+        }
+
+        .logic-tone-amber {
+            border-color: rgba(240, 164, 78, 0.34);
+            color: #f0a44e;
+            background: rgba(240, 164, 78, 0.1);
+        }
+
+        .logic-tone-red {
+            border-color: rgba(240, 112, 112, 0.34);
+            color: #ff9c9c;
+            background: rgba(240, 112, 112, 0.1);
+        }
+
+        .logic-tone-purple {
+            border-color: rgba(192, 132, 252, 0.34);
+            color: #d2a8ff;
+            background: rgba(192, 132, 252, 0.1);
+        }
+
+        .logic-tone-dim {
+            opacity: 0.45;
+        }
+
+        .ai-settings-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2750;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .ai-settings-modal.hidden {
+            display: none;
+        }
+
+        .ai-settings-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(5, 6, 12, 0.76);
+            backdrop-filter: blur(6px);
+        }
+
+        .ai-settings-panel {
+            position: relative;
+            width: min(680px, calc(100vw - 48px));
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #121224;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .ai-settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .ai-settings-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .ai-settings-subtitle {
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .ai-settings-body {
+            padding: 16px;
+        }
+
+        .ai-provider-help {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--text-dim);
+        }
+
+        .ai-provider-help strong {
+            color: var(--text);
+        }
+
+        .ai-settings-status {
+            min-height: 18px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #98d8c8;
+        }
+
+        .ai-settings-status.is-error {
+            color: #ff9c9c;
+        }
+
+        .ai-settings-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+        }
+
+        body.ai-settings-open {
+            overflow: hidden;
         }
 
         body.code-runner-open {
@@ -963,6 +1425,17 @@ body {
 
             .code-runner-meta {
                 text-align: left;
+            }
+
+            .logic-visual-header,
+            .ai-settings-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .logic-history-compare,
+            .logic-history-grid {
+                grid-template-columns: 1fr;
             }
         }
 

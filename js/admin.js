@@ -11,9 +11,11 @@
     const dashboardBtn = document.getElementById('dashboardBtn');
     const tableBtn = document.getElementById('tableBtn');
     const messagesBtn = document.getElementById('messagesBtn');
+    const approvalsBtn = document.getElementById('approvalsBtn');
     const dashboardView = document.getElementById('dashboardView');
     const tableWrap = document.querySelector('.admin-table-wrap');
     const messagesView = document.getElementById('messagesView');
+    const approvalsView = document.getElementById('approvalsView');
     const totalPagesCount = document.getElementById('totalPagesCount');
     const mostVisitedPage = document.getElementById('mostVisitedPage');
     const mostVisitedCount = document.getElementById('mostVisitedCount');
@@ -33,6 +35,13 @@
     const globalMessages = document.getElementById('globalMessages');
     const adminInboxClear = document.getElementById('adminInboxClear');
     const globalMessagesClear = document.getElementById('globalMessagesClear');
+    const approvalsRefresh = document.getElementById('approvalsRefresh');
+    const approvalList = document.getElementById('approvalList');
+    const approvalMeta = document.getElementById('approvalMeta');
+    const approvalPreview = document.getElementById('approvalPreview');
+    const approvalActions = document.getElementById('approvalActions');
+    const approvalApprove = document.getElementById('approvalApprove');
+    const approvalReject = document.getElementById('approvalReject');
 
     let topPagesChart = null;
     let mostVisitedOriginChart = null;
@@ -41,6 +50,9 @@
     let monthlyChart = null;
     let adminCreds = { username: '', password: '' };
     let messagesActive = false;
+    let approvalsActive = false;
+    let approvalItems = [];
+    let selectedApprovalId = '';
 
     function setError(msg) {
         if (err) err.textContent = msg || '';
@@ -359,6 +371,115 @@
         }
     }
 
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderVisualizationPreview(container, data) {
+        if (!container) return;
+        const steps = Array.isArray(data?.steps) ? data.steps : [];
+        const flow = Array.isArray(data?.flow) ? data.flow : [];
+        if (!steps.length) {
+            container.innerHTML = '<div class="logic-empty">No visual steps were returned.</div>';
+            return;
+        }
+        const phaseButtons = steps.map((step, index) => (
+            `<button type="button" class="logic-phase-btn${index === 0 ? ' active' : ''}" data-logic-step="${index}">${escapeHtml(step.label || `Step ${index + 1}`)}</button>`
+        )).join('');
+        const toneClass = (tone) => {
+            const value = String(tone || '').trim();
+            return value ? ` logic-tone-${escapeHtml(value)}` : '';
+        };
+        const stateCards = (step) => Array.isArray(step?.state) && step.state.length
+            ? step.state.map((entry) => `
+                <div class="logic-state-card">
+                    <div class="logic-state-name">${escapeHtml(entry.name || '')}</div>
+                    <div class="logic-state-value">${escapeHtml(String(entry.value ?? ''))}</div>
+                    <div class="logic-state-role">${escapeHtml(entry.role || '')}</div>
+                </div>
+            `).join('')
+            : '<div class="logic-empty small">No tracked variables for this step.</div>';
+        const stepStats = (step) => Array.isArray(step?.stats) && step.stats.length
+            ? step.stats.map((entry) => `
+                <div class="logic-stat-card${toneClass(entry.tone)}">
+                    <div class="logic-stat-label">${escapeHtml(entry.label || '')}</div>
+                    <div class="logic-stat-value">${escapeHtml(String(entry.value ?? ''))}</div>
+                </div>
+            `).join('')
+            : '<div class="logic-empty small">No summary metrics for this step.</div>';
+        const stepCells = (step) => Array.isArray(step?.cells) && step.cells.length
+            ? step.cells.map((entry) => `
+                <div class="logic-cell${toneClass(entry.tone)}">
+                    <div class="logic-cell-index">${escapeHtml(entry.index || '')}</div>
+                    <div class="logic-cell-value">${escapeHtml(String(entry.value ?? ''))}</div>
+                    <div class="logic-cell-tag">${escapeHtml(entry.tag || '')}</div>
+                </div>
+            `).join('')
+            : '<div class="logic-empty small">No sequence view for this step.</div>';
+        const flowHtml = flow.length
+            ? flow.map((item) => `<div class="logic-flow-item logic-flow-${escapeHtml(item.type || 'process')}">${escapeHtml(item.text || '')}</div>`).join('')
+            : '<div class="logic-empty small">No flow outline returned.</div>';
+        const firstExplanation = escapeHtml(steps[0].explanation || '');
+        const firstFocus = escapeHtml(steps[0].focus || '');
+        container.innerHTML = `
+            <div class="logic-visual-shell">
+                <div class="logic-visual-header">
+                    <div>
+                        <div class="logic-visual-title">${escapeHtml(data.title || 'Program Logic')}</div>
+                        <div class="logic-visual-summary">${escapeHtml(data.summary || '')}</div>
+                    </div>
+                    <div class="logic-complexity">
+                        <span>Time: ${escapeHtml(data?.complexity?.time || 'n/a')}</span>
+                        <span>Space: ${escapeHtml(data?.complexity?.space || 'n/a')}</span>
+                    </div>
+                </div>
+                <div class="logic-phase-row">${phaseButtons}</div>
+                <div class="logic-step-panel">
+                    <div class="logic-step-panel-title" data-logic-section>${escapeHtml(steps[0].sectionTitle || 'Current View')}</div>
+                    <div class="logic-cell-row" data-logic-cells>${stepCells(steps[0])}</div>
+                    <div class="logic-stat-row" data-logic-stats>${stepStats(steps[0])}</div>
+                </div>
+                <div class="logic-step-view">
+                    <div class="logic-step-explanation${firstExplanation ? '' : ' hidden'}" data-logic-explanation>${firstExplanation}</div>
+                    <div class="logic-step-focus${firstFocus ? '' : ' hidden'}" data-logic-focus>${firstFocus}</div>
+                    <div class="logic-state-grid" data-logic-state>${stateCards(steps[0])}</div>
+                </div>
+                <div class="logic-flow-panel">${flowHtml}</div>
+            </div>
+        `;
+        const buttons = container.querySelectorAll('[data-logic-step]');
+        const explanation = container.querySelector('[data-logic-explanation]');
+        const focus = container.querySelector('[data-logic-focus]');
+        const state = container.querySelector('[data-logic-state]');
+        const section = container.querySelector('[data-logic-section]');
+        const cells = container.querySelector('[data-logic-cells]');
+        const stats = container.querySelector('[data-logic-stats]');
+        buttons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const index = Number(button.dataset.logicStep);
+                const step = steps[index] || steps[0];
+                buttons.forEach((item) => item.classList.toggle('active', item === button));
+                if (section) section.textContent = step?.sectionTitle || 'Current View';
+                if (explanation) {
+                    explanation.textContent = step?.explanation || '';
+                    explanation.classList.toggle('hidden', !step?.explanation);
+                }
+                if (focus) {
+                    focus.textContent = step?.focus || '';
+                    focus.classList.toggle('hidden', !step?.focus);
+                }
+                if (state) state.innerHTML = stateCards(step);
+                if (cells) cells.innerHTML = stepCells(step);
+                if (stats) stats.innerHTML = stepStats(step);
+            });
+        });
+    }
+
     async function fetchStats(username, password) {
         if (!endpoint) throw new Error('Missing endpoint');
         const res = await fetch(endpoint, {
@@ -441,6 +562,38 @@
         if (!res.ok) throw new Error('Fetch failed');
         const json = await res.json();
         return json.messages || [];
+    }
+
+    async function fetchPendingApprovals() {
+        if (!endpoint) throw new Error('Missing endpoint');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                eventType: 'admin_visualization_pending',
+                username: adminCreds.username,
+                password: adminCreds.password
+            })
+        });
+        if (!res.ok) throw new Error('Approval fetch failed');
+        const json = await res.json();
+        return json.items || [];
+    }
+
+    async function reviewApproval(id, action) {
+        if (!endpoint) throw new Error('Missing endpoint');
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                eventType: 'admin_visualization_review',
+                id,
+                action,
+                username: adminCreds.username,
+                password: adminCreds.password
+            })
+        });
+        if (!res.ok) throw new Error('Approval review failed');
     }
 
     function dayLabel(date) {
@@ -644,6 +797,8 @@
                 tableBtn.onclick = showTable;
             }
             if (messagesBtn) messagesBtn.onclick = showMessages;
+            if (approvalsBtn) approvalsBtn.onclick = showApprovals;
+            if (approvalsRefresh) approvalsRefresh.onclick = loadApprovals;
             wireMessageForms();
             pollMessages();
         } catch (e) {
@@ -655,7 +810,9 @@
         if (dashboardView) dashboardView.classList.remove('hidden');
         if (tableWrap) tableWrap.classList.add('hidden');
         if (messagesView) messagesView.classList.add('hidden');
+        if (approvalsView) approvalsView.classList.add('hidden');
         messagesActive = false;
+        approvalsActive = false;
         setActiveTab('dashboard');
     }
 
@@ -663,7 +820,9 @@
         if (dashboardView) dashboardView.classList.add('hidden');
         if (tableWrap) tableWrap.classList.remove('hidden');
         if (messagesView) messagesView.classList.add('hidden');
+        if (approvalsView) approvalsView.classList.add('hidden');
         messagesActive = false;
+        approvalsActive = false;
         setActiveTab('table');
     }
 
@@ -671,15 +830,82 @@
         if (dashboardView) dashboardView.classList.add('hidden');
         if (tableWrap) tableWrap.classList.add('hidden');
         if (messagesView) messagesView.classList.remove('hidden');
+        if (approvalsView) approvalsView.classList.add('hidden');
         messagesActive = true;
+        approvalsActive = false;
         setActiveTab('messages');
         pollMessages();
+    }
+
+    async function showApprovals() {
+        if (dashboardView) dashboardView.classList.add('hidden');
+        if (tableWrap) tableWrap.classList.add('hidden');
+        if (messagesView) messagesView.classList.add('hidden');
+        if (approvalsView) approvalsView.classList.remove('hidden');
+        messagesActive = false;
+        approvalsActive = true;
+        setActiveTab('approvals');
+        await loadApprovals();
     }
 
     function setActiveTab(tab) {
         dashboardBtn?.classList.toggle('active', tab === 'dashboard');
         tableBtn?.classList.toggle('active', tab === 'table');
         messagesBtn?.classList.toggle('active', tab === 'messages');
+        approvalsBtn?.classList.toggle('active', tab === 'approvals');
+    }
+
+    function renderApprovalList(items) {
+        if (!approvalList) return;
+        approvalList.innerHTML = '';
+        if (!items.length) {
+            approvalList.innerHTML = '<div class="logic-empty">No pending approvals.</div>';
+            if (approvalPreview) approvalPreview.innerHTML = '<div class="logic-empty">No pending visualizations.</div>';
+            if (approvalMeta) approvalMeta.textContent = '';
+            approvalActions?.classList.add('hidden');
+            selectedApprovalId = '';
+            return;
+        }
+        items.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'approval-item';
+            button.dataset.id = item.id || '';
+            const title = item?.visualization?.title || formatPageName(item?.sourceCode || '') || item.language || 'Visualization';
+            button.innerHTML = `
+                <div class="approval-item-title">${escapeHtml(title)}</div>
+                <div class="approval-item-meta">${escapeHtml(item.submittedBy || 'unknown')} • ${escapeHtml((item.language || '').toUpperCase())}</div>
+            `;
+            button.addEventListener('click', () => selectApproval(item.id || ''));
+            approvalList.appendChild(button);
+        });
+    }
+
+    function selectApproval(id) {
+        selectedApprovalId = id;
+        const item = approvalItems.find((entry) => entry.id === id);
+        approvalList?.querySelectorAll('.approval-item').forEach((node) => {
+            node.classList.toggle('active', node.dataset.id === id);
+        });
+        if (!item) {
+            approvalActions?.classList.add('hidden');
+            return;
+        }
+        if (approvalMeta) {
+            approvalMeta.textContent = `${item.submittedBy || 'unknown'} • ${new Date(item.createdAt || Date.now()).toLocaleString()}`;
+        }
+        approvalActions?.classList.remove('hidden');
+        renderVisualizationPreview(approvalPreview, item.visualization || {});
+    }
+
+    async function loadApprovals() {
+        try {
+            approvalItems = await fetchPendingApprovals();
+            renderApprovalList(approvalItems);
+            if (approvalItems.length) selectApproval(approvalItems[0].id || '');
+        } catch {
+            if (approvalList) approvalList.innerHTML = '<div class="logic-empty">Failed to load approvals.</div>';
+        }
     }
 
     function startRefreshVisual() {
@@ -807,6 +1033,18 @@
     globalMessagesClear?.addEventListener('click', async () => {
         await deleteMessages('global', 0, true, '');
         await pollMessages();
+    });
+
+    approvalApprove?.addEventListener('click', async () => {
+        if (!selectedApprovalId) return;
+        await reviewApproval(selectedApprovalId, 'approve');
+        await loadApprovals();
+    });
+
+    approvalReject?.addEventListener('click', async () => {
+        if (!selectedApprovalId) return;
+        await reviewApproval(selectedApprovalId, 'reject');
+        await loadApprovals();
     });
 
     if (form) {

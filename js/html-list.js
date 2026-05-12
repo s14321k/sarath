@@ -1,1 +1,1 @@
-window.htmlFiles = ["design-patterns.html", "loadBalancerapiGatewaySecurity.html", "microservice-architecture.html", "solidAndDesignPrinciple.html"];
+window.htmlFiles = ["design-patterns.html", "java-logic-explorer.html", "loadBalancerapiGatewaySecurity.html", "microservice-architecture.html", "solidAndDesignPrinciple.html", "springSecurityAuthCompleteReference.html"];

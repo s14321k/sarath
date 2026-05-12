@@ -4,6 +4,7 @@
     const VISIT_KEY = 'visitRecorded';
     const NAME_KEY = 'visitorName';
     const KNOWN_KEY = 'knownUser';
+    const SESSION_KEY = 'visitSessionToken';
     const WELCOME_KEY = 'welcomeMessage';
     const ANON_KEY = 'anonRecorded';
     const INTRO_KEY = 'introSeen';
@@ -203,7 +204,11 @@
             });
             const json = await res.json().catch(() => ({}));
             if (!res.ok) return { ok: false };
-            return { ok: true, knownUser: Boolean(json.knownUser) };
+            return {
+                ok: true,
+                knownUser: Boolean(json.knownUser),
+                sessionToken: String(json.sessionToken || '')
+            };
         } catch (e) {
             // Ignore network errors to avoid blocking UX
             return { ok: false };
@@ -330,6 +335,9 @@
             }
             sessionStorage.setItem(VISIT_KEY, '1');
             sessionStorage.setItem(NAME_KEY, username);
+            if (result.sessionToken) {
+                sessionStorage.setItem(SESSION_KEY, result.sessionToken);
+            }
             hideModal();
             const geo = await getGeoAsync();
             if (geo) storeGeo(geo);
@@ -337,7 +345,12 @@
             const msg = `Welcome back, ${username}`;
             sessionStorage.setItem(WELCOME_KEY, msg);
             showBanner(msg);
-            document.dispatchEvent(new CustomEvent('visit-login', { detail: { username } }));
+            document.dispatchEvent(new CustomEvent('visit-login', {
+                detail: {
+                    username,
+                    sessionToken: result.sessionToken || ''
+                }
+            }));
 
             // Track index page view + exit after login
             const endpoint = window.VISIT_ENDPOINT || '';

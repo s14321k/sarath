@@ -36,6 +36,7 @@
                     <button id="dashboardBtn" type="button">Dashboard View</button>
                     <button id="tableBtn" type="button">Table View</button>
                     <button id="messagesBtn" type="button">Messages</button>
+                    <button id="approvalsBtn" type="button">Approvals</button>
                     <button id="refreshBtn" type="button">Refresh</button>
                 </div>
             </div>
@@ -121,6 +122,30 @@
                         <button type="button" id="globalMessagesClear">Delete All</button>
                     </div>
                     <div class="message-list" id="globalMessages"></div>
+                </div>
+            </div>
+            <div class="approvals-view hidden" id="approvalsView">
+                <div class="approvals-grid">
+                    <div class="approval-list-card">
+                        <div class="message-card-header">
+                            <h3>Pending Visualizations</h3>
+                            <button type="button" id="approvalsRefresh">Refresh</button>
+                        </div>
+                        <div class="approval-list" id="approvalList"></div>
+                    </div>
+                    <div class="approval-preview-card">
+                        <div class="message-card-header">
+                            <h3>Preview</h3>
+                            <div class="approval-preview-meta" id="approvalMeta"></div>
+                        </div>
+                        <div class="approval-actions hidden" id="approvalActions">
+                            <button type="button" id="approvalApprove">Approve</button>
+                            <button type="button" id="approvalReject" class="secondary">Reject</button>
+                        </div>
+                        <div class="approval-preview" id="approvalPreview">
+                            <div class="logic-empty">Select a pending visualization to preview it here.</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

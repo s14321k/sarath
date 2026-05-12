@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Logic Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --surface: #151820;
+  --surface2: #1c2030;
+  --border: #2a2f3d;
+  --border2: #353b4d;
+  --text: #e8eaf0;
+  --text2: #8b91a8;
+  --text3: #5a6075;
+  --accent: #6c8aff;
+  --accent2: #4ef0b0;
+  --accent3: #f0a44e;
+  --accent4: #f07070;
+  --accent5: #c084fc;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Sora', sans-serif;
+  --r: 10px;
+  --r2: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-family: var(--mono);
+  margin-bottom: 6px;
+}
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.sidebar-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+.sidebar-section {
+  padding: 12px 12px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  margin: 1px 8px;
+  border-radius: var(--r2);
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--surface2);
+  border-color: var(--border);
+}
+
+.nav-item.active {
+  background: rgba(108,138,255,0.12);
+  border-color: rgba(108,138,255,0.3);
+}
+
+.nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text3);
+}
+
+.nav-item.active .nav-dot { background: var(--accent); }
+
+.nav-label {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.3;
+}
+
+.nav-item.active .nav-label { color: var(--text); }
+
+.nav-badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text3);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* MAIN */
+.main {
+  margin-left: 260px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  padding: 20px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.top-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.top-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.top-desc {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: var(--mono);
+}
+
+.content {
+  padding: 28px 32px;
+  flex: 1;
+}
+
+/* PANEL */
+.panel {
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+.panel.active { display: block; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* PHASE BUTTONS */
+.phase-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.pbtn {
+  padding: 7px 14px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 12px;
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pbtn:hover { border-color: var(--border2); color: var(--text); }
+
+.pbtn.active {
+  background: rgba(108,138,255,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* CELLS */
+.cell-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  min-height: 56px;
+  align-items: center;
+}
+
+.cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 6px 4px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.cell .ci { font-size: 9px; color: var(--text3); margin-bottom: 2px; }
+.cell .ct { font-size: 9px; color: var(--text3); margin-top: 2px; height: 11px; }
+
+.cell.c-accent  { background: rgba(108,138,255,0.15); border-color: var(--accent); color: var(--accent); }
+.cell.c-green   { background: rgba(78,240,176,0.1);  border-color: var(--accent2); color: var(--accent2); }
+.cell.c-amber   { background: rgba(240,164,78,0.12); border-color: var(--accent3); color: var(--accent3); }
+.cell.c-red     { background: rgba(240,112,112,0.12);border-color: var(--accent4); color: var(--accent4); }
+.cell.c-purple  { background: rgba(192,132,252,0.12);border-color: var(--accent5); color: var(--accent5); }
+.cell.dim       { opacity: 0.25; }
+
+/* EXPLAIN BOX */
+.explain {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 18px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  min-height: 54px;
+}
+
+.explain strong { color: var(--text); }
+.explain code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* STAT ROW */
+.stat-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.stat .sv {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+/* INPUT */
+.input-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: flex-end;
+}
+
+.inp-group { display: flex; flex-direction: column; gap: 5px; }
+.inp-label { font-size: 11px; color: var(--text3); font-family: var(--mono); letter-spacing: 0.05em; }
+
+input[type="text"], input[type="number"] {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--r2);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type="text"]:focus, input[type="number"]:focus { border-color: var(--accent); }
+
+input[type="range"] {
+  accent-color: var(--accent);
+}
+
+/* BARS */
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.bar-key {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  min-width: 28px;
+  text-align: right;
+}
+.bar-fill {
+  height: 12px;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.4s;
+}
+.bar-cnt {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* KV ROW */
+.kv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  margin-bottom: 6px;
+  font-size: 13px;
+  transition: all 0.3s;
+}
+.kv-row .kv-key { font-weight: 600; min-width: 60px; color: var(--text); font-family: var(--mono); }
+.kv-row .kv-bar { flex: 1; height: 8px; border-radius: 4px; background: var(--border); transition: width 0.4s; }
+.kv-row .kv-val { color: var(--text2); font-family: var(--mono); font-size: 12px; min-width: 28px; text-align: right; }
+.kv-row.kv-green { background: rgba(78,240,176,0.07); border-color: rgba(78,240,176,0.3); }
+.kv-row.kv-green .kv-bar { background: var(--accent2); }
+.kv-row.kv-accent { background: rgba(108,138,255,0.07); border-color: rgba(108,138,255,0.3); }
+.kv-row.kv-accent .kv-bar { background: var(--accent); }
+
+/* GRID */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+/* THREAD BOX */
+.thread-box {
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  flex: 1;
+  min-width: 140px;
+  transition: all 0.3s;
+}
+.thread-box .t-name { font-size: 12px; font-weight: 600; font-family: var(--mono); margin-bottom: 6px; }
+.thread-box .t-state { font-size: 10px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 8px; font-family: var(--mono); }
+.thread-box .t-action { font-size: 12px; font-family: var(--mono); color: var(--text2); }
+.thread-box.tb-odd { background: rgba(108,138,255,0.07); border-color: rgba(108,138,255,0.3); }
+.thread-box.tb-odd .t-name { color: var(--accent); }
+.thread-box.tb-odd .t-state { background: rgba(108,138,255,0.2); color: var(--accent); }
+.thread-box.tb-even { background: rgba(240,164,78,0.07); border-color: rgba(240,164,78,0.3); }
+.thread-box.tb-even .t-name { color: var(--accent3); }
+.thread-box.tb-even .t-state { background: rgba(240,164,78,0.2); color: var(--accent3); }
+.thread-box.dim { opacity: 0.4; }
+
+.lock-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  display: inline-block;
+  margin-bottom: 12px;
+}
+
+/* HANOI */
+.peg-area { display: flex; justify-content: space-around; align-items: flex-end; height: 150px; margin-bottom: 12px; }
+.peg-wrap { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 140px; width: 120px; gap: 3px; }
+.peg-rod { width: 5px; height: 100px; background: var(--border2); border-radius: 3px; position: absolute; bottom: 10px; }
+.peg-base { width: 100px; height: 8px; background: var(--surface2); border-radius: 4px; border: 1px solid var(--border); }
+.disk { height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-family: var(--mono); font-weight: 500; transition: all 0.4s; position: relative; z-index: 1; }
+.peg-name { font-size: 12px; color: var(--text3); text-align: center; font-family: var(--mono); }
+
+.move-log {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.9;
+  max-height: 120px;
+  overflow-y: auto;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  margin-bottom: 14px;
+}
+.move-log .cur { color: var(--accent); font-weight: 600; }
+
+.output-stream {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 2;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.sep { height: 1px; background: var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">Java Logic</div>
+    <div class="sidebar-title">Explorer</div>
+    <div class="sidebar-sub">14 interactive demos</div>
+  </div>
+
+  <div class="sidebar-section">Core Java</div>
+  <div class="nav-item active" onclick="show('fibonacci', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Fibonacci Recursion</div>
+    <div class="nav-badge">1.3</div>
+  </div>
+  <div class="nav-item" onclick="show('anagram', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Anagram Check</div>
+    <div class="nav-badge">1.4</div>
+  </div>
+  <div class="nav-item" onclick="show('missing', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Missing Number</div>
+    <div class="nav-badge">1.6</div>
+  </div>
+  <div class="nav-item" onclick="show('magic', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Magic Number</div>
+    <div class="nav-badge">1.7</div>
+  </div>
+  <div class="nav-item" onclick="show('reverse', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Reverse String</div>
+    <div class="nav-badge">1.9</div>
+  </div>
+  <div class="nav-item" onclick="show('hanoi', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Tower of Hanoi</div>
+    <div class="nav-badge">1.12</div>
+  </div>
+  <div class="nav-item" onclick="show('bsearch', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Binary Search</div>
+    <div class="nav-badge">1.13</div>
+  </div>
+
+  <div class="sidebar-section">Streams</div>
+  <div class="nav-item" onclick="show('charfreq', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Char Frequency & Top 3</div>
+    <div class="nav-badge">2.6</div>
+  </div>
+  <div class="nav-item" onclick="show('palindrome', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Palindrome Check</div>
+    <div class="nav-badge">2.10</div>
+  </div>
+  <div class="nav-item" onclick="show('secondlargest', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Second Largest</div>
+    <div class="nav-badge">3.7</div>
+  </div>
+  <div class="nav-item" onclick="show('twosum', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Two Sum</div>
+    <div class="nav-badge">3.11</div>
+  </div>
+
+  <div class="sidebar-section">Collections</div>
+  <div class="nav-item" onclick="show('mapsort', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Sort Map by Value</div>
+    <div class="nav-badge">5.1</div>
+  </div>
+
+  <div class="sidebar-section">Multithreading</div>
+  <div class="nav-item" onclick="show('oddeven', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Odd/Even Threads</div>
+    <div class="nav-badge">6.1</div>
+  </div>
+
+  <div class="sidebar-section">Optional</div>
+  <div class="nav-item" onclick="show('optional', this)">
+    <div class="nav-dot"></div>
+    <div class="nav-label">Optional + parallelSort</div>
+    <div class="nav-badge">13.1</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="top-bar" id="top-bar">
+    <div class="top-icon" id="top-icon" style="background:rgba(108,138,255,0.15);">🔢</div>
+    <div>
+      <div class="top-title" id="top-title">Fibonacci Recursion</div>
+      <div class="top-desc" id="top-desc">1.3 · printFibonacci(val_1, val_2, num)</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== 1. FIBONACCI ===== -->
+    <div class="panel active" id="panel-fibonacci">
+      <div class="input-row">
+        <div class="inp-group">
+          <div class="inp-label">Number of terms</div>
+          <input type="range" min="3" max="14" value="8" id="fib-n" oninput="document.getElementById('fib-nv').textContent=this.value;fibPhase(fibP)">
+        </div>
+        <span id="fib-nv" style="font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent);">8</span>
+      </div>
+      <div class="phase-row" id="fib-phases"></div>
+      <div class="cell-row" id="fib-cells"></div>
+      <div class="stat-row" id="fib-stats"></div>
+      <div class="explain" id="fib-ex"></div>
+    </div>
+
+    <!-- ===== 2. ANAGRAM ===== -->
+    <div class="panel" id="panel-anagram">
+      <div class="input-row">
+        <div class="inp-group"><div class="inp-label">String 1</div><input type="text" id="an-s1" value="listen" oninput="anPhase(anP)"></div>
+        <div class="inp-group"><div class="inp-label">String 2</div><input type="text" id="an-s2" value="silent" oninput="anPhase(anP)"></div>
+      </div>
+      <div class="phase-row" id="an-phases"></div>
+      <div class="section-label" id="an-lab1">Original</div>
+      <div class="cell-row" id="an-cells1"></div>
+      <div class="section-label" id="an-lab2" style="display:none">Sorted</div>
+      <div class="cell-row" id="an-cells2" style="display:none"></div>
+      <div class="stat-row" id="an-stats"></div>
+      <div class="explain" id="an-ex"></div>
+    </div>
+
+    <!-- ===== 3. MISSING NUMBER ===== -->
+    <div class="panel" id="panel-missing">
+      <div class="input-row">
+        <div class="inp-group" style="flex:1"><div class="inp-label">Array (one number missing from 1–n)</div><input type="text" id="mn-arr" value="4, 3, 8, 7, 5, 2, 6" style="width:100%" oninput="mnPhase(mnP)"></div>
+      </div>
+      <div class="phase-row" id="mn-phases"></div>
+      <div class="cell-row" id="mn-cells"></div>
+      <div class="stat-row" id="mn-stats"></div>
+      <div class="explain" id="mn-ex"></div>
+    </div>
+
+    <!-- ===== 4. MAGIC NUMBER ===== -->
+    <div class="panel" id="panel-magic">
+      <div class="input-row">
+        <div class="inp-group"><div class="inp-label">Number</div><input type="number" id="mg-n" value="163" oninput="mgPhase(mgP)"></div>
+      </div>
+      <div class="phase-row" id="mg-phases"></div>
+      <div class="cell-row" id="mg-cells"></div>
+      <div class="stat-row" id="mg-stats"></div>
+      <div class="explain" id="mg-ex"></div>
+    </div>
+
+    <!-- ===== 5. REVERSE STRING ===== -->
+    <div class="panel" id="panel-reverse">
+      <div class="input-row">
+        <div class="inp-group"><div class="inp-label">String</div><input type="text" id="rv-str" value="Welcome" oninput="rvPhase(rvP)"></div>
+      </div>
+      <div class="phase-row" id="rv-phases"></div>
+      <div class="section-label">Original</div>
+      <div class="cell-row" id="rv-orig"></div>
+      <div class="section-label" id="rv-res-label" style="display:none">Result</div>
+      <div class="cell-row" id="rv-result"></div>
+      <div class="stat-row" id="rv-stats"></div>
+      <div class="explain" id="rv-ex"></div>
+    </div>
+
+    <!-- ===== 6. TOWER OF HANOI ===== -->
+    <div class="panel" id="panel-hanoi">
+      <div class="input-row" style="align-items:center">
+        <div class="inp-group">
+          <div class="inp-label">Disks</div>
+          <input type="range" min="2" max="5" value="3" id="h-n" oninput="document.getElementById('h-nv').textContent=this.value;hanoiInit()">
+        </div>
+        <span id="h-nv" style="font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent);">3</span>
+        <button class="pbtn" onclick="hanoiMove(-1)">◀ Prev</button>
+        <button class="pbtn" onclick="hanoiMove(1)">Next ▶</button>
+        <span id="h-step-lbl" style="font-family:var(--mono);font-size:12px;color:var(--text3);"></span>
+      </div>
+      <div class="peg-area" id="h-pegs"></div>
+      <div style="display:flex;gap:0;justify-content:space-around;margin-bottom:16px;" id="h-names">
+        <span class="peg-name">A (source)</span>
+        <span class="peg-name">B (auxiliary)</span>
+        <span class="peg-name">C (destination)</span>
+      </div>
+      <div class="move-log" id="h-log"></div>
+      <div class="explain" id="h-ex"></div>
+    </div>
+
+    <!-- ===== 7. BINARY SEARCH ===== -->
+    <div class="panel" id="panel-bsearch">
+      <div class="input-row">
+        <div class="inp-group" style="flex:1"><div class="inp-label">Sorted array</div><input type="text" id="bs-arr" value="2,5,9,13,17,21,30" style="width:100%" oninput="bsPhase(bsP)"></div>
+        <div class="inp-group"><div class="inp-label">Key</div><input type="number" id="bs-key" value="17" style="width:90px" oninput="bsPhase(bsP)"></div>
+      </div>
+      <div class="phase-row" id="bs-phases"></div>
+      <div class="cell-row" id="bs-cells"></div>
+      <div class="stat-row" id="bs-stats"></div>
+      <div class="explain" id="bs-ex"></div>
+    </div>
+
+    <!-- ===== 8. CHAR FREQUENCY ===== -->
+    <div class="panel" id="panel-charfreq">
+      <div class="input-row">
+        <div class="inp-group" style="flex:1"><div class="inp-label">String</div><input type="text" id="cf-str" value="mississippi" style="width:100%" oninput="cfPhase(cfP)"></div>
+      </div>
+      <div class="phase-row" id="cf-phases"></div>
+      <div class="cell-row" id="cf-cells"></div>
+      <div id="cf-bars" style="margin-bottom:14px;"></div>
+      <div class="explain" id="cf-ex"></div>
+    </div>
+
+    <!-- ===== 9. PALINDROME ===== -->
+    <div class="panel" id="panel-palindrome">
+      <div class="input-row">
+        <div class="inp-group"><div class="inp-label">String</div><input type="text" id="pal-str" value="racecar" oninput="palPhase(palP)"></div>
+      </div>
+      <div class="phase-row" id="pal-phases"></div>
+      <div class="section-label" id="pal-lab1">Original</div>
+      <div class="cell-row" id="pal-cells1"></div>
+      <div class="section-label" id="pal-lab2" style="display:none">Mirror (backward)</div>
+      <div class="cell-row" id="pal-cells2"></div>
+      <div class="stat-row" id="pal-stats"></div>
+      <div class="explain" id="pal-ex"></div>
+    </div>
+
+    <!-- ===== 10. SECOND LARGEST ===== -->
+    <div class="panel" id="panel-secondlargest">
+      <div class="input-row">
+        <div class="inp-group" style="flex:1"><div class="inp-label">Array</div><input type="text" id="sl-arr" value="12, 35, 1, 10, 34, 1" style="width:100%" oninput="slPhase(slP)"></div>
+      </div>
+      <div class="phase-row" id="sl-phases"></div>
+      <div class="cell-row" id="sl-cells"></div>
+      <div class="stat-row" id="sl-stats"></div>
+      <div class="explain" id="sl-ex"></div>
+    </div>
+
+    <!-- ===== 11. TWO SUM ===== -->
+    <div class="panel" id="panel-twosum">
+      <div class="input-row">
+        <div class="inp-group" style="flex:1"><div class="inp-label">Array</div><input type="text" id="ts-arr" value="2,7,11,15,7" style="width:100%" oninput="tsPhase(tsP)"></div>
+        <div class="inp-group"><div class="inp-label">Target</div><input type="number" id="ts-target" value="9" style="width:90px" oninput="tsPhase(tsP)"></div>
+      </div>
+      <div class="phase-row" id="ts-phases"></div>
+      <div class="cell-row" id="ts-cells"></div>
+      <div class="stat-row" id="ts-stats"></div>
+      <div class="explain" id="ts-ex"></div>
+    </div>
+
+    <!-- ===== 12. MAP SORT ===== -->
+    <div class="panel" id="panel-mapsort">
+      <div class="phase-row" id="ms-phases"></div>
+      <div class="two-col">
+        <div><div class="section-label" id="ms-lab1">Unsorted HashMap</div><div id="ms-left"></div></div>
+        <div><div class="section-label" id="ms-lab2">Result</div><div id="ms-right"></div></div>
+      </div>
+      <div style="margin-top:16px;" class="explain" id="ms-ex"></div>
+    </div>
+
+    <!-- ===== 13. ODD/EVEN THREADS ===== -->
+    <div class="panel" id="panel-oddeven">
+      <div class="input-row" style="align-items:center">
+        <div class="inp-group"><div class="inp-label">Max count (even)</div><input type="range" min="4" max="14" value="10" step="2" id="oe-max" oninput="document.getElementById('oe-maxv').textContent=this.value;oePhase(oeP)"></div>
+        <span id="oe-maxv" style="font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent);">10</span>
+      </div>
+      <div class="phase-row" id="oe-phases"></div>
+      <div style="font-size:28px;font-weight:600;text-align:center;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;font-family:var(--mono);" id="oe-count">count = 1</div>
+      <div class="lock-badge" id="oe-lock">lock: free</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+        <div class="thread-box tb-odd" id="oe-tb-odd">
+          <div class="t-name">OddThread</div>
+          <div class="t-state" id="oe-odd-state">RUNNABLE</div>
+          <div class="t-action" id="oe-odd-act"></div>
+        </div>
+        <div class="thread-box tb-even dim" id="oe-tb-even">
+          <div class="t-name">EvenThread</div>
+          <div class="t-state" id="oe-even-state">WAITING</div>
+          <div class="t-action" id="oe-even-act"></div>
+        </div>
+      </div>
+      <div class="output-stream" id="oe-output"></div>
+      <div class="explain" id="oe-ex"></div>
+    </div>
+
+    <!-- ===== 14. OPTIONAL ===== -->
+    <div class="panel" id="panel-optional">
+      <div class="input-row">
+        <div class="inp-group" style="flex:1"><div class="inp-label">List (use "null" for nulls)</div><input type="text" id="op-arr" value="3, 5, null, 1, 4, null, 2" style="width:100%" oninput="opPhase(opP)"></div>
+      </div>
+      <div class="phase-row" id="op-phases"></div>
+      <div class="cell-row" id="op-cells"></div>
+      <div class="stat-row" id="op-stats"></div>
+      <div class="explain" id="op-ex"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// NAV
+// ─────────────────────────────────────────
+const panelMeta = {
+  fibonacci:     { icon: '🔢', title: 'Fibonacci Recursion',       desc: '1.3 · printFibonacci(val_1, val_2, num)' },
+  anagram:       { icon: '🔤', title: 'Anagram Check',             desc: '1.4 · sort char arrays and compare' },
+  missing:       { icon: '❓', title: 'Missing Number',            desc: '1.6 · n*(n+1)/2 − actual sum' },
+  magic:         { icon: '✨', title: 'Magic Number',              desc: '1.7 · repeated digit sum until single digit' },
+  reverse:       { icon: '↔️', title: 'Reverse String',            desc: '1.9 · two-pointer swap' },
+  hanoi:         { icon: '🗼', title: 'Tower of Hanoi',            desc: '1.12 · recursive disk mover' },
+  bsearch:       { icon: '🔍', title: 'Binary Search',             desc: '1.13 · halving with recursion' },
+  charfreq:      { icon: '📊', title: 'Char Frequency & Top 3',    desc: '2.6/2.7 · groupingBy + counting + limit' },
+  palindrome:    { icon: '🔄', title: 'Palindrome Check',          desc: '2.10/2.11 · IntStream symmetric comparison' },
+  secondlargest: { icon: '🥈', title: 'Second Largest',            desc: '3.7 · single-pass O(n) two-variable track' },
+  twosum:        { icon: '➕', title: 'Two Sum',                   desc: '3.11 · nested IntStream flatMap' },
+  mapsort:       { icon: '🗺️', title: 'Sort Map by Value',         desc: '5.1 · entrySet stream → LinkedHashMap' },
+  oddeven:       { icon: '🧵', title: 'Odd/Even Threads',          desc: '6.1 · synchronized + wait/notify' },
+  optional:      { icon: '🛡️', title: 'Optional + parallelSort',   desc: '13.1 · null filter + fork/join sort' },
+};
+
+function show(id, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  el.classList.add('active');
+  const m = panelMeta[id];
+  document.getElementById('top-icon').textContent = m.icon;
+  document.getElementById('top-title').textContent = m.title;
+  document.getElementById('top-desc').textContent = m.desc;
+}
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
+function makePhases(containerId, labels, fn) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = labels.map((l,i) => `<button class="pbtn${i===0?' active':''}" onclick="${fn}(${i})">${l}</button>`).join('');
+}
+
+function activatePhase(containerId, p) {
+  document.querySelectorAll(`#${containerId} .pbtn`).forEach((b,i) => b.classList.toggle('active', i===p));
+}
+
+function cell(val, idx, cls='', tag='') {
+  return `<div class="cell ${cls}"><div class="ci">${idx}</div>${val}${tag?`<div class="ct">${tag}</div>`:''}</div>`;
+}
+
+// ─────────────────────────────────────────
+// 1. FIBONACCI
+// ─────────────────────────────────────────
+let fibP = 0;
+function fibSeries(n) {
+  let a = [0, 1];
+  for (let i = 2; i < n; i++) a.push(a[i-1]+a[i-2]);
+  return a.slice(0, n);
+}
+makePhases('fib-phases', ['Base values','Recursive call','Building','Full output'], 'fibPhase');
+function fibPhase(p) {
+  fibP = p;
+  activatePhase('fib-phases', p);
+  const n = parseInt(document.getElementById('fib-n').value);
+  const s = fibSeries(n);
+  const cells = document.getElementById('fib-cells');
+  const stats = document.getElementById('fib-stats');
+  const ex = document.getElementById('fib-ex');
+  const mid = Math.floor(n/2)+1;
+
+  if (p===0) {
+    cells.innerHTML = s.map((v,i) => cell(v, i, i<2?'c-accent':'')).join('');
+    stats.innerHTML = `<div class="stat"><div>Base values</div><div class="sv">0, 1</div></div>`;
+    ex.innerHTML = `<code>printFibonacci(0, 1, n)</code> — the two base values <strong>0</strong> and <strong>1</strong> are printed directly. They seed every subsequent calculation.`;
+  }
+  if (p===1) {
+    cells.innerHTML = s.map((v,i) => cell(v, i, i<2?'c-green':i===2?'c-amber':'')).join('');
+    stats.innerHTML = `<div class="stat"><div>Next</div><div class="sv">F(2) = 0+1 = 1</div></div>`;
+    ex.innerHTML = `Each recursive call computes <code>val_1 + val_2</code>, then calls itself with <code>(val_2, val_1+val_2, num-1)</code>. <strong>Amber</strong> = being computed now.`;
+  }
+  if (p===2) {
+    cells.innerHTML = s.map((v,i) => cell(v, i, i<mid?'c-green':i===mid?'c-amber':'')).join('');
+    ex.innerHTML = `Recursion continues, <code>num</code> decrements each call. Stack unwinds, adding values. Sum so far = <strong>${s.slice(0,mid).reduce((a,b)=>a+b,0)}</strong>.`;
+  }
+  if (p===3) {
+    cells.innerHTML = s.map((v,i) => cell(v, i, 'c-green')).join('');
+    stats.innerHTML = `<div class="stat"><div>Terms</div><div class="sv">${n}</div></div><div class="stat"><div>Sum</div><div class="sv">${s.reduce((a,b)=>a+b,0)}</div></div>`;
+    ex.innerHTML = `When <code>num === 0</code> the base case stops recursion. All <strong>${n}</strong> terms printed: ${s.join(' · ')}.`;
+  }
+}
+fibPhase(0);
+
+// ─────────────────────────────────────────
+// 2. ANAGRAM
+// ─────────────────────────────────────────
+let anP = 0;
+makePhases('an-phases', ['Input','Length check','Sort chars','Compare'], 'anPhase');
+function anPhase(p) {
+  anP = p;
+  activatePhase('an-phases', p);
+  const s1 = document.getElementById('an-s1').value.toLowerCase().trim();
+  const s2 = document.getElementById('an-s2').value.toLowerCase().trim();
+  const ss1 = [...s1].sort().join('');
+  const ss2 = [...s2].sort().join('');
+  const sameLen = s1.length === s2.length;
+  const isAna = sameLen && ss1 === ss2;
+  const c1 = document.getElementById('an-cells1');
+  const c2 = document.getElementById('an-cells2');
+  const lab1 = document.getElementById('an-lab1');
+  const lab2 = document.getElementById('an-lab2');
+  const stats = document.getElementById('an-stats');
+  const ex = document.getElementById('an-ex');
+  c2.style.display = 'none'; lab2.style.display = 'none';
+
+  if (p===0) {
+    lab1.textContent = 'Both strings';
+    c1.innerHTML = [...s1].map((c,i) => cell(c,i,'','')).join('') + `<span style="font-family:var(--mono);font-size:18px;margin:0 10px;color:var(--text3);">vs</span>` + [...s2].map((c,i) => cell(c,i,'','')).join('');
+    stats.innerHTML = '';
+    ex.innerHTML = `Two strings: <strong>"${s1}"</strong> (${s1.length}) and <strong>"${s2}"</strong> (${s2.length}). Check if one is a rearrangement of the other.`;
+  }
+  if (p===1) {
+    const cls = sameLen ? 'c-green' : 'c-red';
+    lab1.textContent = 'Length comparison';
+    c1.innerHTML = `<div class="stat" style="font-size:16px;font-weight:600;">${s1.length}</div><span style="font-size:20px;margin:0 10px;color:var(--text3);">${sameLen?'=':'≠'}</span><div class="stat" style="font-size:16px;font-weight:600;">${s2.length}</div><div class="cell ${cls}" style="margin-left:12px;min-width:64px;">${sameLen?'Pass ✓':'Fail ✗'}</div>`;
+    ex.innerHTML = sameLen ? `Lengths match (${s1.length}). Proceed to sorting.` : `Lengths differ — <strong>cannot be anagrams</strong>. Stop here.`;
+  }
+  if (p===2) {
+    lab1.textContent = 'String 1 sorted'; lab2.textContent = 'String 2 sorted';
+    c1.innerHTML = [...ss1].map((c,i) => cell(c,i,'c-accent')).join('');
+    c2.innerHTML = [...ss2].map((c,i) => cell(c,i,'c-accent')).join('');
+    c2.style.display = 'flex'; lab2.style.display = 'block';
+    ex.innerHTML = `Convert both to <code>char[]</code>, sort. "${s1}" → <strong>"${ss1}"</strong>  ·  "${s2}" → <strong>"${ss2}"</strong>`;
+  }
+  if (p===3) {
+    const cls = isAna ? 'c-green' : 'c-red';
+    lab1.textContent = 'Sorted 1'; lab2.textContent = 'Sorted 2';
+    c1.innerHTML = [...ss1].map((c,i) => cell(c,i,cls)).join('');
+    c2.innerHTML = [...ss2].map((c,i) => cell(c,i,cls)).join('');
+    c2.style.display = 'flex'; lab2.style.display = 'block';
+    stats.innerHTML = `<div class="stat"><div>Anagram?</div><div class="sv" style="color:${isAna?'var(--accent2)':'var(--accent4)'};">${isAna}</div></div>`;
+    ex.innerHTML = isAna ? `Both sorted arrays identical → <code>Arrays.equals() = true</code>. They are anagrams.` : `Sorted arrays differ → <code>Arrays.equals() = false</code>. Not anagrams.`;
+  }
+}
+anPhase(0);
+
+// ─────────────────────────────────────────
+// 3. MISSING NUMBER
+// ─────────────────────────────────────────
+let mnP = 0;
+makePhases('mn-phases', ['Given array','Expected sum','Actual sum','Missing number'], 'mnPhase');
+function mnPhase(p) {
+  mnP = p;
+  activatePhase('mn-phases', p);
+  const arr = document.getElementById('mn-arr').value.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+  const n = arr.length + 1;
+  const exp = n*(n+1)/2;
+  const act = arr.reduce((a,b)=>a+b,0);
+  const missing = exp - act;
+  const cells = document.getElementById('mn-cells');
+  const stats = document.getElementById('mn-stats');
+  const ex = document.getElementById('mn-ex');
+
+  if (p===0) {
+    cells.innerHTML = arr.map((v,i) => cell(v,i)).join('');
+    ex.innerHTML = `Array has <strong>${arr.length}</strong> elements. Should contain 1 to <strong>${n}</strong> — one number is missing.`;
+  }
+  if (p===1) {
+    cells.innerHTML = arr.map((v,i) => cell(v,i)).join('');
+    stats.innerHTML = `<div class="stat"><div>n = ${n}</div><div class="sv">${n}×${n+1}/2 = <span style="color:var(--accent)">${exp}</span></div></div>`;
+    ex.innerHTML = `If no number were missing: sum = n×(n+1)/2 = ${n}×${n+1}/2 = <strong>${exp}</strong>.`;
+  }
+  if (p===2) {
+    cells.innerHTML = arr.map((v,i) => cell(v,i,'c-accent')).join('');
+    stats.innerHTML = `<div class="stat"><div>Expected</div><div class="sv">${exp}</div></div><div class="stat"><div>Actual</div><div class="sv" style="color:var(--accent3);">${act}</div></div>`;
+    ex.innerHTML = `Actual sum of array: ${arr.join(' + ')} = <strong>${act}</strong>.`;
+  }
+  if (p===3) {
+    cells.innerHTML = arr.map((v,i) => cell(v,i,'c-green')).join('');
+    stats.innerHTML = `<div class="stat"><div>Expected</div><div class="sv">${exp}</div></div><div style="font-size:22px;color:var(--text3);padding-top:8px;">−</div><div class="stat"><div>Actual</div><div class="sv">${act}</div></div><div style="font-size:22px;color:var(--text3);padding-top:8px;">=</div><div class="stat"><div>Missing</div><div class="sv" style="color:var(--accent4);">${missing}</div></div>`;
+    ex.innerHTML = `${exp} − ${act} = <strong>${missing}</strong>. Time: O(n) · Space: O(1).`;
+  }
+}
+mnPhase(0);
+
+// ─────────────────────────────────────────
+// 4. MAGIC NUMBER
+// ─────────────────────────────────────────
+let mgP = 0;
+function digitSum(n) { return String(Math.abs(n)).split('').reduce((a,c)=>a+parseInt(c),0); }
+function reductions(n) { let s=[n],c=n; while(c>9){c=digitSum(c);s.push(c);} return s; }
+makePhases('mg-phases', ['Start','First reduction','Full chain','Result'], 'mgPhase');
+function mgPhase(p) {
+  mgP = p;
+  activatePhase('mg-phases', p);
+  const n = parseInt(document.getElementById('mg-n').value)||0;
+  const steps = reductions(n);
+  const isMagic = steps[steps.length-1]===1;
+  const cells = document.getElementById('mg-cells');
+  const stats = document.getElementById('mg-stats');
+  const ex = document.getElementById('mg-ex');
+
+  if (p===0) {
+    cells.innerHTML = cell(n, 'num', 'c-accent');
+    ex.innerHTML = `A magic number keeps summing its digits until a single digit remains. If that digit is <strong>1</strong> → magic. Starting with <strong>${n}</strong>.`;
+  }
+  if (p===1) {
+    const ds = digitSum(n);
+    const digits = String(n).split('');
+    cells.innerHTML = digits.map(d=>cell(d,'','c-accent')).join(`<span style="font-size:16px;margin:0 4px;color:var(--text3);align-self:center">+</span>`) + `<span style="font-size:18px;margin:0 8px;color:var(--text3);align-self:center">=</span>` + cell(ds,'','c-green');
+    ex.innerHTML = `${digits.join(' + ')} = <strong>${ds}</strong>${ds>9?' — still multi-digit, reduce again.':' — single digit reached.'}`;
+  }
+  if (p===2) {
+    cells.innerHTML = steps.map((s,i)=>cell(s,'',i===steps.length-1?'c-green':'c-accent')).join(`<span style="font-size:16px;margin:0 6px;color:var(--text3);align-self:center">→</span>`);
+    ex.innerHTML = `Full chain: ${steps.join(' → ')}. Each step sums digits of the previous result.`;
+  }
+  if (p===3) {
+    const cls = isMagic ? 'c-green' : 'c-red';
+    cells.innerHTML = steps.map(s=>cell(s,'',cls)).join(`<span style="font-size:16px;margin:0 6px;color:var(--text3);align-self:center">→</span>`);
+    stats.innerHTML = `<div class="stat"><div>Final digit</div><div class="sv">${steps[steps.length-1]}</div></div><div class="stat"><div>Magic?</div><div class="sv" style="color:${isMagic?'var(--accent2)':'var(--accent4)'};">${isMagic}</div></div>`;
+    ex.innerHTML = isMagic ? `Final digit = <strong>1</strong>. <strong>${n} is a magic number</strong>.` : `Final digit = <strong>${steps[steps.length-1]}</strong> (not 1). <strong>${n} is NOT magic</strong>.`;
+  }
+}
+mgPhase(0);
+
+// ─────────────────────────────────────────
+// 5. REVERSE STRING
+// ─────────────────────────────────────────
+let rvP = 0;
+makePhases('rv-phases', ['Original','Set pointers','Mid-swap','Reversed'], 'rvPhase');
+function rvPhase(p) {
+  rvP = p;
+  activatePhase('rv-phases', p);
+  const str = document.getElementById('rv-str').value||'hello';
+  const chars = [...str];
+  const n = chars.length;
+  const mid = Math.floor(n/2);
+  const reversed = [...chars].reverse();
+  const orig = document.getElementById('rv-orig');
+  const res = document.getElementById('rv-result');
+  const rl = document.getElementById('rv-res-label');
+  const stats = document.getElementById('rv-stats');
+  const ex = document.getElementById('rv-ex');
+  res.innerHTML = ''; rl.style.display='none';
+
+  if (p===0) {
+    orig.innerHTML = chars.map((c,i)=>cell(c,i)).join('');
+    ex.innerHTML = `String <strong>"${str}"</strong> has <strong>${n}</strong> chars. Two pointers: <code>i</code> starts at 0, <code>j</code> starts at ${n-1}. Swap and move inward.`;
+  }
+  if (p===1) {
+    orig.innerHTML = chars.map((c,i)=>cell(c,i,i===0?'c-accent':i===n-1?'c-amber':'',i===0?'i':i===n-1?'j':'')).join('');
+    ex.innerHTML = `<code style="color:var(--accent)">i=0</code> → '${chars[0]}'  ·  <code style="color:var(--accent3)">j=${n-1}</code> → '${chars[n-1]}'. Swap these, then i++, j--.`;
+  }
+  if (p===2) {
+    rl.style.display='block';
+    const halfDone = Math.floor(mid/2)+1;
+    orig.innerHTML = chars.map((c,i)=>cell(c,i,'dim')).join('');
+    res.innerHTML = reversed.map((c,i)=>cell(c,n-1-i,i<halfDone||i>=n-halfDone?'c-green':'')).join('');
+    ex.innerHTML = `Swaps done: <strong>${halfDone}</strong>. i moves right, j moves left. Continues while <code>i &lt; j</code>.`;
+  }
+  if (p===3) {
+    rl.style.display='block';
+    orig.innerHTML = chars.map((c,i)=>cell(c,i,'dim')).join('');
+    res.innerHTML = reversed.map((c,i)=>cell(c,i,'c-green')).join('');
+    stats.innerHTML = `<div class="stat"><div>Result</div><div class="sv">"${reversed.join('')}"</div></div>`;
+    ex.innerHTML = `All ${mid} swaps done. Reversed: <strong>"${reversed.join('')}"</strong>. Time: O(n).`;
+  }
+}
+rvPhase(0);
+
+// ─────────────────────────────────────────
+// 6. TOWER OF HANOI
+// ─────────────────────────────────────────
+let hStep=0, hMoves=[], hN=3;
+const diskPalette=[
+  ['rgba(108,138,255,0.25)','var(--accent)'],
+  ['rgba(78,240,176,0.2)','var(--accent2)'],
+  ['rgba(240,164,78,0.2)','var(--accent3)'],
+  ['rgba(240,112,112,0.2)','var(--accent4)'],
+  ['rgba(192,132,252,0.2)','var(--accent5)']
+];
+function genMoves(n,s,a,d){if(n===0)return;genMoves(n-1,s,d,a);hMoves.push({from:s,to:d,disk:n});genMoves(n-1,a,s,d);}
+function applyMoves(moves,upTo){
+  const pegs={A:[],B:[],C:[]};
+  for(let i=hN;i>=1;i--) pegs.A.push(i);
+  for(let i=0;i<upTo;i++){const m=moves[i];pegs[m.to].push(pegs[m.from].pop());}
+  return pegs;
+}
+function renderHanoi(){
+  const pegs=applyMoves(hMoves,hStep);
+  const names=['A','B','C'];
+  document.getElementById('h-pegs').innerHTML=names.map(name=>{
+    const stack=pegs[name];
+    const disks=stack.map(d=>{
+      const w=36+d*18;
+      const [bg,fg]=diskPalette[d-1]||diskPalette[0];
+      return `<div class="disk" style="width:${w}px;background:${bg};color:${fg};border:1px solid ${fg};font-size:11px;">${d}</div>`;
+    }).reverse().join('');
+    return `<div class="peg-wrap"><div class="peg-rod"></div>${disks}<div class="peg-base"></div></div>`;
+  }).join('');
+  document.getElementById('h-step-lbl').textContent=`Step ${hStep}/${hMoves.length}`;
+  const ex=document.getElementById('h-ex');
+  if(hStep===0){ex.innerHTML=`All <strong>${hN}</strong> disks on peg A. Goal: move all to peg C using B as auxiliary. Total moves: <strong>${Math.pow(2,hN)-1}</strong>.`;}
+  else{const m=hMoves[hStep-1];ex.innerHTML=`Move disk <strong>${m.disk}</strong>: <strong>${m.from}</strong> → <strong>${m.to}</strong>.${hStep===hMoves.length?' <strong>Complete!</strong>':''}`;}
+  const visible=hMoves.slice(0,Math.min(hStep+3,hMoves.length));
+  document.getElementById('h-log').innerHTML=visible.map((m,i)=>`<div class="${i===hStep-1?'cur':''}">Move ${i+1}: disk ${m.disk}  ${m.from} → ${m.to}</div>`).join('');
+}
+function hanoiMove(dir){hStep=Math.max(0,Math.min(hMoves.length,hStep+dir));renderHanoi();}
+function hanoiInit(){hN=parseInt(document.getElementById('h-n').value);hMoves=[];hStep=0;genMoves(hN,'A','B','C');renderHanoi();}
+hanoiInit();
+
+// ─────────────────────────────────────────
+// 7. BINARY SEARCH
+// ─────────────────────────────────────────
+let bsP=0;
+function getBSArr(){return document.getElementById('bs-arr').value.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));}
+function getBSKey(){return parseInt(document.getElementById('bs-key').value)||0;}
+function getBSSteps(arr,key){let steps=[],lo=0,hi=arr.length-1;while(lo<=hi){let mid=Math.floor((lo+hi)/2);steps.push({lo,hi,mid,val:arr[mid]});if(arr[mid]===key){steps[steps.length-1].found=true;break;}else if(key<arr[mid])hi=mid-1;else lo=mid+1;}return steps;}
+makePhases('bs-phases',['Start','Step 1','Step 2','Result'],'bsPhase');
+function bsPhase(p){
+  bsP=p;activatePhase('bs-phases',p);
+  const arr=getBSArr(),key=getBSKey();
+  const steps=getBSSteps(arr,key);
+  const cells=document.getElementById('bs-cells');
+  const stats=document.getElementById('bs-stats');
+  const ex=document.getElementById('bs-ex');
+
+  if(p===0){
+    const initMid=Math.floor((arr.length-1)/2);
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,i===0?'c-accent':i===arr.length-1?'c-amber':i===initMid?'c-green':'')).join('');
+    ex.innerHTML=`Array: ${arr.length} elements (sorted). Key = <strong>${key}</strong>. Initial mid = ${initMid} → arr[${initMid}] = ${arr[initMid]}.`;
+  }
+  const s0=steps[0];
+  if(p===1&&s0){
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,i===s0.lo?'c-accent':i===s0.hi?'c-amber':i===s0.mid?'c-green':'',(i===s0.lo?'lo':i===s0.hi?'hi':i===s0.mid?'mid':''))).join('');
+    const cmp=key===s0.val?'Found!':`${key}${key<s0.val?'<':'>'}${s0.val} → search ${key<s0.val?'LEFT':'RIGHT'}`;
+    ex.innerHTML=`mid=(${s0.lo}+${s0.hi})/2=${s0.mid} → arr[${s0.mid}]=${s0.val}. Compare: ${cmp}`;
+  }
+  const s1=steps[1];
+  if(p===2){
+    if(s1){
+      cells.innerHTML=arr.map((v,i)=>{const elim=i<s1.lo||i>s1.hi;const cls=elim?'dim':i===s1.lo?'c-accent':i===s1.hi?'c-amber':i===s1.mid?'c-green':'';const t=elim?'':i===s1.lo?'lo':i===s1.hi?'hi':i===s1.mid?'mid':'';return cell(v,i,cls,t);}).join('');
+      const cmp=key===s1.val?'Found!':`${key}${key<s1.val?'<':'>'}${s1.val} → ${key<s1.val?'LEFT':'RIGHT'}`;
+      ex.innerHTML=`New range [${s1.lo}..${s1.hi}]. mid=${s1.mid} → ${s1.val}. ${cmp}`;
+    } else ex.innerHTML=`Search resolved in ≤1 steps.`;
+  }
+  if(p===3){
+    const found=steps.some(s=>s.found),last=steps[steps.length-1];
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,found&&i===last.mid?'c-green':found?'dim':'dim')).join('');
+    if(found){stats.innerHTML=`<div class="stat"><div>Found at index</div><div class="sv" style="color:var(--accent2)">${last.mid}</div></div><div class="stat"><div>Calls</div><div class="sv">${steps.length}</div></div>`;}
+    else{stats.innerHTML=`<div class="stat"><div>Result</div><div class="sv" style="color:var(--accent4)">Not found</div></div>`;}
+    ex.innerHTML=found?`<strong>Found!</strong> Key ${key} at index ${last.mid}. Took ${steps.length} recursive call(s). Time: O(log n).`:`<strong>Not found.</strong> low > high — search space exhausted. Base case triggered.`;
+  }
+}
+bsPhase(0);
+
+// ─────────────────────────────────────────
+// 8. CHAR FREQUENCY
+// ─────────────────────────────────────────
+let cfP=0;
+function getFreq(s){const m={};for(const c of s)m[c]=(m[c]||0)+1;return m;}
+makePhases('cf-phases',['Characters','Group & count','Sort by freq','Top 3'],'cfPhase');
+function cfPhase(p){
+  cfP=p;activatePhase('cf-phases',p);
+  const str=document.getElementById('cf-str').value||'hello';
+  const freq=getFreq(str);
+  const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+  const cells=document.getElementById('cf-cells');
+  const bars=document.getElementById('cf-bars');
+  const ex=document.getElementById('cf-ex');
+  bars.innerHTML='';
+
+  const clsMap=['c-green','c-amber','c-red'];
+  if(p===0){
+    cells.innerHTML=[...str].map((c,i)=>cell(c,i)).join('');
+    ex.innerHTML=`String <strong>"${str}"</strong> has <strong>${str.length}</strong> chars. We'll use <code>groupingBy(identity, counting())</code> to count each.`;
+  }
+  if(p===1){
+    cells.innerHTML=Object.entries(freq).map(([c,n])=>`<div class="cell c-accent"><div class="ci">'${c}'</div>${n}x</div>`).join('');
+    ex.innerHTML=`Grouped into <code>Map&lt;Character, Long&gt;</code>: ${Object.entries(freq).map(([c,n])=>`'${c}'→${n}`).join(', ')}.`;
+  }
+  if(p===2){
+    const maxV=sorted[0][1];
+    cells.innerHTML=sorted.map(([c])=>`<div class="cell c-accent">${c}</div>`).join('');
+    bars.innerHTML=sorted.map(([c,n])=>`<div class="bar-row"><div class="bar-key">'${c}'</div><div class="bar-fill" style="width:${Math.round(n/maxV*180)}px;"></div><div class="bar-cnt">${n}</div></div>`).join('');
+    ex.innerHTML=`<code>.sorted(Map.Entry.comparingByValue(reverseOrder()))</code> — highest frequency first.`;
+  }
+  if(p===3){
+    const top=sorted.slice(0,3);
+    cells.innerHTML=sorted.map(([c,n],i)=>`<div class="cell ${i<3?clsMap[i]:''}">${c}<div class="ct">${n}x</div></div>`).join('');
+    bars.innerHTML=top.map(([c,n],i)=>{const clrs=['var(--accent2)','var(--accent3)','var(--accent4)'];return `<div class="bar-row"><div class="bar-key" style="color:${clrs[i]}">'${c}'</div><div class="bar-fill" style="width:${Math.round(n/sorted[0][1]*180)}px;background:${clrs[i]};"></div><div class="bar-cnt" style="color:${clrs[i]};font-weight:600;">${n}</div></div>`;}).join('');
+    ex.innerHTML=`<code>.limit(3)</code> takes the top 3: ${top.map(([c,n])=>`'${c}' → ${n}x`).join(', ')}.`;
+  }
+}
+cfPhase(0);
+
+// ─────────────────────────────────────────
+// 9. PALINDROME
+// ─────────────────────────────────────────
+let palP=0;
+function cleanPal(s){return s.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();}
+makePhases('pal-phases',['Input','Clean','Compare pairs','Result'],'palPhase');
+function palPhase(p){
+  palP=p;activatePhase('pal-phases',p);
+  const raw=document.getElementById('pal-str').value||'hello';
+  const cleaned=cleanPal(raw);
+  const n=cleaned.length;
+  const isPal=cleaned===cleaned.split('').reverse().join('');
+  const c1=document.getElementById('pal-cells1');
+  const c2=document.getElementById('pal-cells2');
+  const lab2=document.getElementById('pal-lab2');
+  const lab1=document.getElementById('pal-lab1');
+  const stats=document.getElementById('pal-stats');
+  const ex=document.getElementById('pal-ex');
+  c2.innerHTML='';lab2.style.display='none';
+
+  if(p===0){
+    lab1.textContent='Original';
+    c1.innerHTML=[...raw].map((c,i)=>cell(c,i)).join('');
+    ex.innerHTML=`String: <strong>"${raw}"</strong>. A palindrome reads the same forwards and backwards.`;
+  }
+  if(p===1){
+    lab1.textContent='Cleaned (lowercase, alphanumeric)';
+    c1.innerHTML=[...cleaned].map((c,i)=>cell(c,i,'c-accent')).join('');
+    ex.innerHTML=`After <code>replaceAll + toLowerCase</code>: <strong>"${cleaned}"</strong> (${n} chars).`;
+  }
+  if(p===2){
+    const half=Math.floor(n/2);
+    lab1.textContent='Forward'; lab2.textContent='Backward mirror'; lab2.style.display='block';
+    c1.innerHTML=[...cleaned].map((c,i)=>cell(c,i,i<half?'c-accent':i>n-1-half?'c-amber':n%2===1&&i===Math.floor(n/2)?'':'',i<half?'i':i>n-1-half?'n-1-i':'')).join('');
+    c2.innerHTML=[...cleaned].reverse().map((c,i)=>cell(c,n-1-i,i<half?'c-amber':i>n-1-half?'c-accent':'')).join('');
+    ex.innerHTML=`<code>IntStream.range(0, n/2)</code> compares index <code style="color:var(--accent)">i</code> with <code style="color:var(--accent3)">n-1-i</code>. All ${half} pairs must match.`;
+  }
+  if(p===3){
+    const cls=isPal?'c-green':'c-red';
+    lab1.textContent='Result';
+    c1.innerHTML=[...cleaned].map((c,i)=>cell(c,i,cls)).join('');
+    stats.innerHTML=`<div class="stat"><div>isPalindrome</div><div class="sv" style="color:${isPal?'var(--accent2)':'var(--accent4)'};">${isPal}</div></div>`;
+    ex.innerHTML=isPal?`All ${Math.floor(n/2)} symmetric pairs match. <code>allMatch()</code> → <strong>true</strong>.`:`At least one mismatch. <code>allMatch()</code> short-circuits → <strong>false</strong>.`;
+  }
+}
+palPhase(0);
+
+// ─────────────────────────────────────────
+// 10. SECOND LARGEST
+// ─────────────────────────────────────────
+let slP=0;
+function getSLArr(){return document.getElementById('sl-arr').value.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));}
+makePhases('sl-phases',['Input','Scan','Track','Result'],'slPhase');
+function slPhase(p){
+  slP=p;activatePhase('sl-phases',p);
+  const arr=getSLArr();
+  let largest=Number.MIN_SAFE_INTEGER,second=Number.MIN_SAFE_INTEGER;
+  for(const n of arr){if(n>largest){second=largest;largest=n;}else if(n>second&&n<largest)second=n;}
+  const cells=document.getElementById('sl-cells');
+  const stats=document.getElementById('sl-stats');
+  const ex=document.getElementById('sl-ex');
+
+  if(p===0){
+    cells.innerHTML=arr.map((v,i)=>cell(v,i)).join('');
+    ex.innerHTML=`Array of <strong>${arr.length}</strong> numbers. Find second largest in a single O(n) pass using two variables.`;
+  }
+  if(p===1){
+    let curL=Number.MIN_SAFE_INTEGER,curS=Number.MIN_SAFE_INTEGER;
+    const midIdx=Math.floor(arr.length/2);
+    for(let i=0;i<=midIdx;i++){const n=arr[i];if(n>curL){curS=curL;curL=n;}else if(n>curS&&n<curL)curS=n;}
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,i===midIdx?'c-amber':i<midIdx?(v===curL?'c-green':v===curS?'c-accent':''):'dim',(i===midIdx?'cur':i<midIdx?(v===curL?'max':v===curS?'2nd':''):''))).join('');
+    stats.innerHTML=`<div class="stat"><div>Largest so far</div><div class="sv">${curL}</div></div><div class="stat"><div>Second so far</div><div class="sv">${curS===Number.MIN_SAFE_INTEGER?'—':curS}</div></div>`;
+    ex.innerHTML=`If current > largest → second = old largest, largest = current. Else if current > second → update second only.`;
+  }
+  if(p===2){
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,v===largest?'c-green':v===second?'c-accent':'dim',(v===largest?'max':v===second?'2nd':''))).join('');
+    stats.innerHTML=`<div class="stat"><div>Largest</div><div class="sv" style="color:var(--accent2)">${largest}</div></div><div class="stat"><div>Second</div><div class="sv" style="color:var(--accent)">${second===Number.MIN_SAFE_INTEGER?'none':second}</div></div>`;
+    ex.innerHTML=`Full scan complete. Duplicates of largest are skipped. Two variables updated in O(n).`;
+  }
+  if(p===3){
+    const ans=second===Number.MIN_SAFE_INTEGER?'None':second;
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,v===largest?'c-green':v===second?'c-accent':'')).join('');
+    stats.innerHTML=`<div class="stat"><div>Second largest</div><div class="sv" style="color:var(--accent)">${ans}</div></div><div class="stat"><div>Time</div><div class="sv">O(n)</div></div><div class="stat"><div>Space</div><div class="sv">O(1)</div></div>`;
+    ex.innerHTML=`Single pass, two variables, no sorting. <strong>Second largest = ${ans}</strong>.`;
+  }
+}
+slPhase(0);
+
+// ─────────────────────────────────────────
+// 11. TWO SUM
+// ─────────────────────────────────────────
+let tsP=0;
+function getTSArr(){return document.getElementById('ts-arr').value.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));}
+function getTSTarget(){return parseInt(document.getElementById('ts-target').value)||0;}
+function twoSum(arr,t){for(let i=0;i<arr.length;i++)for(let j=i+1;j<arr.length;j++)if(arr[i]+arr[j]===t)return[i,j];return null;}
+makePhases('ts-phases',['Input','Fix i=0','Try pairs','Result'],'tsPhase');
+function tsPhase(p){
+  tsP=p;activatePhase('ts-phases',p);
+  const arr=getTSArr(),target=getTSTarget();
+  const result=twoSum(arr,target);
+  const cells=document.getElementById('ts-cells');
+  const stats=document.getElementById('ts-stats');
+  const ex=document.getElementById('ts-ex');
+
+  if(p===0){
+    cells.innerHTML=arr.map((v,i)=>cell(v,i)).join('');
+    stats.innerHTML=`<div class="stat"><div>Target</div><div class="sv">${target}</div></div>`;
+    ex.innerHTML=`Find indices i, j where <code>arr[i] + arr[j] == ${target}</code>. Nested IntStream with flatMap — each pair (i,j) where j > i.`;
+  }
+  if(p===1){
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,i===0?'c-accent':'',(i===0?'i=0':''))).join('');
+    stats.innerHTML=`<div class="stat"><div>i=0 → arr[0]</div><div class="sv">${arr[0]}</div></div><div class="stat"><div>Need j where arr[j] =</div><div class="sv">${target-arr[0]}</div></div>`;
+    ex.innerHTML=`Outer loop fixes <strong>i=0</strong>. Inner loop tries every j from 1 onward looking for ${target}−${arr[0]}=${target-arr[0]}.`;
+  }
+  if(p===2){
+    const tryI=result?result[0]:0,tryJ=result?result[1]:1;
+    cells.innerHTML=arr.map((v,i)=>cell(v,i,i===tryI?'c-accent':i===tryJ?'c-amber':'',(i===tryI?'i':i===tryJ?'j':''))).join('');
+    const sum=arr[tryI]+arr[tryJ];
+    stats.innerHTML=`<div class="stat"><div>arr[${tryI}]+arr[${tryJ}]</div><div class="sv">${arr[tryI]}+${arr[tryJ]}=${sum}</div></div><div class="stat"><div>Match?</div><div class="sv" style="color:${sum===target?'var(--accent2)':'var(--accent4)'};">${sum===target}</div></div>`;
+    ex.innerHTML=`Trying i=${tryI}, j=${tryJ}: ${arr[tryI]}+${arr[tryJ]}=${sum}. ${sum===target?`Equals target! <strong>Pair found.</strong>`:`≠ ${target}. Continue.`}`;
+  }
+  if(p===3){
+    if(result){
+      cells.innerHTML=arr.map((v,i)=>cell(v,i,i===result[0]||i===result[1]?'c-green':'dim',(i===result[0]?'i':i===result[1]?'j':''))).join('');
+      stats.innerHTML=`<div class="stat"><div>Indices</div><div class="sv" style="color:var(--accent2)">[${result[0]}, ${result[1]}]</div></div><div class="stat"><div>Sum</div><div class="sv">${arr[result[0]]}+${arr[result[1]]}=${target}</div></div>`;
+      ex.innerHTML=`<strong>Found!</strong> arr[${result[0]}]+arr[${result[1]}]=${arr[result[0]]}+${arr[result[1]]}=${target}. Returns <strong>[${result[0]}, ${result[1]}]</strong>. Time: O(n²).`;
+    } else {
+      cells.innerHTML=arr.map((v,i)=>cell(v,i,'dim')).join('');
+      stats.innerHTML=`<div class="stat" style="border-color:var(--accent4)"><div>No solution</div><div class="sv" style="color:var(--accent4)">—</div></div>`;
+      ex.innerHTML=`All pairs exhausted. No two elements sum to <strong>${target}</strong>. Throws IllegalArgumentException.`;
+    }
+  }
+}
+tsPhase(0);
+
+// ─────────────────────────────────────────
+// 12. MAP SORT
+// ─────────────────────────────────────────
+let msP=0;
+const msData=[['David',95],['Jane',80],['Mary',97],['Lisa',78],['Dino',65]];
+const msMax=Math.max(...msData.map(([,v])=>v));
+function msRow(k,v,cls=''){
+  const w=Math.round(v/msMax*160);
+  return `<div class="kv-row ${cls}"><div class="kv-key">${k}</div><div class="kv-bar" style="background:${cls==='kv-green'?'var(--accent2)':cls==='kv-accent'?'var(--accent)':'var(--border)'};width:${w}px;"></div><div class="kv-val">${v}</div></div>`;
+}
+makePhases('ms-phases',['Unsorted HashMap','Entry set stream','Ascending','Descending'],'msPhase');
+function msPhase(p){
+  msP=p;activatePhase('ms-phases',p);
+  const asc=[...msData].sort((a,b)=>a[1]-b[1]);
+  const desc=[...msData].sort((a,b)=>b[1]-a[1]);
+  const ml=document.getElementById('ms-left');
+  const mr=document.getElementById('ms-right');
+  const lab1=document.getElementById('ms-lab1');
+  const lab2=document.getElementById('ms-lab2');
+  const ex=document.getElementById('ms-ex');
+
+  if(p===0){
+    lab1.textContent='Unsorted HashMap'; lab2.textContent='';
+    ml.innerHTML=msData.map(([k,v])=>msRow(k,v)).join('');mr.innerHTML='';
+    ex.innerHTML=`A <code>HashMap</code> has no guaranteed order. To sort by value, stream the entry set and collect into a <code>LinkedHashMap</code>.`;
+  }
+  if(p===1){
+    lab1.textContent='Unsorted'; lab2.textContent='Entry set stream';
+    ml.innerHTML=msData.map(([k,v])=>msRow(k,v)).join('');
+    mr.innerHTML=msData.map(([k,v])=>`<div class="kv-row"><div class="kv-key">${k}</div><div class="kv-val">entry(${k}, ${v})</div></div>`).join('');
+    ex.innerHTML=`<code>scores.entrySet().stream()</code> converts the map to a stream of key-value pairs. Next: sort by value.`;
+  }
+  if(p===2){
+    lab1.textContent='Unsorted'; lab2.textContent='LinkedHashMap (ascending ↑)';
+    ml.innerHTML=msData.map(([k,v])=>msRow(k,v)).join('');
+    mr.innerHTML=asc.map(([k,v])=>msRow(k,v,'kv-green')).join('');
+    ex.innerHTML=`<code>.sorted(Map.Entry.comparingByValue())</code> → collect into <code>LinkedHashMap</code> to preserve insertion order. Lowest first.`;
+  }
+  if(p===3){
+    lab1.textContent='Ascending ↑'; lab2.textContent='Descending ↓';
+    ml.innerHTML=asc.map(([k,v])=>msRow(k,v,'kv-green')).join('');
+    mr.innerHTML=desc.map(([k,v])=>msRow(k,v,'kv-accent')).join('');
+    ex.innerHTML=`<code>Collections.reverseOrder(Map.Entry.comparingByValue())</code> flips the sort. Both collect into <code>LinkedHashMap</code> to preserve order.`;
+  }
+}
+msPhase(0);
+
+// ─────────────────────────────────────────
+// 13. ODD/EVEN THREADS
+// ─────────────────────────────────────────
+let oeP=0;
+function getOEMax(){return parseInt(document.getElementById('oe-max').value)||10;}
+makePhases('oe-phases',['Start','Odd prints','Notify even','Even prints','Full sequence'],'oePhase');
+function oePhase(p){
+  oeP=p;activatePhase('oe-phases',p);
+  const max=getOEMax();
+  const countD=document.getElementById('oe-count');
+  const lockD=document.getElementById('oe-lock');
+  const oddState=document.getElementById('oe-odd-state');
+  const evenState=document.getElementById('oe-even-state');
+  const oddAct=document.getElementById('oe-odd-act');
+  const evenAct=document.getElementById('oe-even-act');
+  const oddBox=document.getElementById('oe-tb-odd');
+  const evenBox=document.getElementById('oe-tb-even');
+  const out=document.getElementById('oe-output');
+  const ex=document.getElementById('oe-ex');
+
+  if(p===0){
+    countD.textContent='count = 1';lockD.textContent='lock: free';lockD.style.color='';
+    oddState.textContent='RUNNABLE';evenState.textContent='WAITING';
+    oddAct.textContent='';evenAct.textContent='';
+    oddBox.classList.remove('dim');evenBox.classList.add('dim');
+    out.innerHTML='';
+    ex.innerHTML=`Two threads share a <code>lock</code> object and a <code>count</code> variable. OddThread prints odd numbers, EvenThread prints even. They coordinate via <code>wait()</code> / <code>notify()</code>.`;
+  }
+  if(p===1){
+    countD.textContent='count = 1 (odd ✓)';lockD.textContent='lock: OddThread holds';lockD.style.color='var(--accent)';
+    oddState.textContent='RUNNING';evenState.textContent='WAITING';
+    oddAct.innerHTML='prints: <span style="color:var(--accent)">Odd: 1</span>';evenAct.textContent='lock.wait()';
+    oddBox.classList.remove('dim');evenBox.classList.add('dim');
+    out.innerHTML='<span style="color:var(--accent)">Odd: 1</span>';
+    ex.innerHTML=`OddThread acquires <code>synchronized(lock)</code>. count%2==1 → its turn. Prints <strong>1</strong>, count→2, calls <code>lock.notify()</code>.`;
+  }
+  if(p===2){
+    countD.textContent='count = 2 (even)';lockD.textContent='lock: releasing…';lockD.style.color='var(--text3)';
+    oddState.textContent='WAITING';evenState.textContent='RUNNABLE';
+    oddAct.textContent='lock.wait()';evenAct.textContent='waking up…';
+    oddBox.classList.add('dim');evenBox.classList.remove('dim');
+    out.innerHTML='<span style="color:var(--accent)">Odd: 1</span>';
+    ex.innerHTML=`<code>notify()</code> wakes EvenThread. OddThread calls <code>wait()</code>, releasing the lock and suspending itself until notified again.`;
+  }
+  if(p===3){
+    countD.textContent='count = 2 (even ✓)';lockD.textContent='lock: EvenThread holds';lockD.style.color='var(--accent3)';
+    oddState.textContent='WAITING';evenState.textContent='RUNNING';
+    oddAct.textContent='lock.wait()';evenAct.innerHTML='prints: <span style="color:var(--accent3)">Even: 2</span>';
+    oddBox.classList.add('dim');evenBox.classList.remove('dim');
+    out.innerHTML='<span style="color:var(--accent)">Odd: 1</span>  <span style="color:var(--accent3)">Even: 2</span>';
+    ex.innerHTML=`EvenThread acquires lock. count%2==0 → its turn. Prints <strong>2</strong>, count→3, calls <code>notify()</code> to wake OddThread again.`;
+  }
+  if(p===4){
+    countD.textContent=`count = ${max+1} (done)`;lockD.textContent='lock: free';lockD.style.color='';
+    oddState.textContent='TERMINATED';evenState.textContent='TERMINATED';
+    oddAct.textContent='';evenAct.textContent='';
+    oddBox.classList.remove('dim');evenBox.classList.remove('dim');
+    let seq='';for(let i=1;i<=max;i++){seq+=`<span style="color:${i%2===1?'var(--accent)':'var(--accent3)'}">${i%2===1?'Odd':'Even'}: ${i}</span>  `;}
+    out.innerHTML=seq;
+    ex.innerHTML=`Full sequence 1→${max} alternately. Each thread uses <code>while(count%2==wrongParity)</code> to guard against spurious wakeups. Exits when count > max.`;
+  }
+}
+oePhase(0);
+
+// ─────────────────────────────────────────
+// 14. OPTIONAL + PARALLEL SORT
+// ─────────────────────────────────────────
+let opP=0;
+function getOPArr(){return document.getElementById('op-arr').value.split(',').map(s=>{const t=s.trim();return t==='null'?null:parseInt(t);});}
+makePhases('op-phases',['Input list','Optional check','Filter nulls','parallelSort'],'opPhase');
+function opPhase(p){
+  opP=p;activatePhase('op-phases',p);
+  const arr=getOPArr();
+  const filtered=arr.filter(v=>v!==null);
+  const sorted=[...filtered].sort((a,b)=>a-b);
+  const cells=document.getElementById('op-cells');
+  const stats=document.getElementById('op-stats');
+  const ex=document.getElementById('op-ex');
+
+  if(p===0){
+    cells.innerHTML=arr.map((v,i)=>cell(v===null?'null':v,i,v===null?'c-red':'')).join('');
+    stats.innerHTML=`<div class="stat"><div>Total</div><div class="sv">${arr.length}</div></div><div class="stat"><div>Nulls</div><div class="sv" style="color:var(--accent4)">${arr.filter(v=>v===null).length}</div></div>`;
+    ex.innerHTML=`List of ${arr.length} elements including <strong>${arr.filter(v=>v===null).length}</strong> null(s). Filter safely using <code>Optional.ofNullable(n).isPresent()</code>.`;
+  }
+  if(p===1){
+    cells.innerHTML=arr.map((v,i)=>cell(v===null?'∅':v,i,v===null?'c-red':'c-green',(v===null?'empty':'present'))).join('');
+    ex.innerHTML=`<code>Optional.ofNullable(n)</code> wraps each element. <code>.isPresent()</code> returns <strong>false</strong> for nulls (red) and <strong>true</strong> for real values (green).`;
+  }
+  if(p===2){
+    cells.innerHTML=filtered.map((v,i)=>cell(v,i,'c-green')).join('');
+    stats.innerHTML=`<div class="stat"><div>After filter</div><div class="sv" style="color:var(--accent2)">${filtered.length}</div></div><div class="stat"><div>Removed</div><div class="sv" style="color:var(--accent4)">${arr.filter(v=>v===null).length} nulls</div></div>`;
+    ex.innerHTML=`<code>.filter(n -> Optional.ofNullable(n).isPresent())</code> keeps only non-nulls. Result: [${filtered.join(', ')}].`;
+  }
+  if(p===3){
+    cells.innerHTML=sorted.map((v,i)=>cell(v,i,'c-accent')).join('');
+    stats.innerHTML=`<div class="stat"><div>Sorted</div><div class="sv">[${sorted.join(', ')}]</div></div><div class="stat"><div>Method</div><div class="sv">fork/join</div></div>`;
+    ex.innerHTML=`<code>Arrays.parallelSort(array)</code> uses the fork/join framework — splits into chunks, sorts in parallel, then merges. Result: <strong>[${sorted.join(', ')}]</strong>.`;
+  }
+}
+opPhase(0);
+</script>
+</body>
+</html>
