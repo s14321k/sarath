@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring Boot & Security — Interview Prep Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #8b90a0;
+    --accent: #6c8fff;
+    --accent2: #50d9b0;
+    --amber: #f59e0b;
+    --red: #f87171;
+    --green: #34d399;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    padding: 20px 0 40px;
+    z-index: 100;
+  }
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    padding: 32px 40px 80px;
+    max-width: 920px;
+  }
+
+  /* Sidebar */
+  .sidebar-logo {
+    padding: 0 16px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-logo .logo-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .sidebar-logo .logo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 12px 16px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all .15s;
+    text-decoration: none;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(108,143,255,.08); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; flex-shrink: 0; }
+
+  /* Page sections */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .page-sub { font-size: 14px; color: var(--muted); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+  }
+  .card-header:hover { background: rgba(255,255,255,.03); }
+  .card-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .card-title { font-size: 14px; font-weight: 600; flex: 1; }
+  .card-badge {
+    font-size: 10px; padding: 2px 8px;
+    border-radius: 20px;
+    background: rgba(108,143,255,.15);
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+  .card-badge.green { background: rgba(52,211,153,.15); color: var(--green); }
+  .card-badge.amber { background: rgba(245,158,11,.15); color: var(--amber); }
+  .card-badge.red { background: rgba(248,113,113,.15); color: var(--red); }
+  .chevron { font-size: 12px; color: var(--muted); transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .card-body {
+    display: none;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: #c0c5d5;
+    line-height: 1.75;
+  }
+  .card-body.open { display: block; }
+  .card-body p { margin: 10px 0; }
+  .card-body p:first-child { margin-top: 12px; }
+
+  /* Code blocks */
+  .code {
+    background: #0d1018;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    color: #b0c4de;
+    overflow-x: auto;
+    margin: 10px 0;
+    white-space: pre;
+  }
+  .code .k { color: #82aaff; }   /* keyword */
+  .code .s { color: #c3e88d; }   /* string */
+  .code .c { color: #546e7a; }   /* comment */
+  .code .a { color: #f07178; }   /* annotation */
+  .code .t { color: #ffcb6b; }   /* type */
+  .code .n { color: #80cbc4; }   /* name */
+
+  /* Tables */
+  .tbl { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px; }
+  .tbl th {
+    text-align: left;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.04);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border2);
+  }
+  .tbl td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    color: #c0c5d5;
+  }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* Tags / badges */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin: 2px;
+  }
+  .tag-blue { background: rgba(108,143,255,.18); color: #82b4ff; }
+  .tag-green { background: rgba(52,211,153,.15); color: #34d399; }
+  .tag-amber { background: rgba(245,158,11,.15); color: #f59e0b; }
+  .tag-red { background: rgba(248,113,113,.15); color: #f87171; }
+  .tag-purple { background: rgba(167,139,250,.15); color: #a78bfa; }
+  .tag-teal { background: rgba(80,217,176,.15); color: #50d9b0; }
+  .tag-pink { background: rgba(244,114,182,.15); color: #f472b6; }
+
+  /* Flow diagrams */
+  .flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .flow-arrow { color: var(--muted); font-size: 14px; }
+
+  /* Columns */
+  .cols { display: grid; gap: 12px; margin: 10px 0; }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .col-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+  }
+  .col-card-title { font-size: 12px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .col-card p { font-size: 12px; color: var(--muted); margin: 3px 0; }
+
+  /* QA items */
+  .qa-item { border-bottom: 1px solid var(--border); padding: 12px 0; }
+  .qa-item:last-child { border-bottom: none; }
+  .qa-q { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: flex; gap: 8px; align-items: flex-start; }
+  .qa-num { background: rgba(108,143,255,.2); color: var(--accent); border-radius: 4px; padding: 1px 6px; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+  .qa-a { font-size: 13px; color: #b0b8cc; line-height: 1.75; }
+
+  /* States grid */
+  .states { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+  .state-box {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-top: 2px solid;
+  }
+  .state-box.green { border-top-color: var(--green); }
+  .state-box.red { border-top-color: var(--red); }
+  .state-box.amber { border-top-color: var(--amber); }
+  .state-name { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .state-desc { font-size: 11px; color: var(--muted); }
+
+  /* Section divider */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin: 20px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Highlight box */
+  .highlight {
+    background: rgba(108,143,255,.08);
+    border: 1px solid rgba(108,143,255,.2);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 13px;
+    color: #b8c8f0;
+  }
+  .highlight.green {
+    background: rgba(52,211,153,.07);
+    border-color: rgba(52,211,153,.2);
+    border-left-color: var(--green);
+  }
+  .highlight.amber {
+    background: rgba(245,158,11,.07);
+    border-color: rgba(245,158,11,.2);
+    border-left-color: var(--amber);
+  }
+  .highlight.red {
+    background: rgba(248,113,113,.07);
+    border-color: rgba(248,113,113,.2);
+    border-left-color: var(--red);
+  }
+
+  /* Search */
+  .search-wrap { margin-bottom: 20px; }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+  .search-result {
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    transition: border-color .15s;
+  }
+  .search-result:hover { border-color: var(--accent); }
+  .sr-title { font-weight: 600; color: var(--text); }
+  .sr-section { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Annotation tree */
+  .ann-group { margin-bottom: 16px; }
+  .ann-group-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ann-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  .ann-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .ann-item:hover { border-color: var(--border2); }
+  .ann-name { font-family: monospace; font-size: 12px; color: var(--accent2); font-weight: 600; }
+  .ann-desc { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+  /* Tooltip for annotations */
+  .ann-detail {
+    display: none;
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 12px;
+    max-width: 300px;
+    z-index: 999;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    pointer-events: none;
+  }
+
+  /* Lifecycle timeline */
+  .lifecycle {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 10px 0;
+    position: relative;
+    padding-left: 24px;
+  }
+  .lifecycle::before {
+    content: '';
+    position: absolute;
+    left: 7px; top: 8px; bottom: 8px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2));
+    border-radius: 2px;
+  }
+  .lc-step {
+    position: relative;
+    padding: 8px 0 8px 16px;
+  }
+  .lc-step::before {
+    content: '';
+    position: absolute;
+    left: -17px; top: 50%;
+    transform: translateY(-50%);
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+  }
+  .lc-step-num { font-size: 10px; color: var(--muted); font-weight: 600; }
+  .lc-step-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .lc-step-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Scroll top button */
+  .scroll-top {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: .8;
+    transition: opacity .2s;
+    z-index: 200;
+  }
+  .scroll-top:hover { opacity: 1; }
+  .scroll-top.visible { display: flex; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { width: 200px; }
+    .main { margin-left: 200px; padding: 20px 16px 60px; }
+    .cols-2, .cols-3 { grid-template-columns: 1fr; }
+    .states { grid-template-columns: 1fr; }
+    .ann-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+<!-- ═══════ SIDEBAR ═══════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-title">Spring Interview</div>
+    <div class="logo-sub">Prep Guide</div>
+  </div>
+
+  <div class="nav-section-label">Topics</div>
+  <a class="nav-item active" onclick="goto('home')"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" onclick="goto('core')"><span class="nav-dot"></span>Core Concepts</a>
+  <a class="nav-item" onclick="goto('beans')"><span class="nav-dot"></span>Beans & DI</a>
+  <a class="nav-item" onclick="goto('annotations')"><span class="nav-dot"></span>Annotations</a>
+  <a class="nav-item" onclick="goto('security')"><span class="nav-dot"></span>Security & Auth</a>
+  <a class="nav-item" onclick="goto('jwt')"><span class="nav-dot"></span>JWT & OAuth2</a>
+  <a class="nav-item" onclick="goto('jpa')"><span class="nav-dot"></span>JPA & Database</a>
+  <a class="nav-item" onclick="goto('caching')"><span class="nav-dot"></span>Caching</a>
+  <a class="nav-item" onclick="goto('aop')"><span class="nav-dot"></span>AOP</a>
+  <a class="nav-item" onclick="goto('web')"><span class="nav-dot"></span>REST & Web</a>
+  <a class="nav-item" onclick="goto('resilience')"><span class="nav-dot"></span>Resilience</a>
+  <a class="nav-item" onclick="goto('cookies')"><span class="nav-dot"></span>Cookies & CORS</a>
+  <a class="nav-item" onclick="goto('qa')"><span class="nav-dot"></span>Interview Q&A</a>
+</nav>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="main">
+
+<!-- ══ HOME ══ -->
+<div class="page active" id="page-home">
+  <div class="page-header">
+    <div class="page-title">Spring Boot Interview Prep</div>
+    <div class="page-sub">Security · Beans · JPA · Auth · AOP · Caching · REST — all in one place</div>
+  </div>
+
+  <div class="search-wrap">
+    <input class="search-input" type="text" id="search" placeholder="Search any topic… (e.g. JWT, @Cacheable, circular dependency)" oninput="doSearch(this.value)">
+    <div id="search-results" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🗺️</div>
+      <span class="card-title">How to use this guide</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>Click any <strong>sidebar section</strong> to navigate. Each card is expandable — click to reveal details, tables, code, and one-liners. Use the <strong>search bar</strong> to jump directly to any topic.</p>
+      <p>Suggested study order: <span class="tag tag-blue">Core Concepts</span> → <span class="tag tag-blue">Beans & DI</span> → <span class="tag tag-teal">Security</span> → <span class="tag tag-amber">JPA</span> → <span class="tag tag-purple">AOP</span> → <span class="tag tag-pink">Q&A</span></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(80,217,176,.15)">⚡</div>
+      <span class="card-title">Quick mental map</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="flow">
+        <div class="flow-box">@SpringBootApplication</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Auto-Configuration</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">IoC Container</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Bean Lifecycle</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Embedded Tomcat</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">App Ready 🚀</div>
+      </div>
+      <div style="margin-top:12px">
+        <span class="tag tag-blue">Constructor DI = best practice</span>
+        <span class="tag tag-teal">JWT = stateless auth</span>
+        <span class="tag tag-amber">@Cacheable = read cache</span>
+        <span class="tag tag-purple">@Transactional = DB boundary</span>
+        <span class="tag tag-green">@Aspect = cross-cutting concerns</span>
+        <span class="tag tag-red">Avoid field injection</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CORE CONCEPTS ══ -->
+<div class="page" id="page-core">
+  <div class="page-header">
+    <div class="page-title">Core Spring Boot Concepts</div>
+    <div class="page-sub">Auto-configuration · Startup · Profiles · Starters</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🔄</div>
+      <span class="card-title">What happens when Spring Boot starts?</span>
+      <span class="card-badge">Must know</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="lifecycle">
+        <div class="lc-step"><div class="lc-step-num">Step 1</div><div class="lc-step-title">SpringApplication.run()</div><div class="lc-step-desc">Entry point bootstraps the app, creates ApplicationContext</div></div>
+        <div class="lc-step"><div class="lc-step-num">Step 2</div><div class="lc-step-title">Environment & Profiles loaded</div><div class="lc-step-desc">Reads application.yml/.properties, ENV vars, command-line args</div></div>
+        <div class="lc-step"><div class="lc-step-num">Step 3</div><div class="lc-step-title">Auto-Configuration kicks in</div><div class="lc-step-desc">Checks classpath → registers beans conditionally (e.g. Tomcat, DataSource)</div></div>
+        <div class="lc-step"><div class="lc-step-num">Step 4</div><div class="lc-step-title">Component scanning</div><div class="lc-step-desc">Scans @Component, @Service, @Repository, @Controller</div></div>
+        <div class="lc-step"><div class="lc-step-num">Step 5</div><div class="lc-step-title">Beans created & injected</div><div class="lc-step-desc">IoC container instantiates and wires all beans</div></div>
+        <div class="lc-step"><div class="lc-step-num">Step 6</div><div class="lc-step-title">Embedded server starts</div><div class="lc-step-desc">Tomcat/Jetty starts on port 8080 (or configured port)</div></div>
+        <div class="lc-step"><div class="lc-step-num">Step 7</div><div class="lc-step-title">ApplicationReadyEvent</div><div class="lc-step-desc">App is live and ready to serve requests 🚀</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🤖</div>
+      <span class="card-title">How Auto-Configuration works</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p><strong>@EnableAutoConfiguration</strong> triggers Spring Boot to scan <code>META-INF/spring/...AutoConfiguration.imports</code> across all JARs on the classpath. Each auto-configuration class uses <strong>conditional annotations</strong> to decide whether to register its beans.</p>
+      <div class="code"><span class="a">@Configuration</span>
+<span class="a">@ConditionalOnClass</span>(DataSource.class)         <span class="c">// only if class exists on classpath</span>
+<span class="a">@ConditionalOnProperty</span>(name = <span class="s">"spring.datasource.url"</span>)  <span class="c">// only if property set</span>
+<span class="k">public class</span> <span class="t">DataSourceAutoConfiguration</span> {
+    <span class="a">@Bean</span>
+    <span class="a">@ConditionalOnMissingBean</span>   <span class="c">// only if user didn't define one</span>
+    DataSource dataSource() { ... }
+}</div>
+      <div class="tbl-wrap" style="margin-top:10px">
+        <table class="tbl">
+          <tr><th>Conditional</th><th>When it applies</th></tr>
+          <tr><td><code>@ConditionalOnClass</code></td><td>Class is on classpath</td></tr>
+          <tr><td><code>@ConditionalOnMissingBean</code></td><td>User hasn't defined that bean</td></tr>
+          <tr><td><code>@ConditionalOnProperty</code></td><td>Property exists in config</td></tr>
+          <tr><td><code>@ConditionalOnWebApplication</code></td><td>App is a web application</td></tr>
+          <tr><td><code>@Profile("dev")</code></td><td>Specific profile is active</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">🎭</div>
+      <span class="card-title">Spring Profiles</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>Profiles allow different configurations for different environments.</p>
+      <div class="code"><span class="c">// Different datasource per environment</span>
+<span class="a">@Bean</span>
+<span class="a">@Profile</span>(<span class="s">"dev"</span>)
+<span class="k">public</span> DataSource devDataSource() {
+    <span class="k">return new</span> EmbeddedDatabaseBuilder().setType(H2).build();
+}
+
+<span class="a">@Bean</span>
+<span class="a">@Profile</span>(<span class="s">"prod"</span>)
+<span class="k">public</span> DataSource prodDataSource() {
+    <span class="k">return</span> DataSourceBuilder.create().url(<span class="s">"jdbc:postgresql://..."</span>).build();
+}</div>
+      <p>Activate via: <code>spring.profiles.active=prod</code> in properties or <code>--spring.profiles.active=prod</code> CLI flag.</p>
+      <p>Name convention: <code>application-dev.yml</code>, <code>application-prod.yml</code> — loaded automatically for that profile.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(167,139,250,.15)">📦</div>
+      <span class="card-title">Spring Boot vs Spring Framework</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Feature</th><th>Spring Framework</th><th>Spring Boot</th></tr>
+        <tr><td>Configuration</td><td>Manual XML/Java config</td><td>Convention over configuration (auto-config)</td></tr>
+        <tr><td>Boilerplate</td><td>Significant</td><td>Minimal</td></tr>
+        <tr><td>Embedded server</td><td>Manual setup</td><td>Built-in Tomcat/Jetty/Undertow</td></tr>
+        <tr><td>Dependencies</td><td>Manual version management</td><td>Starters handle it</td></tr>
+        <tr><td>Learning curve</td><td>Steeper</td><td>Easier / faster start</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BEANS & DI ══ -->
+<div class="page" id="page-beans">
+  <div class="page-header">
+    <div class="page-title">Beans & Dependency Injection</div>
+    <div class="page-sub">IoC · Bean scopes · Lifecycle · Circular dependencies</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(80,217,176,.15)">💉</div>
+      <span class="card-title">Types of Dependency Injection</span>
+      <span class="card-badge">Must know</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="cols cols-3">
+        <div class="col-card">
+          <div class="col-card-title" style="color:var(--green)">✅ Constructor (Recommended)</div>
+          <p>Dependencies injected via constructor. Immutable fields. Spring team's recommendation.</p>
+          <p>✔ Explicit dependencies</p>
+          <p>✔ Supports final fields</p>
+          <p>✔ Easy to test (no Spring needed)</p>
+        </div>
+        <div class="col-card">
+          <div class="col-card-title" style="color:var(--amber)">⚠️ Setter Injection</div>
+          <p>Dependencies set after construction. Useful for optional dependencies only.</p>
+          <p>⚠ Can result in partially configured objects</p>
+          <p>⚠ Not immutable</p>
+        </div>
+        <div class="col-card">
+          <div class="col-card-title" style="color:var(--red)">❌ Field Injection</div>
+          <p>@Autowired on field. Short but hides dependencies — discouraged in production.</p>
+          <p>✗ Hidden dependencies</p>
+          <p>✗ Hard to test</p>
+          <p>✗ Breaks immutability</p>
+        </div>
+      </div>
+      <div class="code"><span class="c">// ✅ Constructor injection — RECOMMENDED</span>
+<span class="a">@Service</span>
+<span class="k">public class</span> <span class="t">OrderService</span> {
+    <span class="k">private final</span> PaymentService paymentService;
+
+    <span class="k">public</span> OrderService(PaymentService paymentService) {
+        <span class="k">this</span>.paymentService = paymentService; <span class="c">// @Autowired optional since Spring 4.3</span>
+    }
+}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🔧</div>
+      <span class="card-title">Resolving multiple beans — @Qualifier & @Primary</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Behavior</th><th>Use when</th></tr>
+        <tr><td><code>@Primary</code></td><td>Default bean when multiple exist</td><td>One implementation should be the "default"</td></tr>
+        <tr><td><code>@Qualifier("name")</code></td><td>Picks specific bean by name</td><td>You need a specific non-default implementation</td></tr>
+        <tr><td><code>@Autowired + @Qualifier</code></td><td>Explicit injection by name</td><td>Multiple implementations and no primary</td></tr>
+      </table>
+      <div class="code"><span class="a">@Primary</span>
+<span class="a">@Service</span>
+<span class="k">public class</span> <span class="t">CreditCardPaymentService</span> <span class="k">implements</span> PaymentService {}
+
+<span class="a">@Service</span>(<span class="s">"paypalService"</span>)
+<span class="k">public class</span> <span class="t">PayPalPaymentService</span> <span class="k">implements</span> PaymentService {}
+
+<span class="c">// Inject specific one:</span>
+<span class="k">public</span> OrderService(<span class="a">@Qualifier</span>(<span class="s">"paypalService"</span>) PaymentService svc) { ... }</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">🔄</div>
+      <span class="card-title">Bean Scopes</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Scope</th><th>Instances</th><th>Best for</th></tr>
+        <tr><td><code>singleton</code> (default)</td><td>1 per container</td><td>Stateless services, repositories</td></tr>
+        <tr><td><code>prototype</code></td><td>New per request</td><td>Stateful beans (shopping cart, per-user state)</td></tr>
+        <tr><td><code>request</code></td><td>1 per HTTP request</td><td>Request-specific data (web only)</td></tr>
+        <tr><td><code>session</code></td><td>1 per HTTP session</td><td>User session data (web only)</td></tr>
+        <tr><td><code>application</code></td><td>1 per ServletContext</td><td>App-wide shared cache/config</td></tr>
+      </table>
+      <div class="highlight amber">⚠️ Never store shared mutable state in <code>singleton</code> beans — causes thread-safety issues in concurrent environments.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(248,113,113,.15)">🔁</div>
+      <span class="card-title">Circular Dependencies — causes, detection, fixes</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>Occurs when Bean A → needs Bean B → needs Bean A. Spring 2.6+ <strong>disallows this by default</strong>.</p>
+      <div class="code"><span class="c">// ❌ Circular — BeanCurrentlyInCreationException</span>
+<span class="a">@Service</span>
+<span class="k">class</span> <span class="t">A</span> { <span class="k">final</span> B b; A(B b) { <span class="k">this</span>.b = b; } }
+
+<span class="a">@Service</span>
+<span class="k">class</span> <span class="t">B</span> { <span class="k">final</span> A a; B(A a) { <span class="k">this</span>.a = a; } }</div>
+      <div class="cols cols-3" style="margin-top:12px">
+        <div class="col-card">
+          <div class="col-card-title" style="color:var(--green)">✅ Best Fix</div>
+          <p>Refactor: extract shared logic into a 3rd class C. Both A and B depend on C.</p>
+        </div>
+        <div class="col-card">
+          <div class="col-card-title" style="color:var(--amber)">⚠️ Workaround</div>
+          <p>Use <code>@Lazy</code> on one injection — defers creation until first access.</p>
+        </div>
+        <div class="col-card">
+          <div class="col-card-title" style="color:var(--red)">❌ Avoid</div>
+          <p><code>spring.main.allow-circular-references=true</code> — hides bad design.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🌱</div>
+      <span class="card-title">Bean Lifecycle callbacks</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="a">@Component</span>
+<span class="k">public class</span> <span class="t">MyBean</span> {
+
+    <span class="a">@PostConstruct</span>   <span class="c">// runs AFTER bean created &amp; dependencies injected</span>
+    <span class="k">public void</span> init() { System.out.println(<span class="s">"Bean ready!"</span>); }
+
+    <span class="a">@PreDestroy</span>     <span class="c">// runs BEFORE bean is removed from container</span>
+    <span class="k">public void</span> cleanup() { System.out.println(<span class="s">"Bean destroyed!"</span>); }
+}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ANNOTATIONS ══ -->
+<div class="page" id="page-annotations">
+  <div class="page-header">
+    <div class="page-title">Annotations Quick Reference</div>
+    <div class="page-sub">200+ annotations grouped by category — click any card to expand</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">📦</div>
+      <span class="card-title">Core & Stereotype</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Purpose</th></tr>
+        <tr><td><code>@SpringBootApplication</code></td><td>Entry point — combines @Configuration + @EnableAutoConfiguration + @ComponentScan</td></tr>
+        <tr><td><code>@Configuration</code></td><td>Marks class as source of bean definitions</td></tr>
+        <tr><td><code>@Component</code></td><td>Generic Spring-managed component</td></tr>
+        <tr><td><code>@Service</code></td><td>Business logic layer</td></tr>
+        <tr><td><code>@Repository</code></td><td>Data access layer — enables exception translation</td></tr>
+        <tr><td><code>@Controller</code></td><td>Spring MVC controller (returns views)</td></tr>
+        <tr><td><code>@RestController</code></td><td>REST API controller = @Controller + @ResponseBody</td></tr>
+        <tr><td><code>@Bean</code></td><td>Explicitly declares method return as a bean</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(80,217,176,.15)">💉</div>
+      <span class="card-title">DI & Injection</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Purpose</th></tr>
+        <tr><td><code>@Autowired</code></td><td>Auto-injects by type</td></tr>
+        <tr><td><code>@Qualifier("name")</code></td><td>Picks specific bean by name</td></tr>
+        <tr><td><code>@Primary</code></td><td>Default bean when multiple exist</td></tr>
+        <tr><td><code>@Lazy</code></td><td>Delays bean init until first use</td></tr>
+        <tr><td><code>@Value("${key}")</code></td><td>Injects property value or SpEL expression</td></tr>
+        <tr><td><code>@Inject</code></td><td>JSR-330 alternative to @Autowired</td></tr>
+        <tr><td><code>@Resource</code></td><td>JSR-250: injects by name first, then type</td></tr>
+        <tr><td><code>@DependsOn</code></td><td>Forces initialization order</td></tr>
+        <tr><td><code>@Order</code></td><td>Sort order when multiple beans collected</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">🌐</div>
+      <span class="card-title">Web / REST</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Purpose</th></tr>
+        <tr><td><code>@GetMapping / @PostMapping</code></td><td>HTTP verb shortcuts</td></tr>
+        <tr><td><code>@PathVariable</code></td><td>Extracts value from URL path <code>/users/{id}</code></td></tr>
+        <tr><td><code>@RequestParam</code></td><td>Extracts query param <code>?name=john</code></td></tr>
+        <tr><td><code>@RequestBody</code></td><td>Binds HTTP body (JSON) to object</td></tr>
+        <tr><td><code>@ResponseBody</code></td><td>Serializes return value to HTTP response</td></tr>
+        <tr><td><code>@ResponseStatus</code></td><td>Sets HTTP status code on response</td></tr>
+        <tr><td><code>@CrossOrigin</code></td><td>Enables CORS on method/class</td></tr>
+        <tr><td><code>@ControllerAdvice</code></td><td>Global exception handler across all controllers</td></tr>
+        <tr><td><code>@ExceptionHandler</code></td><td>Handles specific exception type</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(167,139,250,.15)">⏰</div>
+      <span class="card-title">Scheduling, Async & AOP</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Purpose</th></tr>
+        <tr><td><code>@EnableScheduling</code></td><td>Activates scheduling support</td></tr>
+        <tr><td><code>@Scheduled(cron="0 0 2 * * ?")</code></td><td>Runs method on schedule</td></tr>
+        <tr><td><code>@EnableAsync</code></td><td>Activates async support</td></tr>
+        <tr><td><code>@Async</code></td><td>Executes method on a separate thread</td></tr>
+        <tr><td><code>@Aspect</code></td><td>Marks class as an AOP aspect</td></tr>
+        <tr><td><code>@Before / @After / @Around</code></td><td>Advice types for intercepting method calls</td></tr>
+        <tr><td><code>@Pointcut</code></td><td>Defines reusable method-matching expression</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🔐</div>
+      <span class="card-title">Security</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Purpose</th></tr>
+        <tr><td><code>@EnableWebSecurity</code></td><td>Enables Spring Security</td></tr>
+        <tr><td><code>@EnableGlobalMethodSecurity</code></td><td>Enables method-level security</td></tr>
+        <tr><td><code>@PreAuthorize("hasRole('ADMIN')")</code></td><td>Checks auth before method runs</td></tr>
+        <tr><td><code>@PostAuthorize</code></td><td>Checks auth after method runs</td></tr>
+        <tr><td><code>@Secured("ROLE_USER")</code></td><td>Role-based method security (JSR-250)</td></tr>
+        <tr><td><code>@AuthenticationPrincipal</code></td><td>Injects current user into controller</td></tr>
+        <tr><td><code>@WithMockUser</code></td><td>Mocks a user for testing</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(244,114,182,.15)">🧪</div>
+      <span class="card-title">Testing</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>What it loads</th></tr>
+        <tr><td><code>@SpringBootTest</code></td><td>Full context (heavy — use sparingly)</td></tr>
+        <tr><td><code>@WebMvcTest</code></td><td>Web layer only (controllers, filters)</td></tr>
+        <tr><td><code>@DataJpaTest</code></td><td>JPA / repositories only (H2 in-memory)</td></tr>
+        <tr><td><code>@MockBean</code></td><td>Adds Mockito mock to Spring context</td></tr>
+        <tr><td><code>@SpyBean</code></td><td>Adds Mockito spy (real object + ability to stub)</td></tr>
+        <tr><td><code>@ActiveProfiles("test")</code></td><td>Activates test profile</td></tr>
+        <tr><td><code>@Sql("schema.sql")</code></td><td>Runs SQL before/after test</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SECURITY ══ -->
+<div class="page" id="page-security">
+  <div class="page-header">
+    <div class="page-title">Security & Authentication</div>
+    <div class="page-sub">Basic Auth · Token Auth · OAuth2 · LDAP · ADFS · mTLS</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🔑</div>
+      <span class="card-title">Authentication methods compared</span>
+      <span class="card-badge">Must know</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Method</th><th>Mechanism</th><th>Security</th><th>Best for</th></tr>
+        <tr><td>Basic Auth</td><td>Base64(user:pass) per request</td><td>🔴 Low</td><td>Internal dev/prototypes (HTTPS only)</td></tr>
+        <tr><td>API Key</td><td>Unique key in header <code>x-api-key</code></td><td>🟡 Low–Medium</td><td>Simple public APIs, rate limiting</td></tr>
+        <tr><td>JWT Token</td><td>Bearer token in Authorization header</td><td>🟢 Medium–High</td><td>Stateless microservices, SPAs</td></tr>
+        <tr><td>OAuth2</td><td>Access + Refresh tokens via Auth Server</td><td>🟢 High</td><td>Third-party integrations, enterprise</td></tr>
+        <tr><td>OAuth2 + OIDC</td><td>ID token + access token (JWT)</td><td>🟢 Highest</td><td>Modern apps — recommended default</td></tr>
+      </table>
+      <div class="highlight">💡 For production: use <strong>OAuth2 + OIDC + JWT</strong>. Never rely on Basic Auth or API Key alone.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🔒</div>
+      <span class="card-title">Spring Security filter chain setup</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="a">@Configuration</span>
+<span class="a">@EnableWebSecurity</span>
+<span class="k">public class</span> <span class="t">SecurityConfig</span> {
+
+    <span class="a">@Bean</span>
+    <span class="k">public</span> SecurityFilterChain filterChain(HttpSecurity http) <span class="k">throws</span> Exception {
+        http
+            .cors(Customizer.withDefaults())
+            .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))
+            .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(<span class="s">"/public/**"</span>).permitAll()
+                .requestMatchers(<span class="s">"/admin/**"</span>).hasRole(<span class="s">"ADMIN"</span>)
+                .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(o -> o.jwt()); <span class="c">// validates JWT tokens</span>
+        <span class="k">return</span> http.build();
+    }
+}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">🏢</div>
+      <span class="card-title">ADFS vs Keycloak vs LDAP — when to use what</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th></th><th>ADFS</th><th>Keycloak / Auth0 / Okta</th><th>LDAP direct</th></tr>
+        <tr><td>Type</td><td>Microsoft federation IdP</td><td>Open-source / cloud IdP</td><td>Directory protocol</td></tr>
+        <tr><td>Protocols</td><td>OAuth2, OIDC, SAML</td><td>OAuth2, OIDC, SAML</td><td>LDAP protocol only</td></tr>
+        <tr><td>SSO</td><td>✅ Built-in</td><td>✅ Built-in</td><td>❌ Manual</td></tr>
+        <tr><td>JWT support</td><td>✅ Yes</td><td>✅ Yes</td><td>❌ No</td></tr>
+        <tr><td>Best for</td><td>Microsoft/AD corporate environments</td><td>New apps, cloud-native</td><td>Simple internal auth</td></tr>
+      </table>
+      <div class="highlight">🏗️ Modern approach: Let IdP (ADFS/Keycloak) authenticate against LDAP/AD. Spring Boot only validates JWTs — never queries LDAP directly.</div>
+      <div class="flow" style="margin-top:10px">
+        <div class="flow-box">Angular / Client</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">IdP (Keycloak/ADFS)</div>
+        <span class="flow-arrow">→ validates against →</span>
+        <div class="flow-box">LDAP / AD</div>
+        <span class="flow-arrow">→ issues JWT →</span>
+        <div class="flow-box">Spring Boot (validates JWT only)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(248,113,113,.15)">🛡️</div>
+      <span class="card-title">CSRF protection</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>CSRF tricks a logged-in user's browser into making unwanted requests to another site. Protection: server generates a unique token per session; client must include it in state-changing requests.</p>
+      <div class="code"><span class="c">// Spring Security — cookie-based CSRF token</span>
+csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+<span class="c">// Sets XSRF-TOKEN cookie (readable by JS)</span>
+<span class="c">// Frontend sends it back as X-XSRF-TOKEN header</span></div>
+      <p>Additional protections: <span class="tag tag-blue">SameSite=Strict cookies</span> <span class="tag tag-blue">Origin/Referer header checks</span></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(80,217,176,.15)">🔐</div>
+      <span class="card-title">Service-to-service security (mTLS)</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Layer</th><th>Mechanism</th><th>Purpose</th></tr>
+        <tr><td>Transport</td><td>mTLS — both services present certs</td><td>Encrypted, mutually authenticated channel</td></tr>
+        <tr><td>Identity</td><td>JWT token exchange (OAuth2 On-Behalf-Of)</td><td>User context propagated through services</td></tr>
+        <tr><td>Network</td><td>Private VPC / Service mesh (Istio)</td><td>Isolate internal traffic</td></tr>
+        <tr><td>Secrets</td><td>Vault / K8s Secrets</td><td>Rotate and manage credentials safely</td></tr>
+      </table>
+      <div class="highlight green">Service Mesh (Istio) automates mTLS between pods — no code changes required.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ JWT & OAUTH2 ══ -->
+<div class="page" id="page-jwt">
+  <div class="page-header">
+    <div class="page-title">JWT & OAuth2</div>
+    <div class="page-sub">Token structure · OAuth2 flows · OIDC · SSO</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🎟️</div>
+      <span class="card-title">JWT — structure & how it works</span>
+      <span class="card-badge">Frequent</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>JWT = <code>Header.Payload.Signature</code> — a compact, signed, self-contained token.</p>
+      <div class="code"><span class="c">// Decoded JWT payload example</span>
+{
+  <span class="s">"sub"</span>: <span class="s">"user123"</span>,
+  <span class="s">"email"</span>: <span class="s">"john@example.com"</span>,
+  <span class="s">"roles"</span>: [<span class="s">"ADMIN"</span>],
+  <span class="s">"iss"</span>: <span class="s">"https://auth.example.com"</span>,   <span class="c">// issuer</span>
+  <span class="s">"aud"</span>: <span class="s">"spring-boot-api"</span>,          <span class="c">// audience</span>
+  <span class="s">"iat"</span>: 1699990000,                  <span class="c">// issued at</span>
+  <span class="s">"exp"</span>: 1699993600                   <span class="c">// expires at</span>
+}</div>
+      <div class="highlight">💡 JWT = token <strong>format</strong>. OAuth2 = authorization <strong>framework</strong>. They work together but are different things.</div>
+      <div class="cols cols-2" style="margin-top:10px">
+        <div class="col-card">
+          <div class="col-card-title">Security best practices</div>
+          <p>✔ Short-lived access tokens (5–15 min)</p>
+          <p>✔ Refresh tokens for long sessions</p>
+          <p>✔ HttpOnly cookies (not localStorage)</p>
+          <p>✔ Always use HTTPS</p>
+          <p>✔ Validate signature + exp + iss + aud</p>
+        </div>
+        <div class="col-card">
+          <div class="col-card-title">Token types</div>
+          <p><strong>ID Token</strong> — who the user is (OIDC)</p>
+          <p><strong>Access Token</strong> — what they can do (scopes/roles)</p>
+          <p><strong>Refresh Token</strong> — silently get new access token</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🔄</div>
+      <span class="card-title">OAuth2 Authorization Code Flow</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="lifecycle">
+        <div class="lc-step"><div class="lc-step-num">1</div><div class="lc-step-title">Client redirects to IdP /authorize</div><div class="lc-step-desc">With client_id, redirect_uri, scope, code_challenge (PKCE)</div></div>
+        <div class="lc-step"><div class="lc-step-num">2</div><div class="lc-step-title">User logs in & approves</div><div class="lc-step-desc">IdP shows login page, user submits credentials (+ MFA)</div></div>
+        <div class="lc-step"><div class="lc-step-num">3</div><div class="lc-step-title">IdP redirects with authorization code</div><div class="lc-step-desc">Short-lived, one-time code sent to redirect_uri</div></div>
+        <div class="lc-step"><div class="lc-step-num">4</div><div class="lc-step-title">Client exchanges code for tokens</div><div class="lc-step-desc">POST to /token with code + code_verifier (PKCE)</div></div>
+        <div class="lc-step"><div class="lc-step-num">5</div><div class="lc-step-title">IdP returns ID token + Access token</div><div class="lc-step-desc">Client stores in memory (not localStorage)</div></div>
+        <div class="lc-step"><div class="lc-step-num">6</div><div class="lc-step-title">Client calls Spring Boot API</div><div class="lc-step-desc">Authorization: Bearer &lt;access_token&gt;</div></div>
+        <div class="lc-step"><div class="lc-step-num">7</div><div class="lc-step-title">Spring Security validates JWT</div><div class="lc-step-desc">Verifies signature via JWKS, checks exp/iss/aud</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">⚙️</div>
+      <span class="card-title">Spring Boot OAuth2 configuration</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="c"># application.yml — Resource Server (API)</span>
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.example.com/realms/myrealm
+          <span class="c"># Spring auto-fetches JWKS from /.well-known/openid-configuration</span></div>
+      <div class="code"><span class="c"># application.yml — OAuth2 Client (login flow)</span>
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: my-client
+            client-secret: ${CLIENT_SECRET}
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+        provider:
+          keycloak:
+            issuer-uri: https://auth.example.com/realms/myrealm</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(167,139,250,.15)">🔁</div>
+      <span class="card-title">JWT lifecycle state machine</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="states">
+        <div class="state-box green"><div class="state-name" style="color:var(--green)">Authenticated</div><div class="state-desc">Valid access_token. All API calls proceed.</div></div>
+        <div class="state-box amber"><div class="state-name" style="color:var(--amber)">Expired</div><div class="state-desc">access_token expired. Try refresh_token.</div></div>
+        <div class="state-box red"><div class="state-name" style="color:var(--red)">NoToken</div><div class="state-desc">Logged out or refresh expired. Re-login required.</div></div>
+      </div>
+      <div class="flow" style="margin-top:10px">
+        <div class="flow-box">Login → tokens issued</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">access_token expires</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Use refresh_token</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">New access_token</div>
+      </div>
+      <div class="flow">
+        <div class="flow-box">Logout</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Server deletes both tokens (maxAge=0)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">NoToken state</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ JPA ══ -->
+<div class="page" id="page-jpa">
+  <div class="page-header">
+    <div class="page-title">JPA & Database</div>
+    <div class="page-sub">Entity mapping · Queries · Transactions · Auditing · Optimization</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">📋</div>
+      <span class="card-title">JpaRepository vs CrudRepository</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th></th><th>CrudRepository</th><th>JpaRepository</th></tr>
+        <tr><td>CRUD ops</td><td>✅ save, findById, delete</td><td>✅ All of CrudRepository</td></tr>
+        <tr><td>Pagination</td><td>❌</td><td>✅ findAll(Pageable)</td></tr>
+        <tr><td>Sorting</td><td>❌</td><td>✅ findAll(Sort)</td></tr>
+        <tr><td>Batch ops</td><td>❌</td><td>✅ saveAll, deleteAllInBatch</td></tr>
+        <tr><td>Flush control</td><td>❌</td><td>✅ flush(), saveAndFlush()</td></tr>
+        <tr><td>Use when</td><td>Simple CRUD</td><td>Complex JPA apps (recommended)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🔍</div>
+      <span class="card-title">Query types in Spring Data JPA</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="c">// 1. Derived query — auto-generated from method name</span>
+List&lt;User&gt; findByAgeGreaterThan(<span class="k">int</span> age);
+
+<span class="c">// 2. Custom JPQL — object-oriented SQL</span>
+<span class="a">@Query</span>(<span class="s">"SELECT u FROM User u WHERE u.age > :age"</span>)
+List&lt;User&gt; findOlderThan(<span class="a">@Param</span>(<span class="s">"age"</span>) <span class="k">int</span> age);
+
+<span class="c">// 3. Native SQL — database-specific</span>
+<span class="a">@Query</span>(value = <span class="s">"SELECT * FROM users WHERE age > ?1"</span>, nativeQuery = <span class="k">true</span>)
+List&lt;User&gt; findNative(<span class="k">int</span> age);
+
+<span class="c">// 4. Modifying query</span>
+<span class="a">@Modifying</span>
+<span class="a">@Query</span>(<span class="s">"UPDATE User u SET u.active = false WHERE u.age > :age"</span>)
+<span class="k">int</span> deactivateOldUsers(<span class="a">@Param</span>(<span class="s">"age"</span>) <span class="k">int</span> age);</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">⚡</div>
+      <span class="card-title">JPA optimization techniques</span>
+      <span class="card-badge amber">Performance</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="section-label">N+1 Problem — the most common JPA trap</div>
+      <div class="code"><span class="c">// ❌ N+1: loads orders, then 1 query per order for items</span>
+List&lt;Order&gt; orders = orderRepo.findAll();
+orders.forEach(o -> o.getItems().size()); <span class="c">// N extra queries!</span>
+
+<span class="c">// ✅ Fix: JOIN FETCH — single query</span>
+<span class="a">@Query</span>(<span class="s">"SELECT o FROM Order o JOIN FETCH o.items"</span>)
+List&lt;Order&gt; findAllWithItems();
+
+<span class="c">// ✅ Fix: @EntityGraph</span>
+<span class="a">@EntityGraph</span>(attributePaths = {<span class="s">"items"</span>, <span class="s">"customer"</span>})
+List&lt;Order&gt; findAll();</div>
+      <div class="section-label" style="margin-top:16px">Other optimizations</div>
+      <table class="tbl">
+        <tr><th>Technique</th><th>How</th><th>Benefit</th></tr>
+        <tr><td>Projections / DTOs</td><td>Return interface or record instead of entity</td><td>Fetch only needed columns</td></tr>
+        <tr><td>Pagination</td><td><code>PageRequest.of(0, 20)</code></td><td>Avoid loading millions of rows</td></tr>
+        <tr><td>Keyset pagination</td><td><code>WHERE id > lastId LIMIT 20</code></td><td>Fast for large offsets</td></tr>
+        <tr><td>Read-only flag</td><td><code>@Transactional(readOnly=true)</code></td><td>Skip dirty checking overhead</td></tr>
+        <tr><td>Batch size</td><td><code>@BatchSize(size=20)</code> on collection</td><td>Loads related entities in batches</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(167,139,250,.15)">📝</div>
+      <span class="card-title">JPA Auditing (@CreatedDate, @LastModifiedBy)</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="c">// 1. Enable in main app class</span>
+<span class="a">@SpringBootApplication</span>
+<span class="a">@EnableJpaAuditing</span>(auditorAwareRef = <span class="s">"auditorProvider"</span>)
+<span class="k">public class</span> <span class="t">App</span> {}
+
+<span class="c">// 2. AuditorAware — provides current user</span>
+<span class="a">@Component</span>
+<span class="k">public class</span> <span class="t">AuditorAwareImpl</span> <span class="k">implements</span> AuditorAware&lt;String&gt; {
+    <span class="k">public</span> Optional&lt;String&gt; getCurrentAuditor() {
+        <span class="k">return</span> Optional.of(SecurityContextHolder.getContext()
+            .getAuthentication().getName());
+    }
+}
+
+<span class="c">// 3. Add to entity</span>
+<span class="a">@Entity</span>
+<span class="a">@EntityListeners</span>(AuditingEntityListener.class)
+<span class="k">public class</span> <span class="t">Order</span> {
+    <span class="a">@CreatedDate</span>   <span class="a">@Column</span>(updatable = <span class="k">false</span>)
+    <span class="k">private</span> LocalDateTime createdAt;
+
+    <span class="a">@LastModifiedDate</span>
+    <span class="k">private</span> LocalDateTime updatedAt;
+
+    <span class="a">@CreatedBy</span>    <span class="k">private</span> String createdBy;
+    <span class="a">@LastModifiedBy</span> <span class="k">private</span> String updatedBy;
+}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(248,113,113,.15)">💸</div>
+      <span class="card-title">@Transactional — propagation & gotchas</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Propagation</th><th>Behavior</th></tr>
+        <tr><td>REQUIRED (default)</td><td>Join existing tx; create new if none exists</td></tr>
+        <tr><td>REQUIRES_NEW</td><td>Always create new tx; suspend existing</td></tr>
+        <tr><td>SUPPORTS</td><td>Use tx if exists; proceed without if none</td></tr>
+        <tr><td>NOT_SUPPORTED</td><td>Always proceed without transaction</td></tr>
+      </table>
+      <div class="highlight amber">⚠️ <strong>Self-invocation problem:</strong> If you call a @Transactional method from within the same class, the proxy is bypassed and the transaction annotation is ignored. Always call through the Spring proxy (inject self or refactor to separate class).</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CACHING ══ -->
+<div class="page" id="page-caching">
+  <div class="page-header">
+    <div class="page-title">Caching</div>
+    <div class="page-sub">@Cacheable · @CachePut · @CacheEvict · TTL strategies</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">⚡</div>
+      <span class="card-title">Three caching annotations at a glance</span>
+      <span class="card-badge green">Core</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Annotation</th><th>Method runs?</th><th>Cache updated?</th><th>Use case</th></tr>
+        <tr><td><code>@Cacheable</code></td><td>Only if cache miss</td><td>On miss</td><td>Read operations (GET)</td></tr>
+        <tr><td><code>@CachePut</code></td><td>Always</td><td>Always</td><td>Update operations (write-through)</td></tr>
+        <tr><td><code>@CacheEvict</code></td><td>Always</td><td>Removes entry</td><td>Delete / invalidation</td></tr>
+      </table>
+      <div class="code"><span class="c">// Read — returns cached value, skips method if hit</span>
+<span class="a">@Cacheable</span>(value = <span class="s">"products"</span>, key = <span class="s">"#id"</span>, unless = <span class="s">"#result == null"</span>)
+<span class="k">public</span> Product findById(Long id) { ... }
+
+<span class="c">// Update — always runs, refreshes cache</span>
+<span class="a">@CachePut</span>(value = <span class="s">"products"</span>, key = <span class="s">"#product.id"</span>)
+<span class="k">public</span> Product update(Product product) { ... }
+
+<span class="c">// Delete — removes from cache</span>
+<span class="a">@CacheEvict</span>(value = <span class="s">"products"</span>, key = <span class="s">"#id"</span>)
+<span class="k">public void</span> delete(Long id) { ... }
+
+<span class="c">// Clear entire cache on schedule</span>
+<span class="a">@CacheEvict</span>(value = <span class="s">"products"</span>, allEntries = <span class="k">true</span>)
+<span class="a">@Scheduled</span>(cron = <span class="s">"0 0 2 * * ?"</span>)
+<span class="k">public void</span> clearCache() {}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">⚙️</div>
+      <span class="card-title">@Cacheable parameters explained</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Parameter</th><th>What it does</th><th>Example</th></tr>
+        <tr><td><code>value</code></td><td>Cache name</td><td><code>value="products"</code></td></tr>
+        <tr><td><code>key</code></td><td>SpEL expression for cache key</td><td><code>key="#id"</code></td></tr>
+        <tr><td><code>condition</code></td><td>Cache only if expression is true (evaluated before)</td><td><code>condition="#user.active"</code></td></tr>
+        <tr><td><code>unless</code></td><td>Don't cache if expression is true (evaluated after)</td><td><code>unless="#result==null"</code></td></tr>
+        <tr><td><code>sync</code></td><td>If true, only 1 thread computes value (prevents thundering herd)</td><td><code>sync=true</code></td></tr>
+        <tr><td><code>keyGenerator</code></td><td>Custom key generation bean</td><td><code>keyGenerator="myGen"</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">🔧</div>
+      <span class="card-title">Setup — enable caching with Caffeine or Redis</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="c"># pom.xml</span>
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-cache&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;com.github.ben-manes.caffeine&lt;/groupId&gt;
+    &lt;artifactId&gt;caffeine&lt;/artifactId&gt;
+&lt;/dependency&gt;</div>
+      <div class="code"><span class="c"># application.yml — Caffeine</span>
+spring:
+  cache:
+    cache-names: products, users
+    caffeine:
+      spec: maximumSize=500,expireAfterAccess=600s
+
+<span class="c"># application.yml — Redis</span>
+spring:
+  cache:
+    type: redis
+  redis:
+    host: localhost
+    port: 6379
+  cache:
+    redis:
+      time-to-live: 600000</div>
+      <div class="code"><span class="c">// Enable in main class</span>
+<span class="a">@SpringBootApplication</span>
+<span class="a">@EnableCaching</span>
+<span class="k">public class</span> <span class="t">App</span> {}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AOP ══ -->
+<div class="page" id="page-aop">
+  <div class="page-header">
+    <div class="page-title">AOP — Aspect-Oriented Programming</div>
+    <div class="page-sub">Cross-cutting concerns · Advice types · Custom annotations</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(167,139,250,.15)">🎯</div>
+      <span class="card-title">What is AOP and why use it?</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>AOP separates <strong>cross-cutting concerns</strong> (logging, security, transactions, retry) from business logic. Instead of duplicating code in every method, write one <strong>Aspect class</strong> that intercepts method calls.</p>
+      <div class="cols cols-2">
+        <div class="col-card">
+          <div class="col-card-title">Without AOP ❌</div>
+          <p>Logging in every service method. Exception handling duplicated. Transaction boilerplate everywhere.</p>
+        </div>
+        <div class="col-card">
+          <div class="col-card-title">With AOP ✅</div>
+          <p>One aspect class handles logging for all methods. Business code stays clean. Add cross-cutting logic without touching business code.</p>
+        </div>
+      </div>
+      <div class="section-label" style="margin-top:12px">AOP terminology</div>
+      <table class="tbl">
+        <tr><th>Term</th><th>Meaning</th></tr>
+        <tr><td>Aspect</td><td>Module containing cross-cutting concern</td></tr>
+        <tr><td>Advice</td><td>Code that runs at a join point (Before, After, Around)</td></tr>
+        <tr><td>Join Point</td><td>Point in execution (method call) where advice applies</td></tr>
+        <tr><td>Pointcut</td><td>Expression to match join points</td></tr>
+        <tr><td>Weaving</td><td>Applying aspect to target object (Spring uses proxy-based)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(80,217,176,.15)">💻</div>
+      <span class="card-title">Logging aspect — full example</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="a">@Aspect</span>
+<span class="a">@Component</span>
+<span class="k">public class</span> <span class="t">LoggingAspect</span> {
+
+    <span class="k">private static final</span> Logger log = LoggerFactory.getLogger(LoggingAspect.class);
+
+    <span class="c">// Pointcut: all methods in service package</span>
+    <span class="a">@Pointcut</span>(<span class="s">"execution(* com.example.service.*.*(..))"</span>)
+    <span class="k">public void</span> serviceMethods() {}
+
+    <span class="c">// Runs BEFORE method</span>
+    <span class="a">@Before</span>(<span class="s">"serviceMethods()"</span>)
+    <span class="k">public void</span> logBefore(JoinPoint jp) {
+        log.info(<span class="s">"Calling: {}"</span>, jp.getSignature().getName());
+    }
+
+    <span class="c">// Runs AFTER successful return</span>
+    <span class="a">@AfterReturning</span>(pointcut = <span class="s">"serviceMethods()"</span>, returning = <span class="s">"result"</span>)
+    <span class="k">public void</span> logReturn(Object result) {
+        log.info(<span class="s">"Returned: {}"</span>, result);
+    }
+
+    <span class="c">// Runs AROUND — full control</span>
+    <span class="a">@Around</span>(<span class="s">"serviceMethods()"</span>)
+    <span class="k">public</span> Object logTiming(ProceedingJoinPoint pjp) <span class="k">throws</span> Throwable {
+        <span class="k">long</span> start = System.currentTimeMillis();
+        Object result = pjp.proceed();
+        log.info(<span class="s">"Took: {}ms"</span>, System.currentTimeMillis() - start);
+        <span class="k">return</span> result;
+    }
+
+    <span class="c">// Runs if exception thrown</span>
+    <span class="a">@AfterThrowing</span>(pointcut = <span class="s">"serviceMethods()"</span>, throwing = <span class="s">"ex"</span>)
+    <span class="k">public void</span> logException(Throwable ex) {
+        log.error(<span class="s">"Exception: {}"</span>, ex.getMessage());
+    }
+}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">✨</div>
+      <span class="card-title">Custom annotation + retry aspect</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="c">// 1. Define custom annotation</span>
+<span class="a">@Target</span>(ElementType.METHOD)
+<span class="a">@Retention</span>(RetentionPolicy.RUNTIME)
+<span class="k">public @interface</span> <span class="t">Retryable</span> {
+    <span class="k">int</span> attempts() <span class="k">default</span> 3;
+}
+
+<span class="c">// 2. Aspect that intercepts @Retryable methods</span>
+<span class="a">@Aspect</span>
+<span class="a">@Component</span>
+<span class="k">public class</span> <span class="t">RetryAspect</span> {
+
+    <span class="a">@Around</span>(<span class="s">"@annotation(retryable)"</span>)
+    <span class="k">public</span> Object retry(ProceedingJoinPoint pjp, <span class="t">Retryable</span> retryable) <span class="k">throws</span> Throwable {
+        <span class="k">int</span> max = retryable.attempts();
+        Throwable last = <span class="k">null</span>;
+        <span class="k">for</span> (<span class="k">int</span> i = 0; i < max; i++) {
+            <span class="k">try</span> { <span class="k">return</span> pjp.proceed(); }
+            <span class="k">catch</span> (Throwable t) { last = t; }
+        }
+        <span class="k">throw</span> last;
+    }
+}
+
+<span class="c">// 3. Usage — annotate any method</span>
+<span class="a">@Retryable</span>(attempts = 3)
+<span class="k">public</span> String callExternalService() { ... }</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WEB ══ -->
+<div class="page" id="page-web">
+  <div class="page-header">
+    <div class="page-title">REST & Web Concepts</div>
+    <div class="page-sub">HTTP methods · Status codes · Pagination · RestTemplate vs WebClient</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🌐</div>
+      <span class="card-title">HTTP methods — safety & idempotency</span>
+      <span class="card-badge">Frequent</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p><strong>Safe</strong> = doesn't change server state · <strong>Idempotent</strong> = same result if called multiple times</p>
+      <table class="tbl" style="margin-top:10px">
+        <tr><th>Method</th><th>Safe</th><th>Idempotent</th><th>Use case</th></tr>
+        <tr><td>GET</td><td>✅</td><td>✅</td><td>Retrieve resource</td></tr>
+        <tr><td>HEAD</td><td>✅</td><td>✅</td><td>Headers only (no body)</td></tr>
+        <tr><td>OPTIONS</td><td>✅</td><td>✅</td><td>Discover supported methods</td></tr>
+        <tr><td>PUT</td><td>❌</td><td>✅</td><td>Full replace of resource</td></tr>
+        <tr><td>DELETE</td><td>❌</td><td>✅</td><td>Remove resource</td></tr>
+        <tr><td>POST</td><td>❌</td><td>❌</td><td>Create / trigger action</td></tr>
+        <tr><td>PATCH</td><td>❌</td><td>❌</td><td>Partial update</td></tr>
+      </table>
+      <div class="highlight" style="margin-top:10px">💡 POST is neither safe nor idempotent → use Idempotency-Key header for payments/orders to prevent duplicate processing.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🔢</div>
+      <span class="card-title">HTTP status codes — quick reference</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Range</th><th>Meaning</th><th>Key codes</th></tr>
+        <tr><td>2xx</td><td>Success</td><td>200 OK · 201 Created · 204 No Content</td></tr>
+        <tr><td>3xx</td><td>Redirect</td><td>301 Permanent · 302 Temp · 304 Not Modified</td></tr>
+        <tr><td>4xx</td><td>Client error</td><td>400 Bad Request · 401 Unauthorized · 403 Forbidden · 404 Not Found · 409 Conflict · 422 Unprocessable · 429 Rate Limited</td></tr>
+        <tr><td>5xx</td><td>Server error</td><td>500 Internal · 502 Bad Gateway · 503 Unavailable · 504 Timeout</td></tr>
+      </table>
+      <div class="highlight amber">⚠️ Never return 200 OK for an error — it breaks client parsing and monitoring tools.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(167,139,250,.15)">📄</div>
+      <span class="card-title">Pagination strategies</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Strategy</th><th>How</th><th>Best for</th><th>Watch out</th></tr>
+        <tr><td>Offset-based</td><td><code>?page=2&size=20</code></td><td>Small datasets, UI pagination</td><td>Slow at large offsets</td></tr>
+        <tr><td>Keyset / Seek</td><td><code>?after_id=500&limit=20</code></td><td>Large tables, infinite scroll</td><td>Requires unique ordered key</td></tr>
+        <tr><td>Cursor-based</td><td><code>?cursor=encoded-value</code></td><td>Real-time feeds</td><td>Complex encoding</td></tr>
+        <tr><td>Time-based</td><td><code>?start=2024-01-01&end=2024-02-01</code></td><td>Time-ordered events/logs</td><td>Timestamp accuracy</td></tr>
+      </table>
+      <div class="code"><span class="c">// Offset pagination — Spring Data</span>
+Page&lt;Product&gt; page = repo.findAll(PageRequest.of(0, 20, Sort.by(<span class="s">"id"</span>)));
+page.getContent();        <span class="c">// list</span>
+page.getTotalElements();  <span class="c">// total count (expensive COUNT query)</span>
+page.getTotalPages();     <span class="c">// total pages</span>
+
+<span class="c">// Slice — no COUNT query (better for infinite scroll)</span>
+Slice&lt;Product&gt; slice = repo.findFirst20ByIdGreaterThan(lastId);
+slice.hasNext();          <span class="c">// just checks if next page exists</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">🔌</div>
+      <span class="card-title">RestTemplate vs WebClient vs Feign</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th></th><th>RestTemplate</th><th>WebClient</th><th>Feign Client</th></tr>
+        <tr><td>Blocking</td><td>Yes</td><td>No (reactive)</td><td>Yes (sync)</td></tr>
+        <tr><td>Reactive</td><td>❌</td><td>✅ Mono/Flux</td><td>❌</td></tr>
+        <tr><td>Style</td><td>Imperative</td><td>Fluent builder</td><td>Declarative interface</td></tr>
+        <tr><td>Load balancing</td><td>Manual</td><td>Manual</td><td>Built-in Ribbon</td></tr>
+        <tr><td>Status</td><td>Legacy (deprecated)</td><td>Recommended (Spring 5+)</td><td>Microservices ideal</td></tr>
+      </table>
+      <div class="code"><span class="c">// WebClient — non-blocking HTTP call</span>
+<span class="t">Mono</span>&lt;String&gt; result = webClient.get()
+    .uri(<span class="s">"/api/users/{id}"</span>, userId)
+    .header(<span class="s">"Authorization"</span>, <span class="s">"Bearer "</span> + token)
+    .retrieve()
+    .bodyToMono(String.class);
+
+<span class="c">// Feign — declarative interface</span>
+<span class="a">@FeignClient</span>(name = <span class="s">"user-service"</span>)
+<span class="k">public interface</span> <span class="t">UserClient</span> {
+    <span class="a">@GetMapping</span>(<span class="s">"/users/{id}"</span>)
+    User findById(<span class="a">@PathVariable</span> Long id);
+}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESILIENCE ══ -->
+<div class="page" id="page-resilience">
+  <div class="page-header">
+    <div class="page-title">Resilience Patterns</div>
+    <div class="page-sub">Circuit Breaker · Retry · Bulkhead · Rate Limiter · Fallback</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(248,113,113,.15)">⚡</div>
+      <span class="card-title">Resilience4j — all patterns at a glance</span>
+      <span class="card-badge red">Critical</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Pattern</th><th>What it does</th><th>When to use</th></tr>
+        <tr><td>Circuit Breaker</td><td>Stops calls to failing service (OPEN state)</td><td>Downstream is consistently failing/slow</td></tr>
+        <tr><td>Retry</td><td>Retries on transient failure with backoff</td><td>Temporary network glitches, brief locks</td></tr>
+        <tr><td>Rate Limiter</td><td>Limits calls per time window</td><td>Protect from overload / DDoS</td></tr>
+        <tr><td>Bulkhead</td><td>Limits concurrent calls (semaphore or threadpool)</td><td>One bad service shouldn't exhaust all threads</td></tr>
+        <tr><td>Fallback</td><td>Returns default/cached response on failure</td><td>Graceful degradation when downstream is down</td></tr>
+      </table>
+      <div class="section-label" style="margin-top:12px">Execution order (outermost → innermost)</div>
+      <div class="flow">
+        <div class="flow-box">Retry</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Circuit Breaker</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Rate Limiter</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Bulkhead</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box">Your method</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🔌</div>
+      <span class="card-title">Circuit Breaker states</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="states">
+        <div class="state-box green"><div class="state-name" style="color:var(--green)">Closed</div><div class="state-desc">Normal — all requests flow through, failures tracked.</div></div>
+        <div class="state-box red"><div class="state-name" style="color:var(--red)">Open</div><div class="state-desc">Failure threshold hit — all calls rejected immediately.</div></div>
+        <div class="state-box amber"><div class="state-name" style="color:var(--amber)">Half-Open</div><div class="state-desc">Trial mode — few calls allowed to test recovery.</div></div>
+      </div>
+      <div class="code"><span class="c"># application.yml</span>
+resilience4j:
+  circuitbreaker:
+    instances:
+      myService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50      <span class="c"># 50% failures → OPEN</span>
+        waitDurationInOpenState: 30s  <span class="c"># wait 30s before trying again</span>
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      myService:
+        maxAttempts: 3
+        waitDuration: 500ms</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">💻</div>
+      <span class="card-title">Resilient service with fallback</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="code"><span class="a">@Service</span>
+<span class="k">public class</span> <span class="t">ExternalApiService</span> {
+
+    <span class="a">@Retry</span>(name = <span class="s">"todos-api"</span>)
+    <span class="a">@CircuitBreaker</span>(name = <span class="s">"todos-api"</span>, fallbackMethod = <span class="s">"fallback"</span>)
+    <span class="a">@RateLimiter</span>(name = <span class="s">"todos-api"</span>)
+    <span class="a">@Bulkhead</span>(name = <span class="s">"todos-api"</span>, type = Bulkhead.Type.SEMAPHORE)
+    <span class="k">public</span> Todo getTodo(Integer id) {
+        <span class="k">return</span> todoClient.getTodoById(id);  <span class="c">// may fail</span>
+    }
+
+    <span class="c">// Fallback — same signature + Throwable param</span>
+    <span class="k">private</span> Todo fallback(Integer id, Throwable t) {
+        log.warn(<span class="s">"Fallback triggered: {}"</span>, t.getMessage());
+        <span class="k">return new</span> Todo(id, <span class="s">"Default response"</span>, <span class="k">false</span>);  <span class="c">// or return cached data</span>
+    }
+}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COOKIES & CORS ══ -->
+<div class="page" id="page-cookies">
+  <div class="page-header">
+    <div class="page-title">Cookies & CORS</div>
+    <div class="page-sub">HttpOnly · SameSite · JWT in cookies · CORS configuration</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">🍪</div>
+      <span class="card-title">Cookie types & attributes</span>
+      <span class="card-badge">Must know</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <table class="tbl">
+        <tr><th>Cookie</th><th>Purpose</th><th>HttpOnly</th><th>Secure</th><th>SameSite</th></tr>
+        <tr><td><code>access_token</code></td><td>JWT access token</td><td>✅ Yes</td><td>✅ Yes</td><td>Strict</td></tr>
+        <tr><td><code>refresh_token</code></td><td>JWT refresh token</td><td>✅ Yes</td><td>✅ Yes</td><td>Strict</td></tr>
+        <tr><td><code>XSRF-TOKEN</code></td><td>CSRF protection token</td><td>❌ No (JS must read it)</td><td>✅ Yes</td><td>Lax</td></tr>
+        <tr><td><code>JSESSIONID</code></td><td>Traditional session ID</td><td>✅ Yes</td><td>✅ Yes</td><td>Lax</td></tr>
+        <tr><td><code>theme</code></td><td>UI preference</td><td>❌ No</td><td>❌ No</td><td>Lax</td></tr>
+      </table>
+      <div class="code"><span class="c">// Set auth cookie in Spring Boot</span>
+ResponseCookie accessCookie = ResponseCookie.from(<span class="s">"access_token"</span>, jwtToken)
+    .httpOnly(<span class="k">true</span>)      <span class="c">// JS cannot read — prevents XSS theft</span>
+    .secure(<span class="k">true</span>)       <span class="c">// HTTPS only</span>
+    .sameSite(<span class="s">"Strict"</span>) <span class="c">// prevents CSRF</span>
+    .path(<span class="s">"/"</span>)
+    .maxAge(Duration.ofMinutes(30))
+    .build();
+response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());</div>
+      <div class="code"><span class="c">// Delete cookie on logout</span>
+ResponseCookie deleteCookie = ResponseCookie.from(<span class="s">"access_token"</span>, <span class="s">""</span>)
+    .httpOnly(<span class="k">true</span>).secure(<span class="k">true</span>).path(<span class="s">"/"</span>).maxAge(0).build();</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">🌐</div>
+      <span class="card-title">CORS configuration</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <p>CORS is required when frontend and backend are on different origins. The browser blocks requests unless the backend explicitly allows them.</p>
+      <div class="code"><span class="a">@Configuration</span>
+<span class="k">public class</span> <span class="t">CorsConfig</span> {
+    <span class="a">@Bean</span>
+    <span class="k">public</span> CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = <span class="k">new</span> UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = <span class="k">new</span> CorsConfiguration();
+        config.setAllowedOrigins(List.of(<span class="s">"https://frontend.com"</span>)); <span class="c">// never "*" with cookies</span>
+        config.setAllowedMethods(List.of(<span class="s">"GET"</span>, <span class="s">"POST"</span>, <span class="s">"PUT"</span>, <span class="s">"DELETE"</span>));
+        config.setAllowedHeaders(List.of(<span class="s">"Authorization"</span>, <span class="s">"Content-Type"</span>, <span class="s">"X-XSRF-TOKEN"</span>));
+        config.setAllowCredentials(<span class="k">true</span>); <span class="c">// required for cookies to pass through</span>
+        source.registerCorsConfiguration(<span class="s">"/**"</span>, config);
+        <span class="k">return new</span> CorsFilter(source);
+    }
+}</div>
+      <div class="code"><span class="c">// Frontend — must include credentials for cookies</span>
+fetch(<span class="s">"https://api.backend.com/data"</span>, {
+    credentials: <span class="s">"include"</span>,  <span class="c">// sends cookies cross-origin</span>
+    headers: { <span class="s">"X-XSRF-TOKEN"</span>: csrfToken }
+});</div>
+      <div class="highlight red">🚫 Never use <code>Access-Control-Allow-Origin: *</code> when <code>credentials: include</code> is used. Browser will reject it.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Q&A ══ -->
+<div class="page" id="page-qa">
+  <div class="page-header">
+    <div class="page-title">Interview Q&A</div>
+    <div class="page-sub">Top questions with concise answers — expand each section to test yourself</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(108,143,255,.15)">❓</div>
+      <span class="card-title">Spring Boot core (Q1–Q10)</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q1</span> What is Spring Boot and why use it?</div>
+        <div class="qa-a">Spring Boot removes the boilerplate of Spring configuration. It provides auto-configuration, embedded servers (Tomcat/Jetty), starter dependencies, and production-ready features (Actuator). Allows you to create production-grade apps with minimal setup.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q2</span> What's the difference between @SpringBootApplication and its components?</div>
+        <div class="qa-a">@SpringBootApplication = @Configuration + @EnableAutoConfiguration + @ComponentScan. It's a convenience annotation for the main class. You rarely split them — but you can to fine-tune scanning or disable auto-configuration selectively.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q3</span> How does Spring Boot auto-configuration work?</div>
+        <div class="qa-a">@EnableAutoConfiguration loads all configuration classes listed in META-INF/spring/*.AutoConfiguration.imports. Each class uses @Conditional annotations to decide if it should create beans. Example: if spring-web is on classpath and no DispatcherServlet bean is defined, Spring Boot creates one.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q4</span> What are Spring Starters?</div>
+        <div class="qa-a">Starters are pre-packaged dependency descriptors that bundle compatible libraries. spring-boot-starter-web brings Spring MVC + Tomcat + Jackson. spring-boot-starter-data-jpa brings Hibernate + Spring Data JPA + JDBC. No more hunting for compatible versions.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q5</span> What is Spring Actuator?</div>
+        <div class="qa-a">Actuator adds production-ready endpoints: /health (app health), /metrics (CPU, memory, HTTP counts), /info (build info), /env (properties). Integrates with Prometheus/Grafana. Add spring-boot-starter-actuator to enable.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q6</span> Which DI type should you prefer and why?</div>
+        <div class="qa-a">Constructor injection. It makes dependencies explicit, allows final fields (immutability), makes testing easy (no Spring needed in unit tests), and the Spring team recommends it. Field injection (@Autowired on field) hides dependencies and makes testing harder.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q7</span> How do you handle circular dependencies?</div>
+        <div class="qa-a">Best fix: refactor — extract shared logic into a 3rd class. Quick fix: add @Lazy on one injection to defer creation. Avoid enabling spring.main.allow-circular-references=true as it hides design issues. Spring Boot 2.6+ disallows them by default.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q8</span> What is the bean lifecycle?</div>
+        <div class="qa-a">Instantiation → DI → @PostConstruct → ready for use → @PreDestroy → destroyed. You can hook in via @PostConstruct/@PreDestroy, or implement InitializingBean/DisposableBean. BeanPostProcessor can intercept all beans before/after initialization.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q9</span> When would you use @Scope("prototype")?</div>
+        <div class="qa-a">When a bean holds state that must be unique per use — e.g., per-user shopping cart, per-thread request state, mutable command objects. Default singleton shares one instance so mutable state causes race conditions.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q10</span> What does @Transactional do and what are common pitfalls?</div>
+        <div class="qa-a">Wraps a method in a DB transaction — auto commits on success, rolls back on RuntimeException. Pitfall: self-invocation bypasses the proxy so the annotation is ignored. Always inject and call through the Spring proxy (or use another bean). Also: readOnly=true improves read performance by skipping dirty checking.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(52,211,153,.15)">❓</div>
+      <span class="card-title">Security & Auth (Q11–Q20)</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q11</span> JWT vs session-based authentication — key differences?</div>
+        <div class="qa-a">JWT is stateless — server stores nothing, validates token signature on each request. Session-based stores session in server memory/Redis, requires sticky sessions or shared session store. JWT scales better for microservices. Session is simpler for traditional monolith.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q12</span> What's the difference between OAuth2 and OIDC?</div>
+        <div class="qa-a">OAuth2 = authorization framework (can this app access your data?). OIDC (OpenID Connect) = authentication layer on top of OAuth2 (who is the user?). OIDC adds an ID Token (JWT) that contains user identity. For login, use OAuth2 + OIDC. For API access delegation only, OAuth2 alone is fine.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q13</span> What is CSRF and how do you prevent it?</div>
+        <div class="qa-a">CSRF tricks a logged-in user's browser into making unwanted requests. Prevention: CSRF token (server-generated, verified per request), SameSite=Strict cookies, Origin/Referer header validation. For REST APIs with JWT in headers (not cookies), CSRF is not a concern since cookies aren't automatically sent.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q14</span> Where should you store JWT — localStorage or HttpOnly cookie?</div>
+        <div class="qa-a">HttpOnly cookie is safer. localStorage is vulnerable to XSS — any injected script can steal the token. HttpOnly cookies can't be read by JavaScript. Pair with SameSite=Strict for CSRF protection. Trade-off: HttpOnly cookies need CORS configured with credentials.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q15</span> How do microservices propagate user identity?</div>
+        <div class="qa-a">Two options: (1) JWT propagation — pass the client's JWT downstream in Authorization header; each service validates it. (2) Token exchange — service A gets a new token scoped to service B (OAuth2 On-Behalf-Of). Combine with mTLS for transport security. Service mesh (Istio) can automate both.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q16</span> What is LDAP and how does it relate to Spring Security?</div>
+        <div class="qa-a">LDAP is a directory protocol for storing users/groups (like Active Directory). Modern best practice: let an IdP (Keycloak, ADFS, Auth0) authenticate against LDAP, then issue JWTs. Spring Boot validates only the JWT — never queries LDAP directly. Direct Spring LDAP integration is legacy and lacks SSO/MFA/token benefits.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q17</span> What is mTLS and when do you use it?</div>
+        <div class="qa-a">Mutual TLS — both client and server present certificates to authenticate each other, not just server to client. Used for service-to-service security in microservices. Service mesh (Istio) can enforce it automatically across all pods without code changes.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q18</span> What does @PreAuthorize do vs @Secured?</div>
+        <div class="qa-a">@PreAuthorize supports full SpEL expressions: hasRole('ADMIN'), #userId == authentication.principal.id (resource ownership). @Secured only supports role-based checks: @Secured("ROLE_ADMIN"). Prefer @PreAuthorize for flexibility. Enable via @EnableGlobalMethodSecurity(prePostEnabled=true).</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q19</span> How do you configure Spring as an OAuth2 Resource Server?</div>
+        <div class="qa-a">Add spring-boot-starter-oauth2-resource-server. Set spring.security.oauth2.resourceserver.jwt.issuer-uri to your IdP. Spring auto-fetches JWKS and validates every incoming Bearer token. Spring Security populates the SecurityContext with claims from the JWT.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q20</span> What are the best practices for API security?</div>
+        <div class="qa-a">Always HTTPS. Use OAuth2+OIDC+JWT. Short-lived access tokens (5-15 min). Validate JWT signature + exp + iss + aud. Rate limiting at API Gateway. Never store secrets in code (use Vault). HttpOnly + Secure + SameSite cookies for browser clients. Input validation on all endpoints.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header" onclick="tog(this)">
+      <div class="card-icon" style="background:rgba(245,158,11,.15)">❓</div>
+      <span class="card-title">JPA & Performance (Q21–Q30)</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q21</span> What is the N+1 problem in JPA?</div>
+        <div class="qa-a">Loading a list of entities (1 query), then lazily loading their associations one-by-one (N queries). Fix: use JOIN FETCH in JPQL, @EntityGraph, or @BatchSize. Never loop and call a lazy collection getter — it fires N separate SQL statements.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q22</span> persist() vs merge() in JPA?</div>
+        <div class="qa-a">persist() — for NEW entities only. Makes entity managed and schedules INSERT. Returns void. merge() — for DETACHED or EXISTING entities. Returns a NEW managed copy (always use the returned value, not the original). Calling merge() on a transient entity creates a new persisted copy.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q23</span> Page vs Slice in Spring Data pagination?</div>
+        <div class="qa-a">Page<T> runs two queries — one for data (LIMIT/OFFSET) and one COUNT(*) for total pages. Slice<T> skips the COUNT query — just fetches data + checks if next page exists. Use Slice for infinite scroll or "Load More" patterns where total count isn't needed.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q24</span> How do you implement auditing in JPA?</div>
+        <div class="qa-a">Enable @EnableJpaAuditing. Add @EntityListeners(AuditingEntityListener.class) to entity. Use @CreatedDate, @LastModifiedDate, @CreatedBy, @LastModifiedBy on fields. Implement AuditorAware<String> bean to provide current user from SecurityContext.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q25</span> What is optimistic locking and how to implement it?</div>
+        <div class="qa-a">Prevents lost updates in concurrent scenarios. Add @Version field to entity — JPA checks version matches before UPDATE. If two users read version 5 and both try to update, second one gets OptimisticLockException. Combine with ETag header for REST APIs.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q26</span> What is @Cacheable and when should you use it?</div>
+        <div class="qa-a">Caches method return value. On first call, executes method and stores result. On subsequent calls with same key, returns cached value without executing method. Use for read-heavy, expensive, infrequently changing data (e.g., product catalog, config). Don't cache mutable or user-specific data without careful key design.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q27</span> What is AOP and what are common use cases?</div>
+        <div class="qa-a">Aspect-Oriented Programming separates cross-cutting concerns from business logic. Common uses: logging, performance timing, transactions (@Transactional IS AOP), security (@PreAuthorize), retry logic, distributed tracing. Spring uses proxy-based AOP — aspects only work on Spring-managed beans called through the proxy.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q28</span> @Before vs @Around advice — when to use each?</div>
+        <div class="qa-a">@Before — runs before method, cannot change result or prevent execution. @After — runs after regardless of outcome. @AfterReturning — only after success, can see result. @AfterThrowing — only after exception. @Around — full control: can modify args, prevent execution, change result, measure time. Use @Around for timing, retry, caching.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q29</span> How does Circuit Breaker prevent cascading failures?</div>
+        <div class="qa-a">When too many calls to a service fail (e.g., 50% failure rate), Circuit Breaker opens — subsequent calls are immediately rejected without trying the service. After a wait period (e.g., 30s), it enters half-open state and tests recovery. This prevents the caller from wasting threads waiting on a dead service and cascading failure across the system.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q"><span class="qa-num">Q30</span> What's the self-invocation problem with @Transactional?</div>
+        <div class="qa-a">If you call a @Transactional method from within the same class (this.method()), the call bypasses the Spring AOP proxy. The annotation is completely ignored — no transaction is created. Fix: inject the bean into itself (@Autowired @Lazy private MyService self), use a separate service class, or use TransactionTemplate for programmatic control.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<button class="scroll-top" id="scrollTop" onclick="scrollToTop()">↑</button>
+
+<script>
+// ── Navigation ──
+function goto(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  const nav = document.querySelector(`[onclick="goto('${id}')"]`);
+  if (nav) nav.classList.add('active');
+  document.querySelector('.main').scrollTop = 0;
+  window.scrollTo(0, 0);
+  document.getElementById('search-results').innerHTML = '';
+  const si = document.getElementById('search');
+  if (si) si.value = '';
+  event.preventDefault();
+}
+
+// ── Card toggle ──
+function tog(header) {
+  const body = header.nextElementSibling;
+  const chev = header.querySelector('.chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open');
+}
+
+// ── Search ──
+const searchIndex = [
+  { section: 'core', title: 'Spring Boot startup flow', keywords: 'startup run springapplication embedded tomcat auto-configuration' },
+  { section: 'core', title: 'Auto-configuration', keywords: 'auto config conditional onclas onmissingbean EnableAutoConfiguration' },
+  { section: 'core', title: 'Profiles dev prod', keywords: 'profile active dev prod staging environment application.yml' },
+  { section: 'beans', title: 'Constructor vs Field injection', keywords: 'constructor field setter injection autowired di dependency best practice' },
+  { section: 'beans', title: '@Qualifier @Primary', keywords: 'qualifier primary multiple beans ambiguous injection' },
+  { section: 'beans', title: 'Bean scopes singleton prototype', keywords: 'scope singleton prototype request session application' },
+  { section: 'beans', title: 'Circular dependency', keywords: 'circular cyclic dependency beanCurrentlyInCreation lazy' },
+  { section: 'beans', title: 'Bean lifecycle @PostConstruct @PreDestroy', keywords: 'lifecycle postconstruct predestroy init destroy callback' },
+  { section: 'annotations', title: 'Annotations reference', keywords: 'annotation component service repository controller restcontroller bean value' },
+  { section: 'annotations', title: '@Scheduled @Async', keywords: 'scheduled async cron fixedrate fixeddelay enablescheduling enableasync' },
+  { section: 'annotations', title: 'Security annotations', keywords: 'preauthorize secured rolesallowed enablewebsecurity authenticationprincipal' },
+  { section: 'annotations', title: 'Testing annotations', keywords: 'springboottest webmvctest datajpatest mockbean spybean activeprofiles sql' },
+  { section: 'security', title: 'Authentication methods', keywords: 'basic auth api key jwt oauth2 oidc token bearer authentication' },
+  { section: 'security', title: 'Spring Security filter chain', keywords: 'security filter chain http csrf session stateless jwt oauth' },
+  { section: 'security', title: 'ADFS Keycloak LDAP comparison', keywords: 'adfs keycloak auth0 okta ldap active directory federation sso' },
+  { section: 'security', title: 'CSRF protection', keywords: 'csrf xsrf token cross site request forgery samesite' },
+  { section: 'security', title: 'Service-to-service mTLS', keywords: 'mtls mutual tls service security vault istio service mesh' },
+  { section: 'jwt', title: 'JWT structure', keywords: 'jwt json web token header payload signature claims sub exp iss' },
+  { section: 'jwt', title: 'OAuth2 authorization code flow', keywords: 'oauth2 authorization code flow pkce redirect token exchange' },
+  { section: 'jwt', title: 'Spring OAuth2 resource server config', keywords: 'resource server jwt issuer uri jwks spring security oauth' },
+  { section: 'jwt', title: 'JWT lifecycle states', keywords: 'token lifecycle authenticated expired refresh logout' },
+  { section: 'jpa', title: 'JpaRepository vs CrudRepository', keywords: 'jpa crud repository pagination sorting flush save delete' },
+  { section: 'jpa', title: 'JPQL native queries @Query @Modifying', keywords: 'jpql query modifying native sql custom derived method' },
+  { section: 'jpa', title: 'N+1 problem JOIN FETCH @EntityGraph', keywords: 'n+1 join fetch entitygraph batchsize lazy loading performance' },
+  { section: 'jpa', title: 'JPA Auditing @CreatedDate @LastModifiedBy', keywords: 'jpa auditing createddate lastmodifieddate createdby auditingentitylistener' },
+  { section: 'jpa', title: '@Transactional propagation', keywords: 'transactional propagation required requires_new rollback self invocation' },
+  { section: 'caching', title: '@Cacheable @CachePut @CacheEvict', keywords: 'cacheable cacheput cacheevict cache spring caching redis caffeine' },
+  { section: 'caching', title: 'Cache setup Caffeine Redis', keywords: 'cache setup caffeine redis enablecaching ttl expiry' },
+  { section: 'aop', title: 'AOP concepts @Aspect @Before @Around', keywords: 'aop aspect before after around pointcut joinpoint advice weaving' },
+  { section: 'aop', title: 'Custom annotation + retry aspect', keywords: 'custom annotation retryable aspect around logging' },
+  { section: 'web', title: 'HTTP methods idempotent safe', keywords: 'get post put delete patch idempotent safe http methods' },
+  { section: 'web', title: 'HTTP status codes', keywords: 'status 200 201 400 401 403 404 409 422 429 500 503' },
+  { section: 'web', title: 'Pagination strategies keyset offset', keywords: 'pagination keyset offset cursor page slice infinite scroll' },
+  { section: 'web', title: 'RestTemplate WebClient Feign', keywords: 'resttemplate webclient feign client reactive mono flux blocking' },
+  { section: 'resilience', title: 'Resilience4j patterns', keywords: 'resilience4j circuit breaker retry bulkhead rate limiter fallback' },
+  { section: 'resilience', title: 'Circuit Breaker states closed open half-open', keywords: 'circuit breaker closed open half-open sliding window failure rate' },
+  { section: 'cookies', title: 'Cookie types HttpOnly SameSite', keywords: 'cookie httponly secure samesite access_token xsrf session jwt' },
+  { section: 'cookies', title: 'CORS configuration cross-origin', keywords: 'cors cross origin allow credentials headers frontend backend' },
+  { section: 'qa', title: 'Spring Boot core Q&A', keywords: 'interview questions spring boot auto config starters actuator di beans' },
+  { section: 'qa', title: 'Security & Auth Q&A', keywords: 'interview jwt oauth csrf mtls preauthorize ldap adfs security' },
+  { section: 'qa', title: 'JPA & Performance Q&A', keywords: 'interview jpa n+1 cacheable transactional aop circuit breaker' },
+];
+
+function doSearch(q) {
+  const container = document.getElementById('search-results');
+  if (!q.trim()) { container.innerHTML = ''; return; }
+  const terms = q.toLowerCase().split(' ');
+  const results = searchIndex.filter(item => {
+    const haystack = (item.title + ' ' + item.keywords).toLowerCase();
+    return terms.every(t => haystack.includes(t));
+  });
+  if (!results.length) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">No results found</div>';
+    return;
+  }
+  const sectionNames = { core:'Core Concepts', beans:'Beans & DI', annotations:'Annotations', security:'Security', jwt:'JWT & OAuth2', jpa:'JPA & Database', caching:'Caching', aop:'AOP', web:'REST & Web', resilience:'Resilience', cookies:'Cookies & CORS', qa:'Interview Q&A' };
+  container.innerHTML = results.map(r => `
+    <div class="search-result" onclick="goto('${r.section}')">
+      <div class="sr-title">${r.title}</div>
+      <div class="sr-section">→ ${sectionNames[r.section]}</div>
+    </div>
+  `).join('');
+}
+
+// ── Scroll to top ──
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scrollTop');
+  btn.classList.toggle('visible', window.scrollY > 300);
+});
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+// Keyboard search shortcut
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    const si = document.getElementById('search');
+    if (si) { goto('home'); setTimeout(() => si.focus(), 100); }
+  }
+});
+</script>
+</body>
+</html>
