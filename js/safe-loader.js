@@ -23,13 +23,6 @@
         injectTo('content', '<section class="content-section"><p>Content is temporarily unavailable. Please try again later.</p></section>');
     }
 
-    function normalizePageData(data) {
-        return {
-            tocHtml: data && (data.tocHtml || data.toc || ''),
-            contentHtml: data && (data.contentHtml || data.content || data.html || '')
-        };
-    }
-
     function fetchPage(endpoint, page, kind) {
         return fetch(endpoint, {
             method: 'POST',
@@ -45,21 +38,6 @@
         }).then((data) => data && data.html ? data.html : '');
     }
 
-    function fetchPageBundle(endpoint, page) {
-        return fetch(endpoint, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-                eventType: 'page_content',
-                page,
-                kind: 'page'
-            })
-        }).then((resp) => {
-            if (!resp.ok) throw new Error('HTTP ' + resp.status);
-            return resp.json();
-        }).then(normalizePageData);
-    }
-
     function fetchLocalPage(page, kind) {
         const url = new URL('../private-repo/visit-data-repo/data/pages/' + encodeURIComponent(page) + '-' + encodeURIComponent(kind) + '.json', window.location.href);
         return fetch(url.toString())
@@ -70,23 +48,6 @@
             .then((data) => data && data.html ? data.html : '');
     }
 
-    function fetchLocalPageBundle(page) {
-        const url = new URL('../private-repo/visit-data-repo/data/pages/' + encodeURIComponent(page) + '.json', window.location.href);
-        return fetch(url.toString())
-            .then((resp) => {
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                return resp.json();
-            })
-            .then(normalizePageData);
-    }
-
-    function fetchSplitPageBundle(page) {
-        return Promise.all([
-            fetchLocalPage(page, 'toc'),
-            fetchLocalPage(page, 'content')
-        ]).then(([tocHtml, contentHtml]) => ({ tocHtml, contentHtml }));
-    }
-
     function loadPage(endpoint, page, kind) {
         const remote = endpoint ? fetchPage(endpoint, page, kind) : Promise.reject(new Error('Missing endpoint'));
         return remote.catch((remoteErr) => {
@@ -94,17 +55,6 @@
             return fetchLocalPage(page, kind).catch((localErr) => {
                 console.warn('safe-loader: local fallback failed for ' + kind, localErr);
                 throw remoteErr;
-            });
-        });
-    }
-
-    function loadPageBundle(endpoint, page) {
-        const remote = endpoint ? fetchPageBundle(endpoint, page) : Promise.reject(new Error('Missing endpoint'));
-        return remote.catch((remoteErr) => {
-            console.warn('safe-loader: backend bundle load failed, trying local fallback', remoteErr);
-            return fetchLocalPageBundle(page).catch((localErr) => {
-                console.warn('safe-loader: local bundle fallback failed, trying split fallback', localErr);
-                return fetchSplitPageBundle(page);
             });
         });
     }
@@ -123,14 +73,22 @@
     const endpoint = window.VISIT_ENDPOINT || '';
     if (!endpoint) console.warn('safe-loader: missing VISIT_ENDPOINT, using local fallback');
 
-    loadPageBundle(endpoint, page).then((pageData) => {
-        if (loadAttr.indexOf('toc') !== -1) injectTo('toc', pageData.tocHtml || '');
-        if (loadAttr.indexOf('content') !== -1) injectTo('content', pageData.contentHtml || '');
-        if (loadAttr.indexOf('content') !== -1 && !pageData.contentHtml) showUnavailableMessage('content');
-    }).catch((err) => {
-        console.warn('safe-loader: failed to load page bundle', err);
-        showUnavailableMessage('content');
-    }).then(() => {
+    const tasks = [];
+    if (loadAttr.indexOf('toc') !== -1) {
+        tasks.push(loadPage(endpoint, page, 'toc')
+            .then((html) => injectTo('toc', html))
+            .catch((err) => console.warn('safe-loader: failed to load toc', err)));
+    }
+    if (loadAttr.indexOf('content') !== -1) {
+        tasks.push(loadPage(endpoint, page, 'content')
+            .then((html) => injectTo('content', html))
+            .catch((err) => {
+                console.warn('safe-loader: failed to load content', err);
+                showUnavailableMessage('content');
+            }));
+    }
+
+    Promise.all(tasks).then(() => {
         try { window.dispatchEvent(new CustomEvent('pageContentLoaded', { detail: { page } })); } catch (e) {}
     });
 })();
