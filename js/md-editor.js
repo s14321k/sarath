@@ -50,8 +50,8 @@
             .md-editor-actions {
                 position: fixed;
                 right: 22px;
-                bottom: 92px;
-                z-index: 2600;
+                bottom: 220px;
+                z-index: 10;
                 display: flex;
                 flex-direction: column;
                 gap: 10px;
