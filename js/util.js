@@ -197,9 +197,15 @@
         };
 
         try {
+            const headers = { 'content-type': 'application/json' };
+            try {
+                const token = sessionStorage.getItem(SESSION_KEY) || '';
+                if (token) headers['authorization'] = `Bearer ${token}`;
+            } catch {}
+
             const res = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
+                headers,
                 body: JSON.stringify(payload),
             });
             const json = await res.json().catch(() => ({}));

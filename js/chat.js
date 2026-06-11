@@ -22,10 +22,16 @@
             <button type="button" class="chat-tab" data-tab="admin">
                 Admin <span class="chat-badge hidden" id="adminBadge"></span>
             </button>
+            <button type="button" class="chat-tab" data-tab="ai">
+                AI
+            </button>
         </div>
         <div class="chat-tools">
             <button type="button" class="chat-tool-btn chat-poll-toggle" id="chatPollToggle" aria-pressed="false" title="Enable auto polling">
                 Polling Off
+            </button>
+            <button type="button" class="chat-tool-btn hidden" id="chatAiSettings" title="AI settings">
+                AI Settings
             </button>
             <button type="button" class="chat-tool-btn hidden" id="chatDeleteAll" aria-label="Delete all messages" title="Delete all messages">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -47,6 +53,7 @@
         const statusEl = container.querySelector('#chatStatus');
         const minBtn = container.querySelector('#chatMinBtn');
         const pollToggleBtn = container.querySelector('#chatPollToggle');
+        const aiSettingsBtn = container.querySelector('#chatAiSettings');
         const globalBadge = container.querySelector('#globalBadge');
         const adminBadge = container.querySelector('#adminBadge');
         const deleteAllBtn = container.querySelector('#chatDeleteAll');
@@ -59,6 +66,11 @@
         let lastUnseen = { global: 0, admin: 0 };
         let lastLengths = { global: 0, admin: 0 };
         let bubbleStatePrimed = false;
+        let aiMessages = [];
+        let aiBusy = false;
+        let aiSettingsModal = null;
+        let aiConfigCache = null;
+        let aiConfigLoadedForUser = '';
 
         function chatCacheKey(scope) {
             return `${CHAT_CACHE_PREFIX}${String(user || '').toLowerCase()}:${scope}`;
@@ -268,6 +280,13 @@
             t.classList.add('active');
             current = t.dataset.tab;
             updateDeleteAllVisibility();
+            if (current === 'ai') {
+                clearPollTimer();
+                render(aiMessages);
+                input.placeholder = 'Ask AI...';
+                return;
+            }
+            input.placeholder = 'Type a message...';
             poll();
         });
     });
@@ -353,6 +372,12 @@
         const raw = input.value || '';
         if (!raw.trim()) return;
         const msg = raw;
+        if (current === 'ai') {
+            await sendAiMessage(msg);
+            input.value = '';
+            autosizeInput();
+            return;
+        }
         await sendMessage(current, msg);
         input.value = '';
         autosizeInput();
@@ -435,6 +460,275 @@
             showStatus('Chat is blocked by the browser or network.');
         }
     }
+
+        async function callAiApi(body) {
+        if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
+        const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
+        if (!user || !sessionToken) throw new Error('Login is required for AI.');
+        const headers = { 'content-type': 'application/json' };
+        if (sessionToken) headers['authorization'] = `Bearer ${sessionToken}`;
+
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                user,
+                sessionToken,
+                ...body
+            })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`);
+        return data;
+    }
+
+        function getAiText(data) {
+        return data?.reply || data?.message || data?.text || data?.content || data?.answer || '';
+    }
+
+        async function loadAiConfig(forceReload) {
+        if (!forceReload && aiConfigCache && aiConfigLoadedForUser === user) return aiConfigCache;
+        try {
+            const data = await callAiApi({ eventType: 'ai_config_get' });
+            aiConfigCache = {
+                hasApiKey: Boolean(data?.hasApiKey),
+                provider: data?.provider || 'openai',
+                model: data?.model || '',
+                baseUrl: data?.baseUrl || '',
+                updatedAt: data?.updatedAt || ''
+            };
+        } catch (error) {
+            aiConfigCache = null;
+            throw error;
+        } finally {
+            aiConfigLoadedForUser = user;
+        }
+        return aiConfigCache;
+    }
+
+        function ensureAiSettingsModal() {
+        if (aiSettingsModal) return aiSettingsModal;
+        aiSettingsModal = document.createElement('div');
+        aiSettingsModal.className = 'ai-settings-modal chat-ai-modal hidden';
+        aiSettingsModal.innerHTML = `
+            <div class="ai-settings-backdrop chat-ai-backdrop" data-ai-close="1"></div>
+            <section class="ai-settings-panel chat-ai-panel" role="dialog" aria-modal="true" aria-label="AI settings">
+                <div class="ai-settings-header chat-ai-head">
+                    <div>
+                        <div class="ai-settings-title">AI Settings</div>
+                        <div class="ai-settings-subtitle">Saved per authenticated user</div>
+                    </div>
+                    <button type="button" class="code-runner-button secondary" data-ai-close="1">Close</button>
+                </div>
+                <div class="ai-settings-body">
+                    <label class="code-runner-label" for="chatAiProvider">Provider</label>
+                    <select id="chatAiProvider" class="code-runner-select">
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Claude / Anthropic</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="groq">Groq</option>
+                        <option value="together">Together</option>
+                    </select>
+                    <label class="code-runner-label" for="chatAiBaseUrl">Base URL</label>
+                    <input id="chatAiBaseUrl" class="code-runner-text" type="text" placeholder="https://api.openai.com/v1">
+                    <label class="code-runner-label" for="chatAiModel">Model</label>
+                    <input id="chatAiModel" class="code-runner-text" type="text" placeholder="gpt-5.5">
+                    <label class="code-runner-label" for="chatAiApiKey">API Key</label>
+                    <input id="chatAiApiKey" class="code-runner-text" type="password" placeholder="Leave blank to keep saved key">
+                    <div class="ai-provider-help chat-ai-help" data-ai-provider-help></div>
+                    <div class="ai-settings-status chat-ai-status" id="chatAiStatus" data-ai-config-status></div>
+                    <div class="ai-settings-actions chat-ai-actions">
+                        <button type="button" class="code-runner-button primary" data-ai-action="save">Save</button>
+                        <button type="button" class="code-runner-button secondary" data-ai-action="refresh">Refresh</button>
+                        <button type="button" class="code-runner-button secondary" data-ai-action="delete">Remove</button>
+                    </div>
+                </div>
+            </section>
+        `;
+        document.body.appendChild(aiSettingsModal);
+        aiSettingsModal.querySelector('#chatAiProvider')?.addEventListener('change', () => applyProviderDefaults(true));
+        aiSettingsModal.addEventListener('click', async (ev) => {
+            if (ev.target.closest('[data-ai-close="1"]')) {
+                aiSettingsModal.classList.add('hidden');
+                document.body.classList.remove('ai-settings-open');
+                return;
+            }
+            const action = ev.target.closest('[data-ai-action]')?.dataset.aiAction;
+            if (!action) return;
+            await handleAiSettingsAction(action);
+        });
+        return aiSettingsModal;
+    }
+
+        function setAiSettingsStatus(message, isError) {
+        const el = document.getElementById('chatAiStatus');
+        if (!el) return;
+        el.textContent = message || '';
+        el.classList.toggle('is-error', Boolean(isError));
+    }
+
+        function updateAiProviderHelp() {
+        const help = aiSettingsModal?.querySelector('[data-ai-provider-help]');
+        const provider = document.getElementById('chatAiProvider')?.value || 'openai';
+        if (!help) return;
+        let title = 'Provider notes';
+        let body = 'Save the API key once for this authenticated user. It stays on the backend in encrypted form.';
+        if (provider === 'gemini') {
+            title = 'Gemini';
+            body = 'Create a Gemini API key in Google AI Studio. Recommended model: gemini-2.5-flash.';
+        } else if (provider === 'openai') {
+            title = 'OpenAI';
+            body = 'Use an OpenAI API key from platform.openai.com. Recommended model: gpt-5.5.';
+        } else if (provider === 'anthropic') {
+            title = 'Anthropic';
+            body = 'Use an Anthropic Console API key. Recommended model: claude-3-5-sonnet-latest.';
+        } else if (provider === 'openrouter') {
+            title = 'OpenRouter';
+            body = 'Use an OpenRouter API key and a model id such as openai/gpt-4.1-mini.';
+        } else if (provider === 'groq') {
+            title = 'Groq';
+            body = 'Use a Groq API key and a Groq-supported model id. Recommended default: llama-3.1-8b-instant.';
+        } else if (provider === 'together') {
+            title = 'Together';
+            body = 'Use a Together API key and model id. Recommended default: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo.';
+        }
+        help.innerHTML = `<strong>${renderInlineMarkdown(title)}</strong>: ${renderInlineMarkdown(body)}`;
+    }
+
+        function applyProviderDefaults(force) {
+        const provider = document.getElementById('chatAiProvider')?.value || 'openai';
+        const base = document.getElementById('chatAiBaseUrl');
+        const model = document.getElementById('chatAiModel');
+        const defaults = {
+            openai: ['https://api.openai.com/v1', 'gpt-5.5'],
+            anthropic: ['https://api.anthropic.com/v1', 'claude-3-5-sonnet-latest'],
+            gemini: ['https://generativelanguage.googleapis.com/v1beta', 'gemini-2.5-flash'],
+            openrouter: ['https://openrouter.ai/api/v1', 'openai/gpt-4.1-mini'],
+            groq: ['https://api.groq.com/openai/v1', 'llama-3.1-8b-instant'],
+            together: ['https://api.together.xyz/v1', 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo']
+        };
+        if (base && (force || !base.value.trim())) base.value = defaults[provider]?.[0] || '';
+        if (model && (force || !model.value.trim())) model.value = defaults[provider]?.[1] || '';
+        updateAiProviderHelp();
+    }
+
+        function fillAiSettingsForm() {
+        document.getElementById('chatAiProvider').value = aiConfigCache?.provider || 'openai';
+        document.getElementById('chatAiBaseUrl').value = aiConfigCache?.baseUrl || '';
+        document.getElementById('chatAiModel').value = aiConfigCache?.model || '';
+        document.getElementById('chatAiApiKey').value = '';
+        applyProviderDefaults(false);
+        setAiSettingsStatus(
+            aiConfigCache?.hasApiKey
+                ? 'API key saved for this user. Leave blank to keep it unchanged.'
+                : 'Enter an API key and model to enable AI.',
+            false
+        );
+    }
+
+        async function openAiSettings() {
+        ensureAiSettingsModal();
+        aiSettingsModal.classList.remove('hidden');
+        document.body.classList.add('ai-settings-open');
+        setAiSettingsStatus('Loading...', false);
+        try {
+            await loadAiConfig(true);
+            fillAiSettingsForm();
+        } catch (error) {
+            setAiSettingsStatus(error.message || 'Unable to load AI settings.', true);
+        }
+    }
+
+        async function handleAiSettingsAction(action) {
+        try {
+            if (action === 'refresh') {
+                aiConfigCache = null;
+                await openAiSettings();
+                return;
+            }
+            if (action === 'delete') {
+                setAiSettingsStatus('Removing AI settings...', false);
+                await callAiApi({ eventType: 'ai_config_delete' });
+                aiConfigCache = {
+                    hasApiKey: false,
+                    provider: 'openai',
+                    model: '',
+                    baseUrl: '',
+                    updatedAt: ''
+                };
+                fillAiSettingsForm();
+                setAiSettingsStatus('AI settings removed.', false);
+                return;
+            }
+            const model = document.getElementById('chatAiModel')?.value || '';
+            if (!model.trim()) {
+                setAiSettingsStatus('Model is required.', true);
+                return;
+            }
+            setAiSettingsStatus('Saving AI settings...', false);
+            await callAiApi({
+                eventType: 'ai_config_save',
+                provider: document.getElementById('chatAiProvider')?.value || 'openai',
+                baseUrl: document.getElementById('chatAiBaseUrl')?.value || '',
+                model,
+                apiKey: document.getElementById('chatAiApiKey')?.value || ''
+            });
+            aiConfigCache = null;
+            await loadAiConfig(true);
+            fillAiSettingsForm();
+            setAiSettingsStatus('AI settings saved.', false);
+        } catch (error) {
+            setAiSettingsStatus(error.message || 'AI settings failed.', true);
+        }
+    }
+
+        async function sendAiMessage(message) {
+        if (aiBusy) return;
+        aiBusy = true;
+        aiMessages.push({ from: user || 'You', message, time: new Date().toISOString() });
+        aiMessages.push({ from: 'AI', message: 'Thinking...', time: new Date().toISOString(), pending: true });
+        render(aiMessages);
+        try {
+            const config = await loadAiConfig(false);
+            if (!config?.hasApiKey || !config?.model) {
+                openAiSettings();
+                throw new Error('Save AI settings before chatting with AI.');
+            }
+            const data = await callAiApi({
+                eventType: 'ai_chat',
+                message,
+                history: aiMessages.filter((m) => !m.pending).slice(-12).map((m) => ({
+                    role: (m.from || '').toLowerCase() === 'ai' ? 'assistant' : 'user',
+                    content: m.message || ''
+                })),
+                page: window.location.href
+            });
+            aiMessages = aiMessages.filter((m) => !m.pending);
+            aiMessages.push({ from: 'AI', message: getAiText(data) || 'No AI response returned.', time: new Date().toISOString() });
+        } catch (error) {
+            aiMessages = aiMessages.filter((m) => !m.pending);
+            aiMessages.push({ from: 'AI', message: error.message || 'AI request failed.', time: new Date().toISOString() });
+        } finally {
+            aiBusy = false;
+            render(aiMessages);
+        }
+    }
+
+        async function askAi(payload) {
+        const config = await loadAiConfig(false);
+        if (!config?.hasApiKey || !config?.model) {
+            openAiSettings();
+            throw new Error('Save AI settings before using AI.');
+        }
+        const data = await callAiApi(payload);
+        return getAiText(data) || '';
+    }
+
+        window.VisitAi = {
+        openSettings: openAiSettings,
+        ask: askAi
+    };
 
         async function deleteMessages(scope, id, index, deleteAll) {
         if (!endpoint || !user) return;
@@ -831,11 +1125,13 @@
         if (!deleteAllBtn) return;
         const show = current === 'admin';
         deleteAllBtn.classList.toggle('hidden', !show);
+        aiSettingsBtn?.classList.toggle('hidden', current !== 'ai');
+        pollToggleBtn?.classList.toggle('hidden', current === 'ai');
     }
 
     function schedulePoll(delay) {
         clearPollTimer();
-        if (!pollingEnabled || minimized) return;
+        if (!pollingEnabled || minimized || current === 'ai') return;
         pollTimer = setTimeout(poll, delay);
     }
 
@@ -852,6 +1148,7 @@
 
         async function poll() {
         if (minimized) return;
+        if (current === 'ai') return;
         if (document.visibilityState === 'hidden') {
             if (pollingEnabled) schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
             return;
@@ -883,6 +1180,7 @@
             await deleteMessages('user', '', 0, true);
             poll();
         });
+        aiSettingsBtn?.addEventListener('click', openAiSettings);
         function copyText(text) {
             if (!text) return;
             if (navigator.clipboard?.writeText) {

@@ -82,7 +82,7 @@
                 width: min(1100px, 96vw);
                 height: min(860px, 92vh);
                 display: grid;
-                grid-template-rows: auto auto 1fr auto;
+                grid-template-rows: auto auto auto 1fr auto;
                 gap: 12px;
                 background: #101923;
                 border: 1px solid rgba(255,255,255,.14);
@@ -129,6 +129,12 @@
                 justify-content: space-between;
                 gap: 12px;
             }
+            .md-editor-ai-row {
+                display: grid;
+                grid-template-columns: 1fr auto auto auto auto;
+                gap: 8px;
+                align-items: center;
+            }
             .md-editor-status {
                 min-height: 20px;
                 color: #9fd8c9;
@@ -144,8 +150,11 @@
             }
             .md-editor-save { background: #9fd8c9; color: #06221c; }
             .md-editor-close { background: rgba(255,255,255,.12); color: #fff; }
+            .md-editor-ai { background: rgba(159,216,201,.16); color: #d9fff5; }
             @media (max-width: 760px) {
                 .md-editor-grid { grid-template-columns: 1fr; }
+                .md-editor-ai-row { grid-template-columns: 1fr 1fr; }
+                .md-editor-ai-row input { grid-column: 1 / -1; }
                 .md-editor-panel { height: 94vh; }
                 .md-editor-actions { right: 14px; bottom: 84px; }
             }
@@ -169,6 +178,13 @@
                     <input id="mdEditorFilename" class="md-editor-input" placeholder="Filename, e.g. Java Notes.md">
                     <input id="mdEditorCommit" class="md-editor-input" placeholder="Commit message">
                 </div>
+                <div class="md-editor-ai-row">
+                    <input id="mdEditorAiPrompt" class="md-editor-input" placeholder="Ask AI about this Markdown">
+                    <button type="button" class="md-editor-ai" data-md-ai="settings">AI Settings</button>
+                    <button type="button" class="md-editor-ai" data-md-ai="improve">Improve</button>
+                    <button type="button" class="md-editor-ai" data-md-ai="summarize">Summarize</button>
+                    <button type="button" class="md-editor-ai" data-md-ai="append">Append Answer</button>
+                </div>
                 <textarea id="mdEditorText" class="md-editor-textarea" spellcheck="false"></textarea>
                 <div class="md-editor-actions-row">
                     <div id="mdEditorStatus" class="md-editor-status"></div>
@@ -181,6 +197,10 @@
             if (ev.target === modal || ev.target.closest('[data-md-close="1"]')) closeModal();
         });
         document.getElementById('mdEditorSave')?.addEventListener('click', saveMarkdown);
+        modal.addEventListener('click', (ev) => {
+            const action = ev.target?.closest?.('[data-md-ai]')?.dataset.mdAi;
+            if (action) runMarkdownAi(action);
+        });
         return modal;
     }
 
@@ -209,6 +229,67 @@
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`);
         return data;
+    }
+
+    function aiResponseText(data) {
+        return data?.markdown || data?.reply || data?.message || data?.text || data?.content || data?.answer || '';
+    }
+
+    async function askAiForMarkdown(action) {
+        const content = document.getElementById('mdEditorText')?.value || '';
+        const prompt = document.getElementById('mdEditorAiPrompt')?.value || '';
+        const filename = document.getElementById('mdEditorFilename')?.value || '';
+        const payload = {
+            eventType: 'ai_markdown_assist',
+            action,
+            prompt,
+            markdown: content,
+            filename,
+            folder: state.folder,
+            page: state.page
+        };
+        if (window.VisitAi?.ask) {
+            return window.VisitAi.ask(payload);
+        }
+        const data = await callApi(payload);
+        return aiResponseText(data);
+    }
+
+    async function runMarkdownAi(action) {
+        if (action === 'settings') {
+            if (window.VisitAi?.openSettings) {
+                window.VisitAi.openSettings();
+                return;
+            }
+            setStatus('Open AI Settings from the code runner or AI chat tab first.', true);
+            return;
+        }
+        const textarea = document.getElementById('mdEditorText');
+        if (!textarea) return;
+        const original = textarea.value || '';
+        if (!original.trim() && action !== 'append') {
+            setStatus('Markdown content is required before using AI.', true);
+            return;
+        }
+        const labels = {
+            improve: 'Improving Markdown...',
+            summarize: 'Summarizing Markdown...',
+            append: 'Asking AI...'
+        };
+        setStatus(labels[action] || 'Asking AI...');
+        try {
+            const result = await askAiForMarkdown(action);
+            if (!result.trim()) throw new Error('No AI response returned.');
+            if (action === 'append') {
+                textarea.value = `${original.replace(/\s*$/, '')}\n\n${result.trim()}\n`;
+            } else {
+                textarea.value = result.trim();
+            }
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            setStatus('AI update applied. Review before committing.');
+        } catch (error) {
+            setStatus(error.message || 'AI request failed.', true);
+        }
     }
 
     function openModal(title) {
