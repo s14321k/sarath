@@ -616,18 +616,151 @@
         const LINE_CLAMP = 5;
         const TABLE_ROW_CLAMP = 6;
 
-        function parseTable(message) {
-            const lines = String(message || '').split(/\r?\n/).filter(l => l.trim().length > 0);
-            if (lines.length < 2) return null;
-            const hasTabs = lines.some(l => l.includes('\t'));
-            if (!hasTabs) return null;
-            const rows = lines.map(l => l.split('\t'));
-            const colCount = Math.max(...rows.map(r => r.length));
-            if (colCount < 2) return null;
-            rows.forEach((r) => {
-                while (r.length < colCount) r.push('');
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[ch]));
+        }
+
+        function renderInlineMarkdown(text) {
+            let html = escapeHtml(text);
+            html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+            html = html.replace(/\*\*([^*\n][\s\S]*?[^*\n])\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            return html;
+        }
+
+        function renderMarkdownBlock(bodyEl, text) {
+            const lines = String(text || '').split(/\r?\n/);
+            let paragraph = [];
+            let list = null;
+            let codeLines = [];
+            let inCode = false;
+
+            const flushParagraph = () => {
+                if (!paragraph.length) return;
+                const p = document.createElement('p');
+                p.innerHTML = renderInlineMarkdown(paragraph.join('\n'));
+                bodyEl.appendChild(p);
+                paragraph = [];
+            };
+            const flushList = () => {
+                if (!list) return;
+                bodyEl.appendChild(list);
+                list = null;
+            };
+            const flushCode = () => {
+                const pre = document.createElement('pre');
+                const code = document.createElement('code');
+                code.textContent = codeLines.join('\n');
+                pre.appendChild(code);
+                bodyEl.appendChild(pre);
+                codeLines = [];
+            };
+
+            lines.forEach((line) => {
+                if (/^```/.test(line.trim())) {
+                    if (inCode) {
+                        flushCode();
+                        inCode = false;
+                    } else {
+                        flushParagraph();
+                        flushList();
+                        inCode = true;
+                        codeLines = [];
+                    }
+                    return;
+                }
+                if (inCode) {
+                    codeLines.push(line);
+                    return;
+                }
+
+                const trimmed = line.trim();
+                if (!trimmed) {
+                    flushParagraph();
+                    flushList();
+                    return;
+                }
+                if (/^([-*_])\1\1+$/.test(trimmed)) {
+                    flushParagraph();
+                    flushList();
+                    bodyEl.appendChild(document.createElement('hr'));
+                    return;
+                }
+                const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+                if (heading) {
+                    flushParagraph();
+                    flushList();
+                    const h = document.createElement(`h${heading[1].length}`);
+                    h.innerHTML = renderInlineMarkdown(heading[2]);
+                    bodyEl.appendChild(h);
+                    return;
+                }
+                const bullet = trimmed.match(/^[-*•]\s+(.+)$/);
+                if (bullet) {
+                    flushParagraph();
+                    if (!list) list = document.createElement('ul');
+                    const li = document.createElement('li');
+                    li.innerHTML = renderInlineMarkdown(bullet[1]);
+                    list.appendChild(li);
+                    return;
+                }
+                flushList();
+                paragraph.push(line);
             });
-            return rows;
+            if (inCode) flushCode();
+            flushParagraph();
+            flushList();
+        }
+
+        function parseMessageParts(message) {
+            const lines = String(message || '').split(/\r?\n/);
+            const parts = [];
+            const textLines = [];
+            const tableLines = [];
+
+            const isTableLine = (line) => line.trim().length > 0 && line.includes('\t') && line.split('\t').length >= 2;
+            const flushText = () => {
+                const text = textLines.join('\n');
+                textLines.length = 0;
+                if (text.trim()) parts.push({ type: 'text', text });
+            };
+            const flushTable = () => {
+                if (tableLines.length < 2) {
+                    textLines.push(...tableLines);
+                    tableLines.length = 0;
+                    return;
+                }
+                flushText();
+                const rows = tableLines.map((line) => line.split('\t').map((cell) => cell.trim()));
+                tableLines.length = 0;
+                const colCount = Math.max(...rows.map((row) => row.length));
+                if (colCount < 2) {
+                    textLines.push(...rows.map((row) => row.join('\t')));
+                    return;
+                }
+                rows.forEach((row) => {
+                    while (row.length < colCount) row.push('');
+                });
+                parts.push({ type: 'table', rows });
+            };
+
+            lines.forEach((line) => {
+                if (isTableLine(line)) {
+                    tableLines.push(line);
+                    return;
+                }
+                flushTable();
+                textLines.push(line);
+            });
+            flushTable();
+            flushText();
+            return parts;
         }
 
         function renderTable(bodyEl, rows) {
@@ -654,9 +787,15 @@
                 tbody.appendChild(tr);
             });
             table.appendChild(tbody);
-            bodyEl.textContent = '';
             bodyEl.appendChild(table);
             return rows.length - 1 > TABLE_ROW_CLAMP;
+        }
+
+        function renderTextBlock(bodyEl, text) {
+            const block = document.createElement('div');
+            block.className = 'message-text-block';
+            renderMarkdownBlock(block, text);
+            bodyEl.appendChild(block);
         }
         const items = list.map((m, index) => {
             const dt = new Date(m.time || Date.now());
@@ -686,12 +825,19 @@
             body.className = 'message-body';
             const rawMessage = m.message || '';
             body.dataset.raw = rawMessage;
-            const tableRows = parseTable(rawMessage);
+            const messageParts = parseMessageParts(rawMessage);
+            const hasTable = messageParts.some((part) => part.type === 'table');
             let hasHiddenRows = false;
-            if (tableRows) {
-                hasHiddenRows = renderTable(body, tableRows);
+            if (hasTable) {
+                messageParts.forEach((part) => {
+                    if (part.type === 'table') {
+                        hasHiddenRows = renderTable(body, part.rows) || hasHiddenRows;
+                    } else {
+                        renderTextBlock(body, part.text);
+                    }
+                });
             } else {
-                body.textContent = rawMessage;
+                renderMarkdownBlock(body, rawMessage);
             }
             const actions = document.createElement('div');
             actions.className = 'message-actions';
@@ -728,41 +874,28 @@
             }
             item.appendChild(actions);
             container.appendChild(item);
-            if (tableRows) {
-                if (hasHiddenRows) {
-                    const toggle = document.createElement('button');
-                    toggle.type = 'button';
-                    toggle.className = 'message-action-btn message-toggle-btn';
-                    toggle.dataset.expanded = '0';
-                    toggle.textContent = 'Show more';
-                    toggle.addEventListener('click', () => {
-                        const expanded = toggle.dataset.expanded === '1';
-                        const rows = body.querySelectorAll('tbody tr');
-                        rows.forEach((tr, idx) => {
-                            if (idx >= TABLE_ROW_CLAMP) {
-                                tr.classList.toggle('message-table-row-hidden', expanded);
-                            }
-                        });
-                        toggle.dataset.expanded = expanded ? '0' : '1';
-                        toggle.textContent = expanded ? 'Show more' : 'Show less';
+            body.classList.add('clamp');
+            body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
+            const hasOverflow = body.scrollHeight > body.clientHeight + 1;
+            if (hasOverflow || hasHiddenRows) {
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'message-action-btn message-toggle-btn';
+                toggle.dataset.expanded = '0';
+                toggle.textContent = 'Show more';
+                toggle.addEventListener('click', () => {
+                    const nextExpanded = toggle.dataset.expanded !== '1';
+                    body.classList.toggle('clamp', !nextExpanded);
+                    body.classList.toggle('expanded', nextExpanded);
+                    body.querySelectorAll('tbody tr').forEach((tr, idx) => {
+                        if (idx >= TABLE_ROW_CLAMP) {
+                            tr.classList.toggle('message-table-row-hidden', !nextExpanded);
+                        }
                     });
-                    actions.appendChild(toggle);
-                }
-            } else {
-                body.classList.add('clamp');
-                body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
-                if (body.scrollHeight > body.clientHeight + 1) {
-                    const toggle = document.createElement('button');
-                    toggle.type = 'button';
-                    toggle.className = 'message-action-btn message-toggle-btn';
-                    toggle.textContent = 'Show more';
-                    toggle.addEventListener('click', () => {
-                        const expanded = body.classList.toggle('expanded');
-                        body.classList.toggle('clamp', !expanded);
-                        toggle.textContent = expanded ? 'Show less' : 'Show more';
-                    });
-                    actions.appendChild(toggle);
-                }
+                    toggle.dataset.expanded = nextExpanded ? '1' : '0';
+                    toggle.textContent = nextExpanded ? 'Show less' : 'Show more';
+                });
+                actions.appendChild(toggle);
             }
         });
     }
