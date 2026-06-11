@@ -2116,5 +2116,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const kuralScript = document.createElement('script');
         kuralScript.src = '../js/kural-widget.js';
         document.body.appendChild(kuralScript);
+
+        const mdEditorScript = document.createElement('script');
+        mdEditorScript.src = '../js/md-editor.js';
+        document.body.appendChild(mdEditorScript);
     }
 });
