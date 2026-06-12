@@ -507,7 +507,13 @@
     }
 
         function getAiText(data) {
-        return data?.reply || data?.message || data?.text || data?.content || data?.answer || '';
+        // Support multiple backend response shapes. Some backends return
+        // { ok: true, markdown: '...' } (markdown content), others return
+        // reply/message/text/content/answer. Also allow raw string responses.
+        if (!data) return '';
+        if (typeof data === 'string') return data;
+        if (data?.ok && typeof data?.markdown === 'string' && data.markdown.trim()) return data.markdown;
+        return data?.markdown || data?.reply || data?.message || data?.text || data?.content || data?.answer || '';
     }
 
         async function loadAiConfig(forceReload) {

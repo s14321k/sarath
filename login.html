@@ -28,6 +28,7 @@
       background: var(--bg);
       color: var(--text);
       display: flex;
+      flex-direction: column;
       min-height: 100vh;
       overflow-x: hidden;
     }
@@ -49,6 +50,7 @@
       grid-template-columns: 1fr 420px;
       width: 100%;
       min-height: 100vh;
+      flex: 1;
     }
 
     /* ── LEFT PANEL ── */
@@ -396,20 +398,308 @@
     }
     .auth-note span { color: var(--cyan); }
 
+    /* ══ SUCCESS OVERLAY ══ */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7,7,14,.88);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .success-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .success-box {
+      font-family: var(--mono);
+      text-align: center;
+      transform: scale(.85);
+      opacity: 0;
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
+    }
+    .success-overlay.show .success-box { transform: scale(1); opacity: 1; }
+
+    .success-ring {
+      width: 84px; height: 84px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      border: 3px solid var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 0 rgba(0,255,136,.5);
+      animation: ring-pulse 1.4s ease-out infinite;
+    }
+    @keyframes ring-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(0,255,136,.45); }
+      70%  { box-shadow: 0 0 0 16px rgba(0,255,136,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,255,136,0); }
+    }
+    .success-check {
+      font-size: 36px;
+      color: var(--green);
+      animation: check-pop .4s ease .15s both;
+    }
+    @keyframes check-pop {
+      0%   { transform: scale(0) rotate(-45deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+    .success-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .04em;
+      margin-bottom: 6px;
+    }
+    .success-sub {
+      font-size: 12px;
+      color: var(--green);
+    }
+    .success-sub .dots::after {
+      content: '';
+      animation: dots 1.2s steps(4) infinite;
+    }
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* ══ DANGER / ACCESS DENIED OVERLAY ══ */
+    .danger-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20,0,4,.88);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease;
+    }
+    .danger-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+      animation: danger-flicker 0.5s steps(8) 1;
+    }
+    @keyframes danger-flicker {
+      0%, 100% { background: rgba(20,0,4,.88); }
+      10%, 30%, 50%, 70% { background: rgba(255,0,60,.22); }
+      20%, 40%, 60%, 80% { background: rgba(20,0,4,.88); }
+    }
+
+    .danger-box {
+      font-family: var(--mono);
+      text-align: center;
+      transform: scale(.85);
+      opacity: 0;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .35s ease;
+    }
+    .danger-overlay.show .danger-box {
+      transform: scale(1);
+      opacity: 1;
+      animation: danger-shake .45s ease .1s;
+    }
+    @keyframes danger-shake {
+      0%, 100% { transform: translateX(0) scale(1); }
+      20% { transform: translateX(-10px) scale(1.02); }
+      40% { transform: translateX(10px) scale(1.02); }
+      60% { transform: translateX(-6px) scale(1); }
+      80% { transform: translateX(6px) scale(1); }
+    }
+
+    .danger-ring {
+      width: 84px; height: 84px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      border: 3px solid var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 0 rgba(255,0,60,.5);
+      animation: danger-pulse 0.9s ease-out infinite;
+    }
+    @keyframes danger-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(255,0,60,.5); }
+      70%  { box-shadow: 0 0 0 18px rgba(255,0,60,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,0,60,0); }
+    }
+    .danger-icon {
+      font-size: 36px;
+      color: var(--red);
+      animation: danger-blink .35s steps(1) infinite;
+    }
+    @keyframes danger-blink {
+      0%, 60% { opacity: 1; }
+      80% { opacity: .25; }
+    }
+    .danger-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--red);
+      letter-spacing: .12em;
+      margin-bottom: 8px;
+      text-shadow: 0 0 12px rgba(255,0,60,.6);
+      animation: danger-glitch-text .25s steps(2) 3;
+    }
+    @keyframes danger-glitch-text {
+      0%   { text-shadow: 2px 0 var(--cyan), -2px 0 #fff, 0 0 12px rgba(255,0,60,.6); }
+      50%  { text-shadow: -2px 0 var(--cyan), 2px 0 #fff, 0 0 12px rgba(255,0,60,.6); }
+      100% { text-shadow: 0 0 12px rgba(255,0,60,.6); }
+    }
+    .danger-sub {
+      font-size: 12px;
+      color: #ffb3c0;
+      letter-spacing: .04em;
+    }
+
+    /* shake the whole auth card on failure */
+    .auth-panel.danger-shake-card {
+      animation: card-shake .45s ease;
+    }
+    @keyframes card-shake {
+      0%, 100% { transform: translateX(0); }
+      15%, 45%, 75% { transform: translateX(-8px); }
+      30%, 60%, 90% { transform: translateX(8px); }
+    }
+    .auth-panel.danger-flash {
+      animation: card-flash .6s ease;
+    }
+    @keyframes card-flash {
+      0%, 100% { box-shadow: inset 0 0 0 0 rgba(255,0,60,0); }
+      30% { box-shadow: inset 0 0 60px rgba(255,0,60,.25); }
+    }
+
+    /* ══ FORM SUBMIT STATES ══ */
+    .submit-btn {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+    .submit-btn .btn-label { transition: opacity .15s; }
+    .submit-btn .btn-spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(7,7,14,.25);
+      border-top-color: #07070e;
+      border-radius: 50%;
+    }
+    .submit-btn.loading .btn-label { opacity: 0; }
+    .submit-btn.loading .btn-spinner {
+      display: block;
+      position: absolute;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .submit-btn.shake { animation: shake .4s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    /* field error flash */
+    .field input.invalid {
+      border-color: var(--red);
+      animation: shake .4s ease;
+      box-shadow: 0 0 0 3px rgba(255,0,60,.12);
+    }
+
+    /* form switch transition */
+    .auth-form {
+      animation: form-in .35s ease;
+    }
+    @keyframes form-in {
+      0%   { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* page load entrance */
+    .showcase, .auth-panel { animation: panel-in .6s ease both; }
+    .showcase { animation-delay: 0s; }
+    .auth-panel { animation-delay: .12s; }
+    @keyframes panel-in {
+      0%   { opacity: 0; transform: translateY(14px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .feat { animation: feat-in .5s ease both; }
+    .feat:nth-child(1) { animation-delay: .15s; }
+    .feat:nth-child(2) { animation-delay: .22s; }
+    .feat:nth-child(3) { animation-delay: .29s; }
+    .feat:nth-child(4) { animation-delay: .36s; }
+    .feat:nth-child(5) { animation-delay: .43s; }
+    .feat:nth-child(6) { animation-delay: .50s; }
+    @keyframes feat-in {
+      0%   { opacity: 0; transform: translateY(10px) scale(.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .showcase, .auth-panel, .feat, .auth-form, .brand-name.glitch,
+      .ticker-text, .term-dot, .ticker-dot { animation: none !important; }
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
-      .shell { grid-template-columns: 1fr; }
-      .showcase {
-        padding: 48px 28px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
+      .shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        min-height: 0;
       }
+      body { min-height: 0; height: auto; }
+      html { height: auto; }
+      .auth-panel { order: -1; }
+      .showcase {
+        padding: 40px 24px;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        justify-content: flex-start;
+        min-height: 0;
+      }
+      .auth-panel {
+        padding: 36px 24px;
+        border-bottom: 1px solid var(--border);
+        justify-content: flex-start;
+        min-height: 0;
+      }
+      .auth-panel::before { display: none; }
       .features { grid-template-columns: 1fr 1fr; }
-      .auth-panel { padding: 40px 28px; }
+      .brand-name { font-size: clamp(36px, 10vw, 56px); }
+      .stats-bar { gap: 20px; }
     }
-    @media (max-width: 540px) {
-      .features { grid-template-columns: 1fr; }
-      .stats-bar { flex-wrap: wrap; gap: 16px; }
+
+    @media (max-width: 600px) {
+      .showcase { padding: 32px 18px; }
+      .auth-panel { padding: 32px 18px; }
+      .features { grid-template-columns: 1fr; gap: 10px; }
+      .stats-bar {
+        flex-wrap: wrap;
+        gap: 14px 24px;
+        padding: 14px 16px;
+      }
+      .stat { min-width: 40%; }
+      .brand-name { font-size: clamp(32px, 12vw, 48px); }
+      .brand-sub { font-size: 14px; }
+      .feat { padding: 16px; }
+      .ticker { font-size: 11px; }
+    }
+
+    @media (max-width: 380px) {
+      .stats-bar { gap: 12px 18px; }
+      .stat-val { font-size: 17px; }
+      .term-title { display: none; }
     }
   </style>
 </head>
@@ -535,7 +825,10 @@
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" required>
       </div>
       <div class="auth-error" id="loginError"></div>
-      <button class="submit-btn" type="submit">&#x25B6; Login</button>
+      <button class="submit-btn" type="submit">
+        <span class="btn-label">&#x25B6; Login</span>
+        <span class="btn-spinner"></span>
+      </button>
     </form>
 
     <!-- SIGNUP -->
@@ -553,7 +846,10 @@
         <input id="signupConfirm" type="password" autocomplete="new-password" placeholder="••••••••" required>
       </div>
       <div class="auth-error" id="signupError"></div>
-      <button class="submit-btn" type="submit">&#x25B6; Create Account</button>
+      <button class="submit-btn" type="submit">
+        <span class="btn-label">&#x25B6; Create Account</span>
+        <span class="btn-spinner"></span>
+      </button>
     </form>
 
     <p class="auth-note">
@@ -564,6 +860,25 @@
   </aside>
 </div>
 
+<!-- ══ SUCCESS OVERLAY ══ -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-box">
+    <div class="success-ring"><span class="success-check">✓</span></div>
+    <div class="success-title" id="successTitle">Access Granted</div>
+    <div class="success-sub">Loading workspace<span class="dots"></span></div>
+  </div>
+</div>
+
+<!-- ══ DANGER / DENIED OVERLAY ══ -->
+<div class="danger-overlay" id="dangerOverlay">
+  <div class="danger-box">
+    <div class="danger-ring"><span class="danger-icon">&#9888;</span></div>
+    <div class="danger-title">ACCESS DENIED</div>
+    <div class="danger-sub" id="dangerSub">Invalid username or password</div>
+  </div>
+</div>
+
+<script src="js/auth-client.js"></script>
 <script>
   /* ── Matrix Rain ── */
   (function() {
@@ -623,24 +938,179 @@
     const loginForm  = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
 
+    function replay(form) {
+      form.style.animation = 'none';
+      // force reflow
+      void form.offsetWidth;
+      form.style.animation = '';
+    }
+
     loginTab.addEventListener('click', () => {
+      if (loginTab.classList.contains('active')) return;
       loginTab.classList.add('active');
       signupTab.classList.remove('active');
       loginForm.classList.remove('hidden');
       signupForm.classList.add('hidden');
+      replay(loginForm);
     });
 
     signupTab.addEventListener('click', () => {
+      if (signupTab.classList.contains('active')) return;
       signupTab.classList.add('active');
       loginTab.classList.remove('active');
       signupForm.classList.remove('hidden');
       loginForm.classList.add('hidden');
+      replay(signupForm);
+    });
+  })();
+
+  /* ── Submit interactions ── */
+  (function() {
+    const successOverlay = document.getElementById('successOverlay');
+    const successTitle    = document.getElementById('successTitle');
+    const dangerOverlay   = document.getElementById('dangerOverlay');
+    const dangerSub       = document.getElementById('dangerSub');
+    const authPanel       = document.querySelector('.auth-panel');
+
+    function shakeBtn(btn) {
+      btn.classList.remove('shake');
+      void btn.offsetWidth;
+      btn.classList.add('shake');
+    }
+
+    function flashInvalid(input) {
+      input.classList.remove('invalid');
+      void input.offsetWidth;
+      input.classList.add('invalid');
+      input.addEventListener('animationend', () => input.classList.remove('invalid'), { once: true });
+    }
+
+    function showSuccess(title, redirectTo) {
+      successTitle.textContent = title;
+      successOverlay.classList.add('show');
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 2600);
+    }
+
+    function showDanger(message, fields) {
+      dangerSub.textContent = message;
+
+      dangerOverlay.classList.remove('show');
+      void dangerOverlay.offsetWidth;
+      dangerOverlay.classList.add('show');
+
+      authPanel.classList.remove('danger-shake-card', 'danger-flash');
+      void authPanel.offsetWidth;
+      authPanel.classList.add('danger-shake-card', 'danger-flash');
+
+      fields.forEach(flashInvalid);
+
+      setTimeout(() => {
+        dangerOverlay.classList.remove('show');
+        authPanel.classList.remove('danger-shake-card', 'danger-flash');
+      }, 2000);
+    }
+
+    // Ensure a minimum visible loading time (2-3s) even if the API responds instantly
+    function withMinDelay(promise, minMs) {
+      const delayPromise = new Promise(resolve => setTimeout(resolve, minMs));
+      return Promise.allSettled([promise, delayPromise]).then(([result]) => result);
+    }
+
+    const MIN_DELAY = 2000 + Math.random() * 1000;
+
+    /* ── LOGIN ── */
+    const loginForm  = document.getElementById('loginForm');
+    const loginBtn   = loginForm.querySelector('.submit-btn');
+    const loginError = document.getElementById('loginError');
+    const loginUser  = document.getElementById('loginUser');
+    const loginPass  = document.getElementById('loginPass');
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (loginBtn.classList.contains('loading')) return;
+
+      let invalid = false;
+      [loginUser, loginPass].forEach(f => {
+        if (!f.value.trim()) { flashInvalid(f); invalid = true; }
+      });
+      if (invalid) {
+        loginError.textContent = 'All fields are required.';
+        shakeBtn(loginBtn);
+        return;
+      }
+      loginError.textContent = '';
+      loginBtn.classList.add('loading');
+
+      withMinDelay(window.AuthClient.login(loginUser.value, loginPass.value), MIN_DELAY)
+        .then((outcome) => {
+          loginBtn.classList.remove('loading');
+          if (outcome.status === 'fulfilled') {
+            showSuccess('Access Granted', window.AuthClient.safeNextUrl(new URLSearchParams(window.location.search).get('next')));
+          } else {
+            const msg = outcome.reason?.message || 'Invalid username or password';
+            loginError.textContent = msg;
+            showDanger(msg, [loginUser, loginPass]);
+          }
+        });
+    });
+
+    /* ── SIGN UP ── */
+    const signupForm    = document.getElementById('signupForm');
+    const signupBtn     = signupForm.querySelector('.submit-btn');
+    const signupError   = document.getElementById('signupError');
+    const signupUser    = document.getElementById('signupUser');
+    const signupPass    = document.getElementById('signupPass');
+    const signupConfirm = document.getElementById('signupConfirm');
+
+    signupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (signupBtn.classList.contains('loading')) return;
+
+      let invalid = false;
+      [signupUser, signupPass, signupConfirm].forEach(f => {
+        if (!f.value.trim()) { flashInvalid(f); invalid = true; }
+      });
+      if (invalid) {
+        signupError.textContent = 'All fields are required.';
+        shakeBtn(signupBtn);
+        return;
+      }
+
+      if (signupPass.value !== signupConfirm.value) {
+        signupError.textContent = 'Passwords do not match.';
+        signupBtn.classList.add('loading');
+        setTimeout(() => {
+          signupBtn.classList.remove('loading');
+          showDanger('Passwords do not match', [signupPass, signupConfirm]);
+        }, MIN_DELAY);
+        return;
+      }
+
+      signupError.textContent = '';
+      signupBtn.classList.add('loading');
+
+      withMinDelay(window.AuthClient.signup(signupUser.value, signupPass.value), MIN_DELAY)
+        .then((outcome) => {
+          signupBtn.classList.remove('loading');
+          if (outcome.status === 'fulfilled') {
+            showSuccess('Account Created', 'index.html');
+          } else {
+            const msg = outcome.reason?.message || 'Sign up failed. Please try again.';
+            signupError.textContent = msg;
+            showDanger(msg, [signupUser, signupPass, signupConfirm]);
+          }
+        });
     });
   })();
 </script>
 
+<!-- If you have additional scripts (e.g. visit-config.js for VISIT_ENDPOINT,
+     or login-page.js for extra page logic), include them BEFORE the inline
+     <script> above, since it calls window.AuthClient on submit. -->
 <script src="js/visit-config.js"></script>
-<script src="js/auth-client.js"></script>
+<!--<script src="js/auth-client.js"></script>-->
 <script src="js/login-page.js"></script>
 
 </body>

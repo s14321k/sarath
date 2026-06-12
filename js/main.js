@@ -28,6 +28,36 @@
         window.location.replace(indexUrl.toString());
     });
 
+    // Ensure a global logout button is available on every page when a session exists
+    safe(() => {
+        try {
+            if (sessionStorage.getItem('visitRecorded')) {
+                if (!document.getElementById('globalLogoutButton')) {
+                    const logoutBtn = document.createElement('button');
+                    logoutBtn.id = 'globalLogoutButton';
+                    logoutBtn.type = 'button';
+                    logoutBtn.className = 'logout-button';
+                    logoutBtn.textContent = 'Logout';
+                    logoutBtn.style.position = 'fixed';
+                    logoutBtn.style.top = '12px';
+                    logoutBtn.style.right = '12px';
+                    logoutBtn.style.zIndex = '9999';
+                    logoutBtn.addEventListener('click', () => {
+                        [
+                            'visitRecorded',
+                            'visitorName',
+                            'knownUser',
+                            'visitSessionToken',
+                            'welcomeMessage'
+                        ].forEach((k) => { try { sessionStorage.removeItem(k); } catch {} });
+                        try { window.location.replace('login.html'); } catch { window.location.href = 'login.html'; }
+                    });
+                    document.body.appendChild(logoutBtn);
+                }
+            }
+        } catch (e) { /* silent */ }
+    });
+
     // Show welcome banner on content pages (after redirect)
     safe(() => {
         const msg = sessionStorage.getItem('welcomeMessage');
@@ -39,6 +69,36 @@
         sessionStorage.removeItem('welcomeMessage');
         setTimeout(() => banner.classList.add('fade'), 3000);
         setTimeout(() => banner.remove(), 4500);
+        // Add a global logout button so users can sign out from any page
+        try {
+            // Only add when a session is present
+            if (sessionStorage.getItem('visitRecorded')) {
+                if (!document.getElementById('globalLogoutButton')) {
+                    const logoutBtn = document.createElement('button');
+                    logoutBtn.id = 'globalLogoutButton';
+                    logoutBtn.type = 'button';
+                    logoutBtn.className = 'logout-button';
+                    logoutBtn.textContent = 'Logout';
+                    // Ensure the button is visible even if page CSS doesn't include .logout-button
+                    logoutBtn.style.position = 'fixed';
+                    logoutBtn.style.top = '12px';
+                    logoutBtn.style.right = '12px';
+                    logoutBtn.style.zIndex = '9999';
+                    // Click handler: clear known session keys and redirect to login
+                    logoutBtn.addEventListener('click', () => {
+                        [
+                            'visitRecorded',
+                            'visitorName',
+                            'knownUser',
+                            'visitSessionToken',
+                            'welcomeMessage'
+                        ].forEach((k) => { try { sessionStorage.removeItem(k); } catch {} });
+                        try { window.location.replace('login.html'); } catch { window.location.href = 'login.html'; }
+                    });
+                    document.body.appendChild(logoutBtn);
+                }
+            }
+        } catch (e) { /* silent */ }
     });
 
     // Track page views and time on page
