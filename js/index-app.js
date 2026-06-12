@@ -79,6 +79,29 @@
         }
     }
 
+    function buildPageRegistry(cards) {
+        /**
+         * Build a registry of pages for the generic page loader
+         * This allows the loader to access page metadata without making extra requests
+         */
+        const registry = {};
+        for (const card of cards) {
+            if (card.type === 'page' && card.href) {
+                // Extract page name from href like: pages/page.html?page=java-basics
+                const match = card.href.match(/\?page=([^&]+)/);
+                if (match) {
+                    const pageName = match[1];
+                    registry[pageName] = {
+                        title: card.title,
+                        description: card.description,
+                        icon: card.icon
+                    };
+                }
+            }
+        }
+        return registry;
+    }
+
     async function boot() {
         const app = $('homeApp');
         const status = $('indexLoadStatus');
@@ -98,6 +121,10 @@
         try {
             const data = await loadIndexData();
             const cards = Array.isArray(data?.cards) ? data.cards : [];
+
+            // Build page registry for generic page loader
+            window.pageRegistry = buildPageRegistry(cards);
+
             $('cardsGrid').innerHTML = cards.map(cardHtml).join('');
             renderLibraryLists();
             if (status) status.textContent = '';
