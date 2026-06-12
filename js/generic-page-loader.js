@@ -22,6 +22,7 @@
     }
 
     // Load page data from JSON or direct data
+    // Load page data from backend API
     async function loadPageData(pageName) {
         try {
             // Check if page data exists in window.pageRegistry (populated by index-app.js)
@@ -29,11 +30,23 @@
                 return window.pageRegistry[pageName];
             }
 
-            // Fallback: try to load from JSON file in data directory
-            const response = await fetch(`../data/pages/${pageName}.json`);
+            // Fetch from backend API
+            const response = await fetch('https://visit-ingest-342647168408.asia-south1.run.app/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    eventType: 'page_content',
+                    page: pageName,
+                    kind: 'page'
+                })
+            });
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: Page not found`);
             }
+
             return await response.json();
         } catch (error) {
             console.error('Error loading page data:', error);
