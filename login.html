@@ -643,26 +643,31 @@
       perspective: 600px;
       perspective-origin: 50% 50%;
       opacity: 0;
+      transition: opacity .55s ease;
     }
-    .shatter-stage.active {
-      opacity: 1;
-    }
+    .shatter-stage.active { opacity: 1; }
+
     .shatter-frag {
       position: absolute;
       display: inline-block;
       will-change: transform, opacity, filter;
       transform-style: preserve-3d;
+      backface-visibility: hidden;
       white-space: pre;
+      transform-origin: 50% 50% 0;
+      -webkit-font-smoothing: antialiased;
     }
+    /* longer default duration and smoother easing; use CSS variable --fly-dur per-frag */
     .shatter-frag.fly {
       transition:
-        transform var(--fly-dur, 1.1s) cubic-bezier(.22,.61,.36,1),
-        opacity var(--fly-dur, 1.1s) ease-in,
-        filter var(--fly-dur, 1.1s) ease-in;
+        transform var(--fly-dur, 2.6s) cubic-bezier(.2,.8,.2,1),
+        opacity var(--fly-dur, 2.6s) ease-in,
+        filter var(--fly-dur, 2.6s) ease-in;
     }
 
+    /* keep the page visible briefly so the shatter can be observed, then fade */
     body.shattering > *:not(.shatter-stage):not(.success-overlay):not(.danger-overlay):not(#rain) {
-      transition: opacity .25s ease, filter .25s ease;
+      transition: opacity .7s ease .39s, filter .6s ease .35s;
       opacity: 0;
       filter: blur(2px);
     }
@@ -1082,12 +1087,14 @@
 
       stage.innerHTML = '';
 
-      // Walk text-bearing leaf nodes and create per-character fragments
-      // using the Range API for accurate screen positioning.
+      // Walk text-bearing leaf nodes and create fragment spans using the Range API.
       const root = document.body;
       const skipSelectors = '.shatter-stage, .success-overlay, .danger-overlay, #rain, script, style';
       const frag = document.createDocumentFragment();
-      const maxNodes = 400; // safety cap
+
+      // Limit fragments for performance — adapt to viewport size
+      const viewportArea = window.innerWidth * window.innerHeight;
+      const maxNodes = Math.max(120, Math.min(360, Math.floor(viewportArea / 900)));
 
       const walker2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
@@ -1104,11 +1111,14 @@
       const fragEls = [];
       let n;
       let count = 0;
+
       while ((n = walker2.nextNode()) && count < maxNodes) {
         const parent = n.parentElement;
         const style = getComputedStyle(parent);
         const text = n.nodeValue;
-        const chunkSize = text.length > 60 ? 3 : 1;
+
+        // adaptive chunking: bigger blocks for long strings to reduce fragment count
+        const chunkSize = text.length > 120 ? 6 : (text.length > 80 ? 5 : (text.length > 40 ? 3 : 1));
 
         for (let i = 0; i < text.length; i += chunkSize) {
           if (count >= maxNodes) break;
@@ -1129,14 +1139,17 @@
           const el = document.createElement('span');
           el.className = 'shatter-frag';
           el.textContent = chunk;
-          el.style.left = rect.left + 'px';
-          el.style.top = rect.top + 'px';
+          // Position relative to viewport (stage is fixed)
+          el.style.left = Math.round(rect.left) + 'px';
+          el.style.top = Math.round(rect.top) + 'px';
           el.style.fontFamily = style.fontFamily;
           el.style.fontSize = style.fontSize;
           el.style.fontWeight = style.fontWeight;
           el.style.lineHeight = style.lineHeight;
           el.style.letterSpacing = style.letterSpacing;
           el.style.color = style.color;
+          el.style.pointerEvents = 'none';
+
           // Preserve gradient-text look for brand name
           if (parent.classList && parent.classList.contains('brand-name')) {
             el.style.background = style.backgroundImage;
@@ -1152,36 +1165,49 @@
         }
       }
 
+      if (!fragEls.length) return Promise.resolve();
+
       stage.appendChild(frag);
       stage.classList.add('active');
-      document.body.classList.add('shattering');
 
-      // Trigger fly-out animation
+      // Slight delay before fading the underlying page so the shatter is visible
+      setTimeout(() => document.body.classList.add('shattering'), 120);
+
+      // Trigger fly-out animation with staggered delays — compute max timing
+      let maxTotal = 0;
       requestAnimationFrame(() => {
-        fragEls.forEach((el) => {
-          const angleX = (Math.random() - 0.5) * 900;   // rotation
+        fragEls.forEach((el, idx) => {
+          const angleX = (Math.random() - 0.5) * 900;
           const angleY = (Math.random() - 0.5) * 900;
           const angleZ = (Math.random() - 0.5) * 720;
-          const dx = (Math.random() - 0.5) * window.innerWidth * 1.6;
-          const dy = (Math.random() - 0.5) * window.innerHeight * 1.6;
-          const tz = 1000 + Math.random() * 1800; // fly toward viewer
-          const dur = 1.6 + Math.random() * 1.0;
-          const delay = Math.random() * 0.6;
+          const dx = (Math.random() - 0.5) * window.innerWidth * (0.9 + Math.random() * 1.4);
+          const dy = (Math.random() - 0.5) * window.innerHeight * (0.6 + Math.random() * 1.6);
+          const tz = 1000 + Math.random() * 2200;
+          const dur = 1.8 + Math.random() * 1.4; // 1.8s - 3.2s
+          const delay = Math.random() * 1.2;     // up to 1.2s
+
+          maxTotal = Math.max(maxTotal, dur + delay);
 
           el.style.setProperty('--fly-dur', dur + 's');
           el.style.transitionDelay = delay + 's';
           el.classList.add('fly');
 
+          // Apply transform on next frame for smoother composite animation
           requestAnimationFrame(() => {
             el.style.transform =
-              `translate3d(${dx}px, ${dy}px, ${tz}px) rotateX(${angleX}deg) rotateY(${angleY}deg) rotateZ(${angleZ}deg) scale(${1 + Math.random() * 1.8})`;
+              `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, ${Math.round(tz)}px) rotateX(${angleX.toFixed(2)}deg) rotateY(${angleY.toFixed(2)}deg) rotateZ(${angleZ.toFixed(2)}deg) scale(${(1 + Math.random() * 1.8).toFixed(2)})`;
             el.style.opacity = '0';
-            el.style.filter = 'blur(6px) brightness(1.8)';
+            el.style.filter = 'blur(6px) brightness(1.6)';
           });
         });
       });
 
-      return new Promise((resolve) => setTimeout(resolve, 2800));
+      // Resolve after the slowest fragment finishes (plus a small buffer)
+      const waitMs = Math.max(2500, Math.ceil(maxTotal * 1000) + 450);
+      return new Promise((resolve) => setTimeout(() => {
+        // leave stage visible briefly before cleanup so overlays (success/danger) can show
+        resolve();
+      }, waitMs));
     }
 
     function showSuccess(title, redirectTo) {
@@ -1309,8 +1335,8 @@
 <!-- If you have additional scripts (e.g. visit-config.js for VISIT_ENDPOINT,
      or login-page.js for extra page logic), include them BEFORE the inline
      <script> above, since it calls window.AuthClient on submit. -->
- <script src="js/visit-config.js"></script>
- <script src="js/login-page.js"></script>
+<script src="js/visit-config.js"></script>
+<script src="js/login-page.js"></script>
 
 </body>
 </html>
