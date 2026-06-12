@@ -27,15 +27,27 @@
 
     function currentRoute() {
         const url = new URL(window.location.href);
-        let pageRef = url.searchParams.get('page') || '';
-        if (!pageRef && /\/pages1?\//.test(url.pathname)) {
+
+        // Generic page.html?page=gcp pattern
+        const pageParam = url.searchParams.get('page');
+        if (pageParam && /\/pages1?\/page\.html$/i.test(url.pathname)) {
+            const folder = url.pathname.includes('/pages1/') ? 'md1' : 'md2';
+            const clean = pageParam.replace(/[^a-zA-Z0-9_-]/g, '');
+            if (clean && clean !== 'pdf-viewer') {
+                return { folder, page: clean };
+            }
+        }
+
+        // Original: path-based /pages/gcp.html pattern
+        let pageRef = '';
+        if (/\/pages1?\//.test(url.pathname)) {
             const parts = url.pathname.split('/').filter(Boolean);
             const idx = parts.findIndex((part) => part === 'pages' || part === 'pages1');
             if (idx >= 0 && parts[idx + 1]) pageRef = `${parts[idx]}/${parts[idx + 1]}`;
         }
         const clean = pageRef.replace(/^(\.\/|\.\.\/)+/, '');
         const match = clean.match(/^(pages|pages1)\/([^/?#]+)\.html/i);
-        if (!match || match[2] === 'pdf-viewer') return null;
+        if (!match || match[2] === 'pdf-viewer' || match[2] === 'page') return null;
         return {
             folder: match[1] === 'pages1' ? 'md1' : 'md2',
             page: match[2]

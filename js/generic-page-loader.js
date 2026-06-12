@@ -82,6 +82,7 @@
 
             // Attach TOC click handlers
             attachTocHandlers();
+            window.dispatchEvent(new Event('pageContentLoaded'));
         } catch (error) {
             console.error('Error rendering page:', error);
             document.getElementById('content').innerHTML = `<p style="color: red;">Error loading page content: ${error.message}</p>`;

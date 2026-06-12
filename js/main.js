@@ -411,14 +411,12 @@
         async function callVisitApi(payload) {
             const endpoint = window.VISIT_ENDPOINT || '';
             if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
-            const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
-            const headers = { 'content-type': 'application/json' };
-            if (sessionToken) {
-                headers['authorization'] = `Bearer ${sessionToken}`;
-            }
+
+            // Don't add Authorization header - it triggers CORS preflight
+            // sessionToken is already included in the payload body
             const response = await fetch(endpoint, {
                 method: 'POST',
-                headers,
+                headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const data = await response.json().catch(() => ({}));
