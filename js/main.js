@@ -351,13 +351,11 @@
         async function callVisitApi(payload) {
             const endpoint = window.VISIT_ENDPOINT || '';
             if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
-            // Include session token in Authorization header when available to satisfy
-            // backends that validate bearer tokens via headers. Keep the token also
-            // in the JSON body for backwards compatibility with older endpoints.
-            const sessionToken = getSessionToken();
+            const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
             const headers = { 'content-type': 'application/json' };
-            if (sessionToken) headers['authorization'] = `Bearer ${sessionToken}`;
-
+            if (sessionToken) {
+                headers['authorization'] = `Bearer ${sessionToken}`;
+            }
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers,

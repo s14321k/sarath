@@ -462,20 +462,44 @@
     }
 
         async function callAiApi(body) {
+        // Ensure AI calls include both recognized identity fields and an Authorization header
+        // to remain compatible with different backend expectations.
         if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
         const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
-        if (!user || !sessionToken) throw new Error('Login is required for AI.');
+        const name = sessionStorage.getItem('visitorName') || '';
+        if (!name || !sessionToken) throw new Error('Login is required for AI.');
+
         const headers = { 'content-type': 'application/json' };
-        if (sessionToken) headers['authorization'] = `Bearer ${sessionToken}`;
+        // Only add Authorization header for specific AI management/visualization events.
+        // Some endpoints (e.g. ai_chat) expect the token in the body and the server
+        // may not include `authorization` in Access-Control-Allow-Headers — avoid it there.
+        const authRequiredEvents = new Set([
+            'ai_config_get',
+            'ai_config_save',
+            'ai_config_delete',
+            'ai_visualize',
+            'ai_visualization_get',
+            'ai_visualization_submit',
+            'ai_visualization_history'
+        ]);
+        if (sessionToken && authRequiredEvents.has(body?.eventType)) {
+            headers['authorization'] = `Bearer ${sessionToken}`;
+        }
+
+        // Include multiple identity keys in the body for compatibility; do NOT rely on the
+        // Authorization header being present for every event type.
+        const payload = {
+            user: name,
+            name,
+            username: name,
+            sessionToken,
+            ...body
+        };
 
         const res = await fetch(endpoint, {
             method: 'POST',
             headers,
-            body: JSON.stringify({
-                user,
-                sessionToken,
-                ...body
-            })
+            body: JSON.stringify(payload)
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`);
@@ -487,9 +511,27 @@
     }
 
         async function loadAiConfig(forceReload) {
+        // Use the same lightweight visit POST pattern as main.js to avoid
+        // Authorization header / CORS preflight issues for ai_config_get.
         if (!forceReload && aiConfigCache && aiConfigLoadedForUser === user) return aiConfigCache;
+        const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
+        if (!user || !sessionToken) {
+            aiConfigCache = null;
+            aiConfigLoadedForUser = '';
+            return null;
+        }
         try {
-            const data = await callAiApi({ eventType: 'ai_config_get' });
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    eventType: 'ai_config_get',
+                    user,
+                    sessionToken
+                })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`);
             aiConfigCache = {
                 hasApiKey: Boolean(data?.hasApiKey),
                 provider: data?.provider || 'openai',
