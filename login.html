@@ -107,19 +107,75 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
       position: relative;
+      display: inline-block;
     }
 
     .brand-name.glitch {
-      animation: glitch .4s steps(2) forwards;
+      animation: glitch-main .55s steps(1) forwards;
     }
 
-    @keyframes glitch {
-      0%   { text-shadow: 2px 0 var(--red), -2px 0 var(--cyan); clip-path: inset(0 0 95% 0); }
-      20%  { clip-path: inset(20% 0 60% 0); }
-      40%  { clip-path: inset(50% 0 30% 0); text-shadow: -2px 0 var(--red), 2px 0 var(--cyan); }
-      60%  { clip-path: inset(70% 0 10% 0); }
-      80%  { clip-path: inset(5% 0 85% 0); }
-      100% { text-shadow: none; clip-path: inset(0 0 0 0); }
+    .brand-name.glitch::before,
+    .brand-name.glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      background: none;
+      -webkit-text-fill-color: initial;
+      pointer-events: none;
+    }
+
+    .brand-name.glitch::before {
+      color: var(--red);
+      mix-blend-mode: screen;
+      opacity: 1;
+      animation: glitch-shift-1 .55s steps(1) forwards;
+    }
+
+    .brand-name.glitch::after {
+      color: var(--cyan);
+      mix-blend-mode: screen;
+      opacity: 1;
+      animation: glitch-shift-2 .55s steps(1) forwards;
+    }
+
+    @keyframes glitch-main {
+      0%   { opacity: 1; transform: translate(0,0) skewX(0deg); filter: brightness(1); }
+      8%   { opacity: .2; transform: translate(-6px, 2px) skewX(8deg); filter: brightness(2.5); }
+      16%  { opacity: 1; transform: translate(5px, -2px) skewX(-6deg); }
+      24%  { opacity: .3; transform: translate(-3px, 0) skewX(4deg); filter: brightness(2); }
+      32%  { opacity: 1; transform: translate(4px, 1px) skewX(-3deg); }
+      45%  { opacity: .25; transform: translate(-5px, -1px) skewX(6deg); filter: brightness(2.5); }
+      58%  { opacity: 1; transform: translate(2px, 2px) skewX(-2deg); }
+      70%  { opacity: .4; transform: translate(-3px, 0) skewX(3deg); filter: brightness(1.8); }
+      85%  { opacity: 1; transform: translate(1px, -1px) skewX(-1deg); }
+      100% { opacity: 1; transform: translate(0,0) skewX(0deg); filter: brightness(1); }
+    }
+
+    @keyframes glitch-shift-1 {
+      0%   { transform: translate(8px, 0); clip-path: inset(0 0 92% 0); opacity: 1; }
+      8%   { transform: translate(-10px, 3px); clip-path: inset(10% 0 75% 0); }
+      16%  { transform: translate(9px, -2px); clip-path: inset(35% 0 50% 0); }
+      24%  { transform: translate(-12px, 1px); clip-path: inset(55% 0 25% 0); }
+      32%  { transform: translate(11px, -3px); clip-path: inset(20% 0 65% 0); }
+      45%  { transform: translate(-9px, 2px); clip-path: inset(70% 0 12% 0); }
+      58%  { transform: translate(10px, 0); clip-path: inset(5% 0 80% 0); }
+      70%  { transform: translate(-7px, -1px); clip-path: inset(45% 0 35% 0); }
+      85%  { transform: translate(6px, 1px); clip-path: inset(15% 0 60% 0); }
+      100% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+    }
+
+    @keyframes glitch-shift-2 {
+      0%   { transform: translate(-8px, 0); clip-path: inset(0 0 92% 0); opacity: 1; }
+      8%   { transform: translate(11px, -3px); clip-path: inset(10% 0 75% 0); }
+      16%  { transform: translate(-9px, 2px); clip-path: inset(35% 0 50% 0); }
+      24%  { transform: translate(12px, -1px); clip-path: inset(55% 0 25% 0); }
+      32%  { transform: translate(-11px, 3px); clip-path: inset(20% 0 65% 0); }
+      45%  { transform: translate(9px, -2px); clip-path: inset(70% 0 12% 0); }
+      58%  { transform: translate(-10px, 0); clip-path: inset(5% 0 80% 0); }
+      70%  { transform: translate(7px, 1px); clip-path: inset(45% 0 35% 0); }
+      85%  { transform: translate(-6px, -1px); clip-path: inset(15% 0 60% 0); }
+      100% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
     }
 
     .brand-sub {
@@ -578,7 +634,38 @@
       30% { box-shadow: inset 0 0 60px rgba(255,0,60,.25); }
     }
 
-    /* ══ FORM SUBMIT STATES ══ */
+    /* ══ 3D SHATTER EFFECT ══ */
+    .shatter-stage {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      pointer-events: none;
+      perspective: 600px;
+      perspective-origin: 50% 50%;
+      opacity: 0;
+    }
+    .shatter-stage.active {
+      opacity: 1;
+    }
+    .shatter-frag {
+      position: absolute;
+      display: inline-block;
+      will-change: transform, opacity, filter;
+      transform-style: preserve-3d;
+      white-space: pre;
+    }
+    .shatter-frag.fly {
+      transition:
+        transform var(--fly-dur, 1.1s) cubic-bezier(.22,.61,.36,1),
+        opacity var(--fly-dur, 1.1s) ease-in,
+        filter var(--fly-dur, 1.1s) ease-in;
+    }
+
+    body.shattering > *:not(.shatter-stage):not(.success-overlay):not(.danger-overlay):not(#rain) {
+      transition: opacity .25s ease, filter .25s ease;
+      opacity: 0;
+      filter: blur(2px);
+    }
     .submit-btn {
       position: relative;
       display: flex;
@@ -714,7 +801,7 @@
 
     <div class="brand-wrap">
       <div class="kicker">Private Learning Library</div>
-      <h1 class="brand-name" id="brandName">S14321K</h1>
+      <h1 class="brand-name" id="brandName" data-text="S14321K">S14321K</h1>
       <p class="brand-sub">
         A developer-grade environment where you write, run, chat, and learn —
         all in one encrypted workspace.
@@ -860,6 +947,9 @@
   </aside>
 </div>
 
+<!-- ══ 3D SHATTER STAGE ══ -->
+<div class="shatter-stage" id="shatterStage"></div>
+
 <!-- ══ SUCCESS OVERLAY ══ -->
 <div class="success-overlay" id="successOverlay">
   <div class="success-box">
@@ -925,7 +1015,7 @@
     const el = document.getElementById('brandName');
     function glitch() {
       el.classList.add('glitch');
-      setTimeout(() => el.classList.remove('glitch'), 450);
+      setTimeout(() => el.classList.remove('glitch'), 560);
       setTimeout(glitch, 4000 + Math.random() * 5000);
     }
     setTimeout(glitch, 2000);
@@ -985,12 +1075,121 @@
       input.addEventListener('animationend', () => input.classList.remove('invalid'), { once: true });
     }
 
+    /* ── 3D Text Shatter Effect ── */
+    function shatterPage() {
+      const stage = document.getElementById('shatterStage');
+      if (!stage) return Promise.resolve();
+
+      stage.innerHTML = '';
+
+      // Walk text-bearing leaf nodes and create per-character fragments
+      // using the Range API for accurate screen positioning.
+      const root = document.body;
+      const skipSelectors = '.shatter-stage, .success-overlay, .danger-overlay, #rain, script, style';
+      const frag = document.createDocumentFragment();
+      const maxNodes = 400; // safety cap
+
+      const walker2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const text = node.nodeValue.replace(/\s+/g, '');
+          if (!text) return NodeFilter.FILTER_REJECT;
+          const parent = node.parentElement;
+          if (!parent || parent.closest(skipSelectors)) return NodeFilter.FILTER_REJECT;
+          const rect = parent.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+
+      const fragEls = [];
+      let n;
+      let count = 0;
+      while ((n = walker2.nextNode()) && count < maxNodes) {
+        const parent = n.parentElement;
+        const style = getComputedStyle(parent);
+        const text = n.nodeValue;
+        const chunkSize = text.length > 60 ? 3 : 1;
+
+        for (let i = 0; i < text.length; i += chunkSize) {
+          if (count >= maxNodes) break;
+          const chunk = text.slice(i, i + chunkSize);
+          if (!chunk.trim()) continue;
+
+          let rect;
+          try {
+            const range = document.createRange();
+            range.setStart(n, i);
+            range.setEnd(n, Math.min(i + chunkSize, text.length));
+            rect = range.getBoundingClientRect();
+          } catch {
+            continue;
+          }
+          if (rect.width === 0 && rect.height === 0) continue;
+
+          const el = document.createElement('span');
+          el.className = 'shatter-frag';
+          el.textContent = chunk;
+          el.style.left = rect.left + 'px';
+          el.style.top = rect.top + 'px';
+          el.style.fontFamily = style.fontFamily;
+          el.style.fontSize = style.fontSize;
+          el.style.fontWeight = style.fontWeight;
+          el.style.lineHeight = style.lineHeight;
+          el.style.letterSpacing = style.letterSpacing;
+          el.style.color = style.color;
+          // Preserve gradient-text look for brand name
+          if (parent.classList && parent.classList.contains('brand-name')) {
+            el.style.background = style.backgroundImage;
+            el.style.webkitBackgroundClip = 'text';
+            el.style.backgroundClip = 'text';
+            el.style.webkitTextFillColor = 'transparent';
+            el.style.color = '';
+          }
+
+          frag.appendChild(el);
+          fragEls.push(el);
+          count++;
+        }
+      }
+
+      stage.appendChild(frag);
+      stage.classList.add('active');
+      document.body.classList.add('shattering');
+
+      // Trigger fly-out animation
+      requestAnimationFrame(() => {
+        fragEls.forEach((el) => {
+          const angleX = (Math.random() - 0.5) * 900;   // rotation
+          const angleY = (Math.random() - 0.5) * 900;
+          const angleZ = (Math.random() - 0.5) * 720;
+          const dx = (Math.random() - 0.5) * window.innerWidth * 1.6;
+          const dy = (Math.random() - 0.5) * window.innerHeight * 1.6;
+          const tz = 1000 + Math.random() * 1800; // fly toward viewer
+          const dur = 1.6 + Math.random() * 1.0;
+          const delay = Math.random() * 0.6;
+
+          el.style.setProperty('--fly-dur', dur + 's');
+          el.style.transitionDelay = delay + 's';
+          el.classList.add('fly');
+
+          requestAnimationFrame(() => {
+            el.style.transform =
+              `translate3d(${dx}px, ${dy}px, ${tz}px) rotateX(${angleX}deg) rotateY(${angleY}deg) rotateZ(${angleZ}deg) scale(${1 + Math.random() * 1.8})`;
+            el.style.opacity = '0';
+            el.style.filter = 'blur(6px) brightness(1.8)';
+          });
+        });
+      });
+
+      return new Promise((resolve) => setTimeout(resolve, 2800));
+    }
+
     function showSuccess(title, redirectTo) {
       successTitle.textContent = title;
       successOverlay.classList.add('show');
       setTimeout(() => {
         window.location.href = redirectTo;
-      }, 2600);
+      }, 2200);
     }
 
     function showDanger(message, fields) {
@@ -1004,12 +1203,12 @@
       void authPanel.offsetWidth;
       authPanel.classList.add('danger-shake-card', 'danger-flash');
 
-      fields.forEach(flashInvalid);
+      if (fields) fields.forEach(flashInvalid);
 
       setTimeout(() => {
         dangerOverlay.classList.remove('show');
         authPanel.classList.remove('danger-shake-card', 'danger-flash');
-      }, 2000);
+      }, 2400);
     }
 
     // Ensure a minimum visible loading time (2-3s) even if the API responds instantly
@@ -1029,7 +1228,7 @@
 
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (loginBtn.classList.contains('loading')) return;
+      if (document.body.classList.contains('shattering')) return;
 
       let invalid = false;
       [loginUser, loginPass].forEach(f => {
@@ -1041,19 +1240,20 @@
         return;
       }
       loginError.textContent = '';
-      loginBtn.classList.add('loading');
 
-      withMinDelay(window.AuthClient.login(loginUser.value, loginPass.value), MIN_DELAY)
-        .then((outcome) => {
-          loginBtn.classList.remove('loading');
-          if (outcome.status === 'fulfilled') {
-            showSuccess('Access Granted', window.AuthClient.safeNextUrl(new URLSearchParams(window.location.search).get('next')));
-          } else {
-            const msg = outcome.reason?.message || 'Invalid username or password';
-            loginError.textContent = msg;
-            showDanger(msg, [loginUser, loginPass]);
-          }
-        });
+      const authPromise = window.AuthClient.login(loginUser.value, loginPass.value);
+      const shatterPromise = shatterPage();
+
+      Promise.allSettled([authPromise, shatterPromise]).then(([authResult]) => {
+        if (authResult.status === 'fulfilled') {
+          showSuccess('Access Granted', window.AuthClient.safeNextUrl(new URLSearchParams(window.location.search).get('next')));
+        } else {
+          const msg = authResult.reason?.message || 'Invalid username or password';
+          loginError.textContent = msg;
+          showDanger(msg);
+          setTimeout(() => window.location.reload(), 2500);
+        }
+      });
     });
 
     /* ── SIGN UP ── */
@@ -1066,7 +1266,7 @@
 
     signupForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (signupBtn.classList.contains('loading')) return;
+      if (document.body.classList.contains('shattering')) return;
 
       let invalid = false;
       [signupUser, signupPass, signupConfirm].forEach(f => {
@@ -1080,28 +1280,28 @@
 
       if (signupPass.value !== signupConfirm.value) {
         signupError.textContent = 'Passwords do not match.';
-        signupBtn.classList.add('loading');
-        setTimeout(() => {
-          signupBtn.classList.remove('loading');
-          showDanger('Passwords do not match', [signupPass, signupConfirm]);
-        }, MIN_DELAY);
+        shatterPage().then(() => {
+          showDanger('Passwords do not match');
+          setTimeout(() => window.location.reload(), 2500);
+        });
         return;
       }
 
       signupError.textContent = '';
-      signupBtn.classList.add('loading');
 
-      withMinDelay(window.AuthClient.signup(signupUser.value, signupPass.value), MIN_DELAY)
-        .then((outcome) => {
-          signupBtn.classList.remove('loading');
-          if (outcome.status === 'fulfilled') {
-            showSuccess('Account Created', 'index.html');
-          } else {
-            const msg = outcome.reason?.message || 'Sign up failed. Please try again.';
-            signupError.textContent = msg;
-            showDanger(msg, [signupUser, signupPass, signupConfirm]);
-          }
-        });
+      const authPromise = window.AuthClient.signup(signupUser.value, signupPass.value);
+      const shatterPromise = shatterPage();
+
+      Promise.allSettled([authPromise, shatterPromise]).then(([authResult]) => {
+        if (authResult.status === 'fulfilled') {
+          showSuccess('Account Created', 'index.html');
+        } else {
+          const msg = authResult.reason?.message || 'Sign up failed. Please try again.';
+          signupError.textContent = msg;
+          showDanger(msg);
+          setTimeout(() => window.location.reload(), 2500);
+        }
+      });
     });
   })();
 </script>
@@ -1109,9 +1309,8 @@
 <!-- If you have additional scripts (e.g. visit-config.js for VISIT_ENDPOINT,
      or login-page.js for extra page logic), include them BEFORE the inline
      <script> above, since it calls window.AuthClient on submit. -->
-<script src="js/visit-config.js"></script>
-<!--<script src="js/auth-client.js"></script>-->
-<script src="js/login-page.js"></script>
+ <script src="js/visit-config.js"></script>
+ <script src="js/login-page.js"></script>
 
 </body>
 </html>
