@@ -50,7 +50,7 @@
                             'visitSessionToken',
                             'welcomeMessage'
                         ].forEach((k) => { try { sessionStorage.removeItem(k); } catch {} });
-                        try { window.location.replace('login.html'); } catch { window.location.href = 'login.html'; }
+                        try { window.location.replace('../login.html'); } catch { window.location.href = '../login.html'; }
                     });
                     document.body.appendChild(logoutBtn);
                 }
@@ -93,7 +93,7 @@
                             'visitSessionToken',
                             'welcomeMessage'
                         ].forEach((k) => { try { sessionStorage.removeItem(k); } catch {} });
-                        try { window.location.replace('login.html'); } catch { window.location.href = 'login.html'; }
+                        try { window.location.replace('../login.html'); } catch { window.location.href = '../login.html'; }
                     });
                     document.body.appendChild(logoutBtn);
                 }
