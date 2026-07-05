@@ -28,11 +28,24 @@
         activeIndex = -1;
     }
 
+    function toPageUrl(href, query) {
+        // href looks like "pages/microservice.html" or "pages1/foo.html"
+        const match = href.match(/^(.*\/)?([^\/]+)\.html(\?.*)?$/i);
+        if (!match) return href; // fallback, unexpected format
+        const dir = match[1] || '';
+        const slug = match[2];
+        const params = new URLSearchParams();
+        params.set('page', slug);
+        if (query) params.set('q', query);
+        return `${dir}page.html?${params.toString()}`;
+    }
+
     function addResult(item, snippet, query) {
         const li = document.createElement('li');
         li.classList.add('search-result-item');
         li.dataset.index = String(resultsEl.children.length);
         const a = document.createElement('a');
+        a.href = toPageUrl(item.href, query);
         if (query) {
             const joiner = item.href.includes('?') ? '&' : '?';
             a.href = `${item.href}${joiner}q=${encodeURIComponent(query)}`;
