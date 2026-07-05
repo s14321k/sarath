@@ -66,7 +66,20 @@
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-            throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+            const err = new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+            // Surface backend lockout/attempt info (see index.js's eventType
+            // 'auth' handler) so the UI can show a concrete attempts-left
+            // count or a wait-time warning instead of a generic message.
+            if (data && typeof data.remainingAttempts !== 'undefined') {
+                err.remainingAttempts = data.remainingAttempts;
+            }
+            if (data && typeof data.retryAfterMs !== 'undefined') {
+                err.retryAfterMs = data.retryAfterMs;
+            }
+            if (response.status === 423) {
+                err.locked = true;
+            }
+            throw err;
         }
         return data;
     }

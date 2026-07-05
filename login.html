@@ -660,9 +660,9 @@
     /* longer default duration and smoother easing; use CSS variable --fly-dur per-frag */
     .shatter-frag.fly {
       transition:
-        transform var(--fly-dur, 2.6s) cubic-bezier(.2,.8,.2,1),
-        opacity var(--fly-dur, 2.6s) ease-in,
-        filter var(--fly-dur, 2.6s) ease-in;
+              transform var(--fly-dur, 2.6s) cubic-bezier(.2,.8,.2,1),
+              opacity var(--fly-dur, 2.6s) ease-in,
+              filter var(--fly-dur, 2.6s) ease-in;
     }
 
     /* keep the page visible briefly so the shatter can be observed, then fade */
@@ -1195,7 +1195,7 @@
           // Apply transform on next frame for smoother composite animation
           requestAnimationFrame(() => {
             el.style.transform =
-              `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, ${Math.round(tz)}px) rotateX(${angleX.toFixed(2)}deg) rotateY(${angleY.toFixed(2)}deg) rotateZ(${angleZ.toFixed(2)}deg) scale(${(1 + Math.random() * 1.8).toFixed(2)})`;
+                    `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, ${Math.round(tz)}px) rotateX(${angleX.toFixed(2)}deg) rotateY(${angleY.toFixed(2)}deg) rotateZ(${angleZ.toFixed(2)}deg) scale(${(1 + Math.random() * 1.8).toFixed(2)})`;
             el.style.opacity = '0';
             el.style.filter = 'blur(6px) brightness(1.6)';
           });
@@ -1234,7 +1234,7 @@
       setTimeout(() => {
         dangerOverlay.classList.remove('show');
         authPanel.classList.remove('danger-shake-card', 'danger-flash');
-      }, 2400);
+      }, 4400);
     }
 
     // Ensure a minimum visible loading time (2-3s) even if the API responds instantly
@@ -1274,13 +1274,46 @@
         if (authResult.status === 'fulfilled') {
           showSuccess('Access Granted', window.AuthClient.safeNextUrl(new URLSearchParams(window.location.search).get('next')));
         } else {
-          const msg = authResult.reason?.message || 'Invalid username or password';
+          const msg = buildLoginErrorMessage(authResult.reason);
           loginError.textContent = msg;
           showDanger(msg);
-          setTimeout(() => window.location.reload(), 2500);
+          setTimeout(() => window.location.reload(), 4500);
         }
       });
     });
+
+    // Turns a rejected login error (which may carry remainingAttempts /
+    // retryAfterMs from the backend, see index.js's eventType 'auth'
+    // handler) into a user-facing message with a concrete attempts-left
+    // count or a wait-time warning.
+    function buildLoginErrorMessage(err) {
+      const baseMsg = err?.message || 'Invalid username or password';
+      const retryAfterMs = Number(err?.retryAfterMs);
+      const remainingAttempts = Number(err?.remainingAttempts);
+
+      if (!isNaN(retryAfterMs) && retryAfterMs > 0) {
+        const totalMinutes = Math.ceil(retryAfterMs / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        let waitText;
+        if (hours > 0 && minutes > 0) {
+          waitText = `${hours}h ${minutes}m`;
+        } else if (hours > 0) {
+          waitText = `${hours}h`;
+        } else {
+          waitText = `${Math.max(1, minutes)}m`;
+        }
+        return `${baseMsg}. Too many failed attempts — please try again in ${waitText}.`;
+      }
+
+      if (!isNaN(remainingAttempts) && remainingAttempts >= 0) {
+        return remainingAttempts > 0
+                ? `${baseMsg}. ${remainingAttempts} attempt${remainingAttempts === 1 ? '' : 's'} remaining before lockout.`
+                : baseMsg;
+      }
+
+      return baseMsg;
+    }
 
     /* ── SIGN UP ── */
     const signupForm    = document.getElementById('signupForm');
