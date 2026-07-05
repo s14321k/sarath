@@ -46,12 +46,6 @@
         li.dataset.index = String(resultsEl.children.length);
         const a = document.createElement('a');
         a.href = toPageUrl(item.href, query);
-        if (query) {
-            const joiner = item.href.includes('?') ? '&' : '?';
-            a.href = `${item.href}${joiner}q=${encodeURIComponent(query)}`;
-        } else {
-            a.href = item.href;
-        }
         a.textContent = item.title || item.href;
         const p = document.createElement('p');
         p.textContent = snippet || '';
