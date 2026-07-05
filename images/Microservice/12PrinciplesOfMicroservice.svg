@@ -1,0 +1,67 @@
+<svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg" font-family="Arial">
+
+  <!-- Title -->
+  <text x="400" y="30" font-size="24" font-weight="bold">12 Principles of Microservices (12-Factor App)</text>
+
+  <!-- Section 1: Code & Config -->
+  <rect x="50" y="70" width="300" height="200" fill="#E3F2FD" stroke="#1E88E5"/>
+  <text x="100" y="95" font-size="16" font-weight="bold">Code &amp; Config</text>
+
+  <rect x="70" y="110" width="260" height="30" fill="#90CAF9"/>
+  <text x="80" y="130">1. Codebase</text>
+
+  <rect x="70" y="150" width="260" height="30" fill="#90CAF9"/>
+  <text x="80" y="170">2. Dependencies</text>
+
+  <rect x="70" y="190" width="260" height="30" fill="#90CAF9"/>
+  <text x="80" y="210">3. Config</text>
+
+  <rect x="70" y="230" width="260" height="30" fill="#90CAF9"/>
+  <text x="80" y="250">4. Backing Services</text>
+
+
+  <!-- Section 2: Build & Runtime -->
+  <rect x="400" y="70" width="300" height="200" fill="#E8F5E9" stroke="#43A047"/>
+  <text x="460" y="95" font-size="16" font-weight="bold">Build &amp; Runtime</text>
+
+  <rect x="420" y="110" width="260" height="30" fill="#A5D6A7"/>
+  <text x="430" y="130">5. Build-Release-Run</text>
+
+  <rect x="420" y="150" width="260" height="30" fill="#A5D6A7"/>
+  <text x="430" y="170">6. Processes (Stateless)</text>
+
+  <rect x="420" y="190" width="260" height="30" fill="#A5D6A7"/>
+  <text x="430" y="210">7. Port Binding</text>
+
+  <rect x="420" y="230" width="260" height="30" fill="#A5D6A7"/>
+  <text x="430" y="250">8. Concurrency</text>
+
+
+  <!-- Section 3: Scalability & Reliability -->
+  <rect x="750" y="70" width="300" height="200" fill="#FFF3E0" stroke="#FB8C00"/>
+  <text x="760" y="95" font-size="16" font-weight="bold">Scalability &amp; Reliability</text>
+
+  <rect x="770" y="110" width="260" height="30" fill="#FFCC80"/>
+  <text x="780" y="130">9. Disposability</text>
+
+  <rect x="770" y="150" width="260" height="30" fill="#FFCC80"/>
+  <text x="780" y="170">10. Dev/Prod Parity</text>
+
+  <rect x="770" y="190" width="260" height="30" fill="#FFCC80"/>
+  <text x="780" y="210">11. Logs (Event Streams)</text>
+
+  <rect x="770" y="230" width="260" height="30" fill="#FFCC80"/>
+  <text x="780" y="250">12. Admin Processes</text>
+
+
+  <!-- Center Flow Arrow -->
+  <line x1="350" y1="350" x2="850" y2="350" stroke="black" stroke-width="2"/>
+
+  <!-- Bottom Summary -->
+  <rect x="250" y="380" width="700" height="120" fill="#F3E5F5" stroke="#8E24AA"/>
+  <text x="300" y="420" font-size="16" font-weight="bold">Result</text>
+  <text x="300" y="450">• Scalable microservices</text>
+  <text x="300" y="470">• Stateless &amp; cloud-ready</text>
+  <text x="300" y="490">• Easy deployment &amp; maintenance</text>
+
+</svg>

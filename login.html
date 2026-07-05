@@ -1215,7 +1215,7 @@
       successOverlay.classList.add('show');
       setTimeout(() => {
         window.location.href = redirectTo;
-      }, 2200);
+      }, 2500);
     }
 
     function showDanger(message, fields) {
@@ -1234,7 +1234,7 @@
       setTimeout(() => {
         dangerOverlay.classList.remove('show');
         authPanel.classList.remove('danger-shake-card', 'danger-flash');
-      }, 4400);
+      }, 6000);
     }
 
     // Ensure a minimum visible loading time (2-3s) even if the API responds instantly
@@ -1277,7 +1277,7 @@
           const msg = buildLoginErrorMessage(authResult.reason);
           loginError.textContent = msg;
           showDanger(msg);
-          setTimeout(() => window.location.reload(), 4500);
+          setTimeout(() => window.location.reload(), 6000);
         }
       });
     });
