@@ -4,6 +4,7 @@
     const endpoint = window.VISIT_ENDPOINT || '';
     const POLLING_KEY = 'chatPollingEnabled';
     const CHAT_CACHE_PREFIX = 'chatCache:v1:';
+    const CHAT_PAGE_SIZE = 5;
     let user = sessionStorage.getItem('visitorName') || '';
 
     function initChat() {
@@ -65,12 +66,14 @@
         let pollingEnabled = getStoredPollingEnabled();
         let lastUnseen = { global: 0, admin: 0 };
         let lastLengths = { global: 0, admin: 0 };
+        let chatPages = {
+            global: { messages: [], hasMore: true, loadingOlder: false, version: '' },
+            admin: { messages: [], hasMore: true, loadingOlder: false, version: '' }
+        };
         let bubbleStatePrimed = false;
         let aiMessages = [];
         let aiBusy = false;
         let aiSettingsModal = null;
-        let aiConfigCache = null;
-        let aiConfigLoadedForUser = '';
 
         function chatCacheKey(scope) {
             return `${CHAT_CACHE_PREFIX}${String(user || '').toLowerCase()}:${scope}`;
@@ -85,7 +88,10 @@
                 return {
                     messages: parsed.messages,
                     unseenCount: Number(parsed.unseenCount || 0),
-                    version: String(parsed.version || '')
+                    version: String(parsed.version || ''),
+                    hasMore: Object.prototype.hasOwnProperty.call(parsed, 'hasMore')
+                        ? Boolean(parsed.hasMore)
+                        : parsed.messages.length >= CHAT_PAGE_SIZE
                 };
             } catch {
                 return null;
@@ -98,6 +104,7 @@
                     messages: Array.isArray(payload?.messages) ? payload.messages : [],
                     unseenCount: Number(payload?.unseenCount || 0),
                     version: String(payload?.version || ''),
+                    hasMore: Boolean(payload?.hasMore),
                     cachedAt: Date.now()
                 }));
             } catch {}
@@ -106,6 +113,7 @@
         function primeChatFromCache() {
             const currentCache = readChatCache(current);
             if (currentCache) {
+                currentCache.messages = (currentCache.messages || []).slice(-CHAT_PAGE_SIZE);
                 hasNewActivity(current, currentCache);
                 render(currentCache.messages);
             }
@@ -274,22 +282,22 @@
             return increased;
         }
 
-    tabs.forEach((t) => {
-        t.addEventListener('click', () => {
-            tabs.forEach((x) => x.classList.remove('active'));
-            t.classList.add('active');
-            current = t.dataset.tab;
-            updateDeleteAllVisibility();
-            if (current === 'ai') {
-                clearPollTimer();
-                render(aiMessages);
-                input.placeholder = 'Ask AI...';
-                return;
-            }
-            input.placeholder = 'Type a message...';
-            poll();
+        tabs.forEach((t) => {
+            t.addEventListener('click', () => {
+                tabs.forEach((x) => x.classList.remove('active'));
+                t.classList.add('active');
+                current = t.dataset.tab;
+                updateDeleteAllVisibility();
+                if (current === 'ai') {
+                    clearPollTimer();
+                    render(aiMessages);
+                    input.placeholder = 'Ask AI...';
+                    return;
+                }
+                input.placeholder = 'Type a message...';
+                poll();
+            });
         });
-    });
 
         function autosizeInput() {
             if (!input) return;
@@ -364,24 +372,24 @@
         }
 
         form.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-        if (!endpoint || !user) {
-            showStatus('Chat is unavailable. Please login and allow requests.');
-            return;
-        }
-        const raw = input.value || '';
-        if (!raw.trim()) return;
-        const msg = raw;
-        if (current === 'ai') {
-            await sendAiMessage(msg);
+            ev.preventDefault();
+            if (!endpoint || !user) {
+                showStatus('Chat is unavailable. Please login and allow requests.');
+                return;
+            }
+            const raw = input.value || '';
+            if (!raw.trim()) return;
+            const msg = raw;
+            if (current === 'ai') {
+                await sendAiMessage(msg);
+                input.value = '';
+                autosizeInput();
+                return;
+            }
+            await sendMessage(current, msg);
             input.value = '';
             autosizeInput();
-            return;
-        }
-        await sendMessage(current, msg);
-        input.value = '';
-        autosizeInput();
-        poll();
+            poll();
         });
 
         input.addEventListener('keydown', (ev) => {
@@ -407,342 +415,154 @@
         autosizeInput();
 
         async function gzipToBase64(text) {
-        if (!('CompressionStream' in window)) return '';
-        const encoder = new TextEncoder();
-        const stream = new CompressionStream('gzip');
-        const writer = stream.writable.getWriter();
-        writer.write(encoder.encode(text));
-        writer.close();
-        const buffer = await new Response(stream.readable).arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = '';
-        const chunkSize = 0x8000;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            if (!('CompressionStream' in window)) return '';
+            const encoder = new TextEncoder();
+            const stream = new CompressionStream('gzip');
+            const writer = stream.writable.getWriter();
+            writer.write(encoder.encode(text));
+            writer.close();
+            const buffer = await new Response(stream.readable).arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            const chunkSize = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binary);
         }
-        return btoa(binary);
-    }
 
         async function buildMessagePayload(message) {
-        if (message.length <= 1000) return { message };
-        try {
-            const gz = await gzipToBase64(message);
-            if (!gz) return { message };
-            return {
-                messageGzipBase64: gz,
-                messageEncoding: 'gzip+base64',
-                messageLength: message.length
-            };
-        } catch {
-            return { message };
+            if (message.length <= 1000) return { message };
+            try {
+                const gz = await gzipToBase64(message);
+                if (!gz) return { message };
+                return {
+                    messageGzipBase64: gz,
+                    messageEncoding: 'gzip+base64',
+                    messageLength: message.length
+                };
+            } catch {
+                return { message };
+            }
         }
-    }
 
         async function sendMessage(scope, message) {
-        if (!endpoint || !user) return;
-        try {
-            const payload = await buildMessagePayload(message);
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'message_send',
-                    scope: scope === 'global' ? 'global' : 'admin',
-                    from: user,
-                    to: scope === 'admin' ? 'admin' : '',
-                    ...payload
-                })
-            });
-            if (!res.ok) throw new Error('Send failed');
-            showStatus('');
-        } catch {
-            networkOk = false;
-            showStatus('Chat is blocked by the browser or network.');
+            if (!endpoint || !user) return;
+            try {
+                const payload = await buildMessagePayload(message);
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: 'message_send',
+                        scope: scope === 'global' ? 'global' : 'admin',
+                        from: user,
+                        to: scope === 'admin' ? 'admin' : '',
+                        ...payload
+                    })
+                });
+                if (!res.ok) throw new Error('Send failed');
+                showStatus('');
+            } catch {
+                networkOk = false;
+                showStatus('Chat is blocked by the browser or network.');
+            }
         }
-    }
 
         async function callAiApi(body) {
-        // Ensure AI calls include both recognized identity fields and an Authorization header
-        // to remain compatible with different backend expectations.
-        if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
-        const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
-        const name = sessionStorage.getItem('visitorName') || '';
-        if (!name || !sessionToken) throw new Error('Login is required for AI.');
+            // Keep AI calls CORS-compatible: the backend receives the session
+            // token in the payload body, so do not add an Authorization header.
+            if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
+            const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
+            const name = sessionStorage.getItem('visitorName') || '';
+            if (!name || !sessionToken) throw new Error('Login is required for AI.');
 
-        const headers = { 'content-type': 'application/json' };
-        // Only add Authorization header for specific AI management/visualization events.
-        // Some endpoints (e.g. ai_chat) expect the token in the body and the server
-        // may not include `authorization` in Access-Control-Allow-Headers — avoid it there.
-        const authRequiredEvents = new Set([
-            'ai_config_get',
-            'ai_config_save',
-            'ai_config_delete',
-            'ai_visualize',
-            'ai_visualization_get',
-            'ai_visualization_submit',
-            'ai_visualization_history'
-        ]);
-        if (sessionToken && authRequiredEvents.has(body?.eventType)) {
-            headers['authorization'] = `Bearer ${sessionToken}`;
-        }
+            const headers = { 'content-type': 'application/json' };
 
-        // Include multiple identity keys in the body for compatibility; do NOT rely on the
-        // Authorization header being present for every event type.
-        const payload = {
-            user: name,
-            name,
-            username: name,
-            sessionToken,
-            ...body
-        };
+            // Include multiple identity keys in the body for compatibility; do NOT rely on the
+            // Authorization header being present for every event type.
+            const payload = {
+                user: name,
+                name,
+                username: name,
+                sessionToken,
+                ...body
+            };
 
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`);
-        return data;
-    }
-
-        function getAiText(data) {
-        // Support multiple backend response shapes. Some backends return
-        // { ok: true, markdown: '...' } (markdown content), others return
-        // reply/message/text/content/answer. Also allow raw string responses.
-        if (!data) return '';
-        if (typeof data === 'string') return data;
-        if (data?.ok && typeof data?.markdown === 'string' && data.markdown.trim()) return data.markdown;
-        return data?.markdown || data?.reply || data?.message || data?.text || data?.content || data?.answer || '';
-    }
-
-        async function loadAiConfig(forceReload) {
-        // Use the same lightweight visit POST pattern as main.js to avoid
-        // Authorization header / CORS preflight issues for ai_config_get.
-        if (!forceReload && aiConfigCache && aiConfigLoadedForUser === user) return aiConfigCache;
-        const sessionToken = sessionStorage.getItem('visitSessionToken') || '';
-        if (!user || !sessionToken) {
-            aiConfigCache = null;
-            aiConfigLoadedForUser = '';
-            return null;
-        }
-        try {
             const res = await fetch(endpoint, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'ai_config_get',
-                    user,
-                    sessionToken
-                })
+                headers,
+                body: JSON.stringify(payload)
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data?.error || data?.detail || `HTTP ${res.status}`);
-            aiConfigCache = {
-                hasApiKey: Boolean(data?.hasApiKey),
-                provider: data?.provider || 'openai',
-                model: data?.model || '',
-                baseUrl: data?.baseUrl || '',
-                updatedAt: data?.updatedAt || ''
-            };
-        } catch (error) {
-            aiConfigCache = null;
-            throw error;
-        } finally {
-            aiConfigLoadedForUser = user;
+            return data;
         }
-        return aiConfigCache;
-    }
 
-        function ensureAiSettingsModal() {
-        if (aiSettingsModal) return aiSettingsModal;
-        aiSettingsModal = document.createElement('div');
-        aiSettingsModal.className = 'ai-settings-modal chat-ai-modal hidden';
-        aiSettingsModal.innerHTML = `
-            <div class="ai-settings-backdrop chat-ai-backdrop" data-ai-close="1"></div>
-            <section class="ai-settings-panel chat-ai-panel" role="dialog" aria-modal="true" aria-label="AI settings">
-                <div class="ai-settings-header chat-ai-head">
-                    <div>
-                        <div class="ai-settings-title">AI Settings</div>
-                        <div class="ai-settings-subtitle">Saved per authenticated user</div>
-                    </div>
-                    <button type="button" class="code-runner-button secondary" data-ai-close="1">Close</button>
-                </div>
-                <div class="ai-settings-body">
-                    <label class="code-runner-label" for="chatAiProvider">Provider</label>
-                    <select id="chatAiProvider" class="code-runner-select">
-                        <option value="openai">OpenAI</option>
-                        <option value="anthropic">Claude / Anthropic</option>
-                        <option value="gemini">Gemini</option>
-                        <option value="openrouter">OpenRouter</option>
-                        <option value="groq">Groq</option>
-                        <option value="together">Together</option>
-                    </select>
-                    <label class="code-runner-label" for="chatAiBaseUrl">Base URL</label>
-                    <input id="chatAiBaseUrl" class="code-runner-text" type="text" placeholder="https://api.openai.com/v1">
-                    <label class="code-runner-label" for="chatAiModel">Model</label>
-                    <input id="chatAiModel" class="code-runner-text" type="text" placeholder="gpt-5.5">
-                    <label class="code-runner-label" for="chatAiApiKey">API Key</label>
-                    <input id="chatAiApiKey" class="code-runner-text" type="password" placeholder="Leave blank to keep saved key">
-                    <div class="ai-provider-help chat-ai-help" data-ai-provider-help></div>
-                    <div class="ai-settings-status chat-ai-status" id="chatAiStatus" data-ai-config-status></div>
-                    <div class="ai-settings-actions chat-ai-actions">
-                        <button type="button" class="code-runner-button primary" data-ai-action="save">Save</button>
-                        <button type="button" class="code-runner-button secondary" data-ai-action="refresh">Refresh</button>
-                        <button type="button" class="code-runner-button secondary" data-ai-action="delete">Remove</button>
-                    </div>
-                </div>
-            </section>
-        `;
-        document.body.appendChild(aiSettingsModal);
-        aiSettingsModal.querySelector('#chatAiProvider')?.addEventListener('change', () => applyProviderDefaults(true));
-        aiSettingsModal.addEventListener('click', async (ev) => {
-            if (ev.target.closest('[data-ai-close="1"]')) {
-                aiSettingsModal.classList.add('hidden');
-                document.body.classList.remove('ai-settings-open');
-                return;
-            }
-            const action = ev.target.closest('[data-ai-action]')?.dataset.aiAction;
-            if (!action) return;
-            await handleAiSettingsAction(action);
+        function getAiText(data) {
+            // Support multiple backend response shapes. Some backends return
+            // { ok: true, markdown: '...' } (markdown content), others return
+            // reply/message/text/content/answer. Also allow raw string responses.
+            if (!data) return '';
+            if (typeof data === 'string') return data;
+            if (data?.ok && typeof data?.markdown === 'string' && data.markdown.trim()) return data.markdown;
+            return data?.markdown || data?.reply || data?.message || data?.text || data?.content || data?.answer || '';
+        }
+
+
+        window.AiSettings.init({
+            callApi: (payload) => callAiApi(payload), // your existing fetch wrapper is fine as-is
+            getUser: () => user,
+            getSessionToken: () => sessionStorage.getItem('visitSessionToken') || ''
         });
-        return aiSettingsModal;
-    }
-
-        function setAiSettingsStatus(message, isError) {
-        const el = document.getElementById('chatAiStatus');
-        if (!el) return;
-        el.textContent = message || '';
-        el.classList.toggle('is-error', Boolean(isError));
-    }
-
-        function updateAiProviderHelp() {
-        const help = aiSettingsModal?.querySelector('[data-ai-provider-help]');
-        const provider = document.getElementById('chatAiProvider')?.value || 'openai';
-        if (!help) return;
-        let title = 'Provider notes';
-        let body = 'Save the API key once for this authenticated user. It stays on the backend in encrypted form.';
-        if (provider === 'gemini') {
-            title = 'Gemini';
-            body = 'Create a Gemini API key in Google AI Studio. Recommended model: gemini-2.5-flash.';
-        } else if (provider === 'openai') {
-            title = 'OpenAI';
-            body = 'Use an OpenAI API key from platform.openai.com. Recommended model: gpt-5.5.';
-        } else if (provider === 'anthropic') {
-            title = 'Anthropic';
-            body = 'Use an Anthropic Console API key. Recommended model: claude-3-5-sonnet-latest.';
-        } else if (provider === 'openrouter') {
-            title = 'OpenRouter';
-            body = 'Use an OpenRouter API key and a model id such as openai/gpt-4.1-mini.';
-        } else if (provider === 'groq') {
-            title = 'Groq';
-            body = 'Use a Groq API key and a Groq-supported model id. Recommended default: llama-3.1-8b-instant.';
-        } else if (provider === 'together') {
-            title = 'Together';
-            body = 'Use a Together API key and model id. Recommended default: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo.';
-        }
-        help.innerHTML = `<strong>${renderInlineMarkdown(title)}</strong>: ${renderInlineMarkdown(body)}`;
-    }
-
-        function applyProviderDefaults(force) {
-        const provider = document.getElementById('chatAiProvider')?.value || 'openai';
-        const base = document.getElementById('chatAiBaseUrl');
-        const model = document.getElementById('chatAiModel');
-        const defaults = {
-            openai: ['https://api.openai.com/v1', 'gpt-5.5'],
-            anthropic: ['https://api.anthropic.com/v1', 'claude-3-5-sonnet-latest'],
-            gemini: ['https://generativelanguage.googleapis.com/v1beta', 'gemini-2.5-flash'],
-            openrouter: ['https://openrouter.ai/api/v1', 'openai/gpt-4.1-mini'],
-            groq: ['https://api.groq.com/openai/v1', 'llama-3.1-8b-instant'],
-            together: ['https://api.together.xyz/v1', 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo']
-        };
-        if (base && (force || !base.value.trim())) base.value = defaults[provider]?.[0] || '';
-        if (model && (force || !model.value.trim())) model.value = defaults[provider]?.[1] || '';
-        updateAiProviderHelp();
-    }
-
-        function fillAiSettingsForm() {
-        document.getElementById('chatAiProvider').value = aiConfigCache?.provider || 'openai';
-        document.getElementById('chatAiBaseUrl').value = aiConfigCache?.baseUrl || '';
-        document.getElementById('chatAiModel').value = aiConfigCache?.model || '';
-        document.getElementById('chatAiApiKey').value = '';
-        applyProviderDefaults(false);
-        setAiSettingsStatus(
-            aiConfigCache?.hasApiKey
-                ? 'API key saved for this user. Leave blank to keep it unchanged.'
-                : 'Enter an API key and model to enable AI.',
-            false
-        );
-    }
 
         async function openAiSettings() {
-        ensureAiSettingsModal();
-        aiSettingsModal.classList.remove('hidden');
-        document.body.classList.add('ai-settings-open');
-        setAiSettingsStatus('Loading...', false);
-        try {
-            await loadAiConfig(true);
-            fillAiSettingsForm();
-        } catch (error) {
-            setAiSettingsStatus(error.message || 'Unable to load AI settings.', true);
+            await window.AiSettings.open();
         }
-    }
 
-        async function handleAiSettingsAction(action) {
-        try {
-            if (action === 'refresh') {
-                aiConfigCache = null;
-                await openAiSettings();
-                return;
-            }
-            if (action === 'delete') {
-                setAiSettingsStatus('Removing AI settings...', false);
-                await callAiApi({ eventType: 'ai_config_delete' });
-                aiConfigCache = {
-                    hasApiKey: false,
-                    provider: 'openai',
-                    model: '',
-                    baseUrl: '',
-                    updatedAt: ''
-                };
-                fillAiSettingsForm();
-                setAiSettingsStatus('AI settings removed.', false);
-                return;
-            }
-            const model = document.getElementById('chatAiModel')?.value || '';
-            if (!model.trim()) {
-                setAiSettingsStatus('Model is required.', true);
-                return;
-            }
-            setAiSettingsStatus('Saving AI settings...', false);
-            await callAiApi({
-                eventType: 'ai_config_save',
-                provider: document.getElementById('chatAiProvider')?.value || 'openai',
-                baseUrl: document.getElementById('chatAiBaseUrl')?.value || '',
-                model,
-                apiKey: document.getElementById('chatAiApiKey')?.value || ''
-            });
-            aiConfigCache = null;
-            await loadAiConfig(true);
-            fillAiSettingsForm();
-            setAiSettingsStatus('AI settings saved.', false);
-        } catch (error) {
-            setAiSettingsStatus(error.message || 'AI settings failed.', true);
-        }
-    }
 
         async function sendAiMessage(message) {
-        if (aiBusy) return;
-        aiBusy = true;
-        aiMessages.push({ from: user || 'You', message, time: new Date().toISOString() });
-        aiMessages.push({ from: 'AI', message: 'Thinking...', time: new Date().toISOString(), pending: true });
-        render(aiMessages);
-        try {
-            const config = await loadAiConfig(false);
-            if (!config?.hasApiKey || !config?.model) {
+            if (aiBusy) return;
+            aiBusy = true;
+            aiMessages.push({ from: user || 'You', message, time: new Date().toISOString() });
+            aiMessages.push({ from: 'AI', message: 'Thinking...', time: new Date().toISOString(), pending: true });
+            render(aiMessages);
+            try {
+                await window.AiSettings.loadConfig(false);
+                if (!window.AiSettings.hasUsableKey()) {
+                    openAiSettings();
+                    throw new Error('Save AI settings before chatting with AI.');
+                }
+                const active = window.AiSettings.getActiveKey();
+                const data = await callAiApi({
+                    eventType: 'ai_chat',
+                    message,
+                    history: aiMessages.filter((m) => !m.pending).slice(-12).map((m) => ({
+                        role: (m.from || '').toLowerCase() === 'ai' ? 'assistant' : 'user',
+                        content: m.message || ''
+                    })),
+                    page: window.location.href
+                    // no need to pass provider/model/apiKey — the backend reads the
+                    // active key server-side via fetchActiveAiKeyConfig(user)
+                });
+                aiMessages = aiMessages.filter((m) => !m.pending);
+                aiMessages.push({ from: 'AI', message: getAiText(data) || 'No AI response returned.', time: new Date().toISOString() });
+            } catch (error) {
+                aiMessages = aiMessages.filter((m) => !m.pending);
+                aiMessages.push({ from: 'AI', message: error.message || 'AI request failed.', time: new Date().toISOString() });
+            } finally {
+                aiBusy = false;
+                render(aiMessages);
+            }
+        }
+
+        async function askAi(payload) {
+            await window.AiSettings.loadConfig(false);
+            if (!window.AiSettings.hasUsableKey()) {
                 openAiSettings();
                 throw new Error('Save AI settings before chatting with AI.');
             }
+            const message = typeof payload === 'string' ? payload : (payload?.message || '');
             const data = await callAiApi({
                 eventType: 'ai_chat',
                 message,
@@ -751,475 +571,562 @@
                     content: m.message || ''
                 })),
                 page: window.location.href
+                // no need to pass provider/model/apiKey — the backend reads the
+                // active key server-side via fetchActiveAiKeyConfig(user)
             });
-            aiMessages = aiMessages.filter((m) => !m.pending);
-            aiMessages.push({ from: 'AI', message: getAiText(data) || 'No AI response returned.', time: new Date().toISOString() });
-        } catch (error) {
-            aiMessages = aiMessages.filter((m) => !m.pending);
-            aiMessages.push({ from: 'AI', message: error.message || 'AI request failed.', time: new Date().toISOString() });
-        } finally {
-            aiBusy = false;
-            render(aiMessages);
+            return getAiText(data) || '';
         }
-    }
-
-        async function askAi(payload) {
-        const config = await loadAiConfig(false);
-        if (!config?.hasApiKey || !config?.model) {
-            openAiSettings();
-            throw new Error('Save AI settings before using AI.');
-        }
-        const data = await callAiApi(payload);
-        return getAiText(data) || '';
-    }
 
         window.VisitAi = {
-        openSettings: openAiSettings,
-        ask: askAi
-    };
+            openSettings: openAiSettings,
+            ask: askAi
+        };
 
         async function deleteMessages(scope, id, index, deleteAll) {
-        if (!endpoint || !user) return;
-        const body = {
-            eventType: 'message_delete',
-            scope,
-            deleteAll: Boolean(deleteAll),
-            index: Number.isFinite(index) ? index : 0,
-            requestor: user
-        };
-        if (id) body.id = id;
-        if (scope === 'user') body.user = user;
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            if (!res.ok) throw new Error('Delete failed');
-        } catch {
-            showStatus('Delete failed. Try again.');
-        }
-    }
-
-        async function fetchMessages(scope, markSeen) {
-        if (!endpoint || !user) return { messages: [], unseenCount: 0 };
-        const cached = readChatCache(scope);
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    eventType: 'message_fetch',
-                    scope: scope === 'global' ? 'global' : 'user',
-                    user,
-                    markSeen: Boolean(markSeen),
-                    knownVersion: cached?.version || ''
-                })
-            });
-            if (!res.ok) throw new Error('Fetch failed');
-            const json = await res.json().catch(() => ({}));
-            if (json.notModified && cached) {
-                showStatus('');
-                return cached;
-            }
-            const payload = {
-                messages: json.messages || [],
-                unseenCount: Number(json.unseenCount || 0),
-                version: String(json.version || '')
+            if (!endpoint || !user) return;
+            const chatScope = scope === 'global' ? 'global' : 'admin';
+            const body = {
+                eventType: 'message_delete',
+                scope,
+                deleteAll: Boolean(deleteAll),
+                index: Number.isFinite(index) ? index : 0,
+                requestor: user
             };
-            writeChatCache(scope, payload);
-            showStatus('');
-            return payload;
-        } catch {
-            networkOk = false;
-            showStatus('Chat is blocked by the browser or network.');
-            return cached || { messages: [], unseenCount: 0, version: '' };
+            if (id) body.id = id;
+            if (scope === 'user') body.user = user;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) throw new Error('Delete failed');
+                removeDeletedMessages(chatScope, id, index, deleteAll);
+                if (current === chatScope) render(chatPages[chatScope]?.messages || []);
+            } catch {
+                showStatus('Delete failed. Try again.');
+            }
         }
-    }
+
+        function removeDeletedMessages(scope, id, index, deleteAll) {
+            if (!chatPages[scope]) return;
+            if (deleteAll) {
+                chatPages[scope].messages = [];
+                chatPages[scope].hasMore = false;
+            } else if (id) {
+                chatPages[scope].messages = (chatPages[scope].messages || []).filter((msg) => String(msg.id || '') !== String(id));
+            } else if (Number.isFinite(index)) {
+                chatPages[scope].messages = (chatPages[scope].messages || []).filter((_, idx) => idx !== index);
+            }
+            writeChatCache(scope, {
+                messages: chatPages[scope].messages,
+                unseenCount: 0,
+                version: chatPages[scope].version || '',
+                hasMore: chatPages[scope].hasMore
+            });
+        }
+
+        function mergeMessages(existing, incoming) {
+            const map = new Map();
+            [...(existing || []), ...(incoming || [])].forEach((msg) => {
+                const key = msg.id || `${msg.time || ''}:${msg.from || ''}:${msg.message || ''}`;
+                map.set(key, msg);
+            });
+            return Array.from(map.values()).sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+        }
+
+        function reconcileFreshMessages(existing, incoming) {
+            if (!incoming.length) return [];
+            const newestFetchedTime = incoming[0]?.time || '';
+            const incomingIds = new Set(incoming.map((msg) => String(msg.id || '')).filter(Boolean));
+            const olderLoaded = (existing || []).filter((msg) => {
+                if (msg.id && incomingIds.has(String(msg.id))) return false;
+                return newestFetchedTime && String(msg.time || '').localeCompare(String(newestFetchedTime)) < 0;
+            });
+            return mergeMessages(olderLoaded, incoming);
+        }
+
+        function oldestMessageTime(scope) {
+            const list = chatPages[scope]?.messages || [];
+            return list[0]?.time || '';
+        }
+
+        async function fetchMessages(scope, markSeen, options = {}) {
+            if (!endpoint || !user) return { messages: [], unseenCount: 0 };
+            const cached = readChatCache(scope);
+            const beforeTime = options.beforeTime || '';
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        eventType: 'message_fetch',
+                        scope: scope === 'global' ? 'global' : 'user',
+                        user,
+                        markSeen: Boolean(markSeen),
+                        knownVersion: beforeTime ? '' : (cached?.version || ''),
+                        beforeTime,
+                        limit: CHAT_PAGE_SIZE
+                    })
+                });
+                if (!res.ok) throw new Error('Fetch failed');
+                const json = await res.json().catch(() => ({}));
+                if (json.notModified && cached) {
+                    if (!chatPages[scope]?.messages?.length) {
+                        chatPages[scope] = {
+                            messages: (cached.messages || []).slice(-CHAT_PAGE_SIZE),
+                            hasMore: Boolean(cached.hasMore),
+                            loadingOlder: false,
+                            version: cached.version || ''
+                        };
+                    }
+                    showStatus('');
+                    return {
+                        ...cached,
+                        messages: chatPages[scope].messages,
+                        hasMore: chatPages[scope].hasMore
+                    };
+                }
+                const incoming = json.messages || [];
+                if (!chatPages[scope]) chatPages[scope] = { messages: [], hasMore: true, loadingOlder: false, version: '' };
+                chatPages[scope].messages = beforeTime
+                    ? mergeMessages(incoming, chatPages[scope].messages)
+                    : reconcileFreshMessages(chatPages[scope].messages, incoming);
+                chatPages[scope].hasMore = Boolean(json.hasMore);
+                chatPages[scope].version = String(json.version || chatPages[scope].version || '');
+                const payload = {
+                    messages: chatPages[scope].messages,
+                    unseenCount: Number(json.unseenCount || 0),
+                    version: chatPages[scope].version,
+                    hasMore: chatPages[scope].hasMore
+                };
+                if (!beforeTime) writeChatCache(scope, payload);
+                showStatus('');
+                return payload;
+            } catch {
+                networkOk = false;
+                showStatus('Chat is blocked by the browser or network.');
+                return cached || { messages: [], unseenCount: 0, version: '' };
+            }
+        }
+
+        async function loadOlderMessages(scope) {
+            if (!chatPages[scope] || chatPages[scope].loadingOlder || !chatPages[scope].hasMore) return;
+            const beforeTime = oldestMessageTime(scope);
+            if (!beforeTime) return;
+            const prevHeight = bodyEl.scrollHeight;
+            chatPages[scope].loadingOlder = true;
+            if (current === scope) render(chatPages[scope].messages || []);
+            try {
+                const res = await fetchMessages(scope, false, { beforeTime });
+                chatPages[scope].loadingOlder = false;
+                if (current === scope) {
+                    render(res.messages);
+                    bodyEl.scrollTop = Math.max(0, bodyEl.scrollHeight - prevHeight);
+                }
+            } catch {
+                chatPages[scope].loadingOlder = false;
+                if (current === scope) render(chatPages[scope].messages || []);
+            }
+        }
 
         function dayLabel(date) {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const that = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const diffDays = Math.round((today - that) / 86400000);
-        if (diffDays === 0) return 'Today';
-        if (diffDays === 1) return 'Yesterday';
-        return that.toLocaleDateString();
-    }
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const that = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const diffDays = Math.round((today - that) / 86400000);
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            return that.toLocaleDateString();
+        }
 
         function fmtTime(date) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
 
         const LINE_CLAMP = 5;
         const TABLE_ROW_CLAMP = 6;
 
         function escapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        }[ch]));
-    }
+            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[ch]));
+        }
 
         function renderInlineMarkdown(text) {
-        let html = escapeHtml(text);
-        html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-        html = html.replace(/\*\*([^*\n][\s\S]*?[^*\n])\*\*/g, '<strong>$1</strong>');
-        html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-        return html;
-    }
+            let html = escapeHtml(text);
+            html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+            html = html.replace(/\*\*([^*\n][\s\S]*?[^*\n])\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+            return html;
+        }
 
         function renderMarkdownBlock(bodyEl, text) {
-        const lines = String(text || '').split(/\r?\n/);
-        let paragraph = [];
-        let list = null;
-        let codeLines = [];
-        let inCode = false;
+            const lines = String(text || '').split(/\r?\n/);
+            let paragraph = [];
+            let list = null;
+            let codeLines = [];
+            let inCode = false;
 
-        const flushParagraph = () => {
-            if (!paragraph.length) return;
-            const p = document.createElement('p');
-            p.innerHTML = renderInlineMarkdown(paragraph.join('\n'));
-            bodyEl.appendChild(p);
-            paragraph = [];
-        };
-        const flushList = () => {
-            if (!list) return;
-            bodyEl.appendChild(list);
-            list = null;
-        };
-        const flushCode = () => {
-            const pre = document.createElement('pre');
-            const code = document.createElement('code');
-            code.textContent = codeLines.join('\n');
-            pre.appendChild(code);
-            bodyEl.appendChild(pre);
-            codeLines = [];
-        };
+            const flushParagraph = () => {
+                if (!paragraph.length) return;
+                const p = document.createElement('p');
+                p.innerHTML = renderInlineMarkdown(paragraph.join('\n'));
+                bodyEl.appendChild(p);
+                paragraph = [];
+            };
+            const flushList = () => {
+                if (!list) return;
+                bodyEl.appendChild(list);
+                list = null;
+            };
+            const flushCode = () => {
+                const pre = document.createElement('pre');
+                const code = document.createElement('code');
+                code.textContent = codeLines.join('\n');
+                pre.appendChild(code);
+                bodyEl.appendChild(pre);
+                codeLines = [];
+            };
 
-        lines.forEach((line) => {
-            if (/^```/.test(line.trim())) {
+            lines.forEach((line) => {
+                if (/^```/.test(line.trim())) {
+                    if (inCode) {
+                        flushCode();
+                        inCode = false;
+                    } else {
+                        flushParagraph();
+                        flushList();
+                        inCode = true;
+                        codeLines = [];
+                    }
+                    return;
+                }
                 if (inCode) {
-                    flushCode();
-                    inCode = false;
-                } else {
+                    codeLines.push(line);
+                    return;
+                }
+
+                const trimmed = line.trim();
+                if (!trimmed) {
                     flushParagraph();
                     flushList();
-                    inCode = true;
-                    codeLines = [];
+                    return;
                 }
-                return;
-            }
-            if (inCode) {
-                codeLines.push(line);
-                return;
-            }
-
-            const trimmed = line.trim();
-            if (!trimmed) {
-                flushParagraph();
+                if (/^([-*_])\1\1+$/.test(trimmed)) {
+                    flushParagraph();
+                    flushList();
+                    bodyEl.appendChild(document.createElement('hr'));
+                    return;
+                }
+                const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+                if (heading) {
+                    flushParagraph();
+                    flushList();
+                    const h = document.createElement(`h${heading[1].length}`);
+                    h.innerHTML = renderInlineMarkdown(heading[2]);
+                    bodyEl.appendChild(h);
+                    return;
+                }
+                const bullet = trimmed.match(/^[-*•]\s+(.+)$/);
+                if (bullet) {
+                    flushParagraph();
+                    if (!list) list = document.createElement('ul');
+                    const li = document.createElement('li');
+                    li.innerHTML = renderInlineMarkdown(bullet[1]);
+                    list.appendChild(li);
+                    return;
+                }
                 flushList();
-                return;
-            }
-            if (/^([-*_])\1\1+$/.test(trimmed)) {
-                flushParagraph();
-                flushList();
-                bodyEl.appendChild(document.createElement('hr'));
-                return;
-            }
-            const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
-            if (heading) {
-                flushParagraph();
-                flushList();
-                const h = document.createElement(`h${heading[1].length}`);
-                h.innerHTML = renderInlineMarkdown(heading[2]);
-                bodyEl.appendChild(h);
-                return;
-            }
-            const bullet = trimmed.match(/^[-*•]\s+(.+)$/);
-            if (bullet) {
-                flushParagraph();
-                if (!list) list = document.createElement('ul');
-                const li = document.createElement('li');
-                li.innerHTML = renderInlineMarkdown(bullet[1]);
-                list.appendChild(li);
-                return;
-            }
+                paragraph.push(line);
+            });
+            if (inCode) flushCode();
+            flushParagraph();
             flushList();
-            paragraph.push(line);
-        });
-        if (inCode) flushCode();
-        flushParagraph();
-        flushList();
-    }
+        }
 
         function parseMessageParts(message) {
-        const lines = String(message || '').split(/\r?\n/);
-        const parts = [];
-        const textLines = [];
-        const tableLines = [];
+            const lines = String(message || '').split(/\r?\n/);
+            const parts = [];
+            const textLines = [];
+            const tableLines = [];
 
-        const isTableLine = (line) => line.trim().length > 0 && line.includes('\t') && line.split('\t').length >= 2;
-        const flushText = () => {
-            const text = textLines.join('\n');
-            textLines.length = 0;
-            if (text.trim()) parts.push({ type: 'text', text });
-        };
-        const flushTable = () => {
-            if (tableLines.length < 2) {
-                textLines.push(...tableLines);
+            const isTableLine = (line) => line.trim().length > 0 && line.includes('\t') && line.split('\t').length >= 2;
+            const flushText = () => {
+                const text = textLines.join('\n');
+                textLines.length = 0;
+                if (text.trim()) parts.push({ type: 'text', text });
+            };
+            const flushTable = () => {
+                if (tableLines.length < 2) {
+                    textLines.push(...tableLines);
+                    tableLines.length = 0;
+                    return;
+                }
+                flushText();
+                const rows = tableLines.map((line) => line.split('\t').map((cell) => cell.trim()));
                 tableLines.length = 0;
-                return;
-            }
-            flushText();
-            const rows = tableLines.map((line) => line.split('\t').map((cell) => cell.trim()));
-            tableLines.length = 0;
-            const colCount = Math.max(...rows.map((row) => row.length));
-            if (colCount < 2) {
-                textLines.push(...rows.map((row) => row.join('\t')));
-                return;
-            }
-            rows.forEach((row) => {
-                while (row.length < colCount) row.push('');
-            });
-            parts.push({ type: 'table', rows });
-        };
+                const colCount = Math.max(...rows.map((row) => row.length));
+                if (colCount < 2) {
+                    textLines.push(...rows.map((row) => row.join('\t')));
+                    return;
+                }
+                rows.forEach((row) => {
+                    while (row.length < colCount) row.push('');
+                });
+                parts.push({ type: 'table', rows });
+            };
 
-        lines.forEach((line) => {
-            if (isTableLine(line)) {
-                tableLines.push(line);
-                return;
-            }
+            lines.forEach((line) => {
+                if (isTableLine(line)) {
+                    tableLines.push(line);
+                    return;
+                }
+                flushTable();
+                textLines.push(line);
+            });
             flushTable();
-            textLines.push(line);
-        });
-        flushTable();
-        flushText();
-        return parts;
-    }
+            flushText();
+            return parts;
+        }
 
         function renderTable(bodyEl, rows) {
-        const table = document.createElement('table');
-        table.className = 'chat-table';
-        const thead = document.createElement('thead');
-        const headRow = document.createElement('tr');
-        rows[0].forEach((cell) => {
-            const th = document.createElement('th');
-            th.textContent = cell;
-            headRow.appendChild(th);
-        });
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        rows.slice(1).forEach((row, idx) => {
-            const tr = document.createElement('tr');
-            if (idx >= TABLE_ROW_CLAMP) tr.classList.add('chat-table-row-hidden');
-            row.forEach((cell) => {
-                const td = document.createElement('td');
-                td.textContent = cell;
-                tr.appendChild(td);
+            const table = document.createElement('table');
+            table.className = 'chat-table';
+            const thead = document.createElement('thead');
+            const headRow = document.createElement('tr');
+            rows[0].forEach((cell) => {
+                const th = document.createElement('th');
+                th.textContent = cell;
+                headRow.appendChild(th);
             });
-            tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        bodyEl.appendChild(table);
-        return rows.length - 1 > TABLE_ROW_CLAMP;
-    }
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            rows.slice(1).forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                if (idx >= TABLE_ROW_CLAMP) tr.classList.add('chat-table-row-hidden');
+                row.forEach((cell) => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            bodyEl.appendChild(table);
+            return rows.length - 1 > TABLE_ROW_CLAMP;
+        }
 
         function renderTextBlock(bodyEl, text) {
-        const block = document.createElement('div');
-        block.className = 'chat-text-block';
-        renderMarkdownBlock(block, text);
-        bodyEl.appendChild(block);
-    }
+            const block = document.createElement('div');
+            block.className = 'chat-text-block';
+            renderMarkdownBlock(block, text);
+            bodyEl.appendChild(block);
+        }
 
         function render(list) {
-        const prevScrollTop = bodyEl.scrollTop;
-        const prevScrollHeight = bodyEl.scrollHeight;
-        const nearBottom = prevScrollTop + bodyEl.clientHeight >= prevScrollHeight - 40;
-        bodyEl.innerHTML = '';
-        const items = list.map((m, index) => {
-            const dt = new Date(m.time || Date.now());
-            return { m, dt, label: dayLabel(dt), index };
-        }).slice(-50);
-        let currentLabel = '';
-        const userLower = (user || '').toLowerCase();
-        items.forEach(({ m, dt, label, index }) => {
-            if (label !== currentLabel) {
-                currentLabel = label;
-                const header = document.createElement('div');
-                header.className = 'chat-day';
-                header.textContent = label;
-                bodyEl.appendChild(header);
+            const prevScrollTop = bodyEl.scrollTop;
+            const prevScrollHeight = bodyEl.scrollHeight;
+            const nearBottom = prevScrollTop + bodyEl.clientHeight >= prevScrollHeight - 40;
+            bodyEl.innerHTML = '';
+            if (current !== 'ai' && chatPages[current]?.hasMore && list.length) {
+                const loadBtn = document.createElement('button');
+                loadBtn.type = 'button';
+                loadBtn.className = 'chat-load-more';
+                loadBtn.dataset.loadOlder = current;
+                loadBtn.textContent = chatPages[current]?.loadingOlder ? 'Loading...' : 'Load older messages';
+                bodyEl.appendChild(loadBtn);
             }
-            const row = document.createElement('div');
-            row.className = 'chat-item';
-            if ((m.from || '').toLowerCase() === (user || '').toLowerCase()) {
-                row.classList.add('chat-item-own');
-            }
-            const meta = document.createElement('div');
-            meta.className = 'chat-meta';
-            const name = document.createElement('span');
-            name.textContent = m.from || '';
-            const time = document.createElement('span');
-            time.className = 'chat-time';
-            time.textContent = fmtTime(dt);
-            meta.appendChild(name);
-            meta.appendChild(time);
-            const body = document.createElement('div');
-            body.className = 'chat-message';
-            const rawMessage = m.message || '';
-            body.dataset.raw = rawMessage;
-            const messageParts = parseMessageParts(rawMessage);
-            const hasTable = messageParts.some((part) => part.type === 'table');
-            let hasHiddenRows = false;
-            if (hasTable) {
-                messageParts.forEach((part) => {
-                    if (part.type === 'table') {
-                        hasHiddenRows = renderTable(body, part.rows) || hasHiddenRows;
-                    } else {
-                        renderTextBlock(body, part.text);
-                    }
-                });
-            } else {
-                renderMarkdownBlock(body, rawMessage);
-            }
-            row.appendChild(meta);
-            row.appendChild(body);
-            const isOwn = (m.from || '').toLowerCase() === userLower;
-            const canDelete = current === 'admin' || (current === 'global' && isOwn);
-            const actions = document.createElement('div');
-            actions.className = 'chat-actions';
-            const copyBtn = document.createElement('button');
-            copyBtn.type = 'button';
-            copyBtn.className = 'chat-copy-btn';
-            copyBtn.setAttribute('aria-label', 'Copy message');
-            copyBtn.innerHTML = `
+            const items = list.map((m, index) => {
+                const dt = new Date(m.time || Date.now());
+                return { m, dt, label: dayLabel(dt), index };
+            });
+            let currentLabel = '';
+            const userLower = (user || '').toLowerCase();
+            items.forEach(({ m, dt, label, index }) => {
+                if (label !== currentLabel) {
+                    currentLabel = label;
+                    const header = document.createElement('div');
+                    header.className = 'chat-day';
+                    header.textContent = label;
+                    bodyEl.appendChild(header);
+                }
+                const row = document.createElement('div');
+                row.className = 'chat-item';
+                if ((m.from || '').toLowerCase() === (user || '').toLowerCase()) {
+                    row.classList.add('chat-item-own');
+                }
+                const meta = document.createElement('div');
+                meta.className = 'chat-meta';
+                const name = document.createElement('span');
+                name.textContent = m.from || '';
+                const time = document.createElement('span');
+                time.className = 'chat-time';
+                time.textContent = fmtTime(dt);
+                meta.appendChild(name);
+                meta.appendChild(time);
+                const body = document.createElement('div');
+                body.className = 'chat-message';
+                const rawMessage = m.message || '';
+                body.dataset.raw = rawMessage;
+                const messageParts = parseMessageParts(rawMessage);
+                const hasTable = messageParts.some((part) => part.type === 'table');
+                let hasHiddenRows = false;
+                if (hasTable) {
+                    messageParts.forEach((part) => {
+                        if (part.type === 'table') {
+                            hasHiddenRows = renderTable(body, part.rows) || hasHiddenRows;
+                        } else {
+                            renderTextBlock(body, part.text);
+                        }
+                    });
+                } else {
+                    renderMarkdownBlock(body, rawMessage);
+                }
+                row.appendChild(meta);
+                row.appendChild(body);
+                const isOwn = (m.from || '').toLowerCase() === userLower;
+                const canDelete = current === 'admin' || (current === 'global' && isOwn);
+                // For the private admin thread, "seen" now lives on the message
+                // doc itself as seenByAdmin/seenAtAdmin (admin's read receipt on
+                // the user's own outgoing messages). Global chat keeps its
+                // separate seenBy-map handling elsewhere and isn't affected.
+                const receiptSeen = current === 'admin' ? Boolean(m.seenByAdmin) : false;
+                const receiptSeenAt = current === 'admin' ? m.seenAtAdmin : '';
+                const actions = document.createElement('div');
+                actions.className = 'chat-actions';
+                const copyBtn = document.createElement('button');
+                copyBtn.type = 'button';
+                copyBtn.className = 'chat-copy-btn';
+                copyBtn.setAttribute('aria-label', 'Copy message');
+                copyBtn.innerHTML = `
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1zm2 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H10V7h8v14z"/>
                 </svg>
             `;
-            actions.appendChild(copyBtn);
-            if (canDelete) {
-                const del = document.createElement('button');
-                del.type = 'button';
-                del.className = 'chat-delete-btn';
-                del.setAttribute('aria-label', 'Delete message');
-                del.innerHTML = `
+                actions.appendChild(copyBtn);
+                if (canDelete) {
+                    const del = document.createElement('button');
+                    del.type = 'button';
+                    del.className = 'chat-delete-btn';
+                    del.setAttribute('aria-label', 'Delete message');
+                    del.innerHTML = `
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9zM7 9h2v9H7V9zM6 21h12a1 1 0 0 0 1-1V9H5v11a1 1 0 0 0 1 1z"/>
                     </svg>
                 `;
-                del.dataset.scope = current === 'global' ? 'global' : 'user';
-                if (m.id) del.dataset.id = String(m.id);
-                del.dataset.index = String(index);
-                actions.appendChild(del);
-            }
-            row.appendChild(actions);
-            if (m.seenAt && (m.from || '').toLowerCase() === (user || '').toLowerCase()) {
-                const seen = document.createElement('div');
-                seen.className = 'chat-seen';
-                seen.textContent = `seen ${new Date(m.seenAt).toLocaleString()}`;
-                row.appendChild(seen);
-            }
-            bodyEl.appendChild(row);
-            body.classList.add('clamp');
-            body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
-            const hasOverflow = body.scrollHeight > body.clientHeight + 1;
-            if (hasOverflow || hasHiddenRows) {
-                const toggle = document.createElement('button');
-                toggle.type = 'button';
-                toggle.className = 'chat-toggle-btn';
-                toggle.dataset.expanded = '0';
-                toggle.textContent = 'Show more';
-                toggle.addEventListener('click', () => {
-                    const nextExpanded = toggle.dataset.expanded !== '1';
-                    body.classList.toggle('clamp', !nextExpanded);
-                    body.classList.toggle('expanded', nextExpanded);
-                    body.querySelectorAll('tbody tr').forEach((tr, idx) => {
-                        if (idx >= TABLE_ROW_CLAMP) {
-                            tr.classList.toggle('chat-table-row-hidden', !nextExpanded);
-                        }
+                    del.dataset.scope = current === 'global' ? 'global' : 'user';
+                    if (m.id) del.dataset.id = String(m.id);
+                    del.dataset.index = String(index);
+                    actions.appendChild(del);
+                }
+                row.appendChild(actions);
+                if (receiptSeen && receiptSeenAt && isOwn) {
+                    const seen = document.createElement('div');
+                    seen.className = 'chat-seen';
+                    seen.textContent = `seen ${new Date(receiptSeenAt).toLocaleString()}`;
+                    row.appendChild(seen);
+                }
+                bodyEl.appendChild(row);
+                body.classList.add('clamp');
+                body.style.setProperty('--chat-line-clamp', String(LINE_CLAMP));
+                const hasOverflow = body.scrollHeight > body.clientHeight + 1;
+                if (hasOverflow || hasHiddenRows) {
+                    const toggle = document.createElement('button');
+                    toggle.type = 'button';
+                    toggle.className = 'chat-toggle-btn';
+                    toggle.dataset.expanded = '0';
+                    toggle.textContent = 'Show more';
+                    toggle.addEventListener('click', () => {
+                        const nextExpanded = toggle.dataset.expanded !== '1';
+                        body.classList.toggle('clamp', !nextExpanded);
+                        body.classList.toggle('expanded', nextExpanded);
+                        body.querySelectorAll('tbody tr').forEach((tr, idx) => {
+                            if (idx >= TABLE_ROW_CLAMP) {
+                                tr.classList.toggle('chat-table-row-hidden', !nextExpanded);
+                            }
+                        });
+                        toggle.dataset.expanded = nextExpanded ? '1' : '0';
+                        toggle.textContent = nextExpanded ? 'Show less' : 'Show more';
                     });
-                    toggle.dataset.expanded = nextExpanded ? '1' : '0';
-                    toggle.textContent = nextExpanded ? 'Show less' : 'Show more';
-                });
-                actions.appendChild(toggle);
+                    actions.appendChild(toggle);
+                }
+            });
+            if (nearBottom) {
+                bodyEl.scrollTop = bodyEl.scrollHeight;
+            } else {
+                const delta = bodyEl.scrollHeight - prevScrollHeight;
+                bodyEl.scrollTop = prevScrollTop + delta;
             }
-        });
-        if (nearBottom) {
-            bodyEl.scrollTop = bodyEl.scrollHeight;
-        } else {
-            const delta = bodyEl.scrollHeight - prevScrollHeight;
-            bodyEl.scrollTop = prevScrollTop + delta;
         }
-    }
 
         function showStatus(text) {
-        if (!statusEl) return;
-        if (!text) {
-            statusEl.classList.add('hidden');
-            statusEl.textContent = '';
-            return;
+            if (!statusEl) return;
+            if (!text) {
+                statusEl.classList.add('hidden');
+                statusEl.textContent = '';
+                return;
+            }
+            statusEl.textContent = text;
+            statusEl.classList.remove('hidden');
         }
-        statusEl.textContent = text;
-        statusEl.classList.remove('hidden');
-    }
 
         function updateDeleteAllVisibility() {
-        if (!deleteAllBtn) return;
-        const show = current === 'admin';
-        deleteAllBtn.classList.toggle('hidden', !show);
-        aiSettingsBtn?.classList.toggle('hidden', current !== 'ai');
-        pollToggleBtn?.classList.toggle('hidden', current === 'ai');
-    }
+            if (!deleteAllBtn) return;
+            const show = current === 'admin';
+            deleteAllBtn.classList.toggle('hidden', !show);
+            aiSettingsBtn?.classList.toggle('hidden', current !== 'ai');
+            pollToggleBtn?.classList.toggle('hidden', current === 'ai');
+        }
 
-    function schedulePoll(delay) {
-        clearPollTimer();
-        if (!pollingEnabled || minimized || current === 'ai') return;
-        pollTimer = setTimeout(poll, delay);
-    }
+        function schedulePoll(delay) {
+            clearPollTimer();
+            if (!pollingEnabled || minimized || current === 'ai') return;
+            pollTimer = setTimeout(poll, delay);
+        }
 
         function setBadge(el, count) {
-        if (!el) return;
-        if (count > 0) {
-            el.textContent = String(count);
-            el.classList.remove('hidden');
-        } else {
-            el.textContent = '';
-            el.classList.add('hidden');
+            if (!el) return;
+            if (count > 0) {
+                el.textContent = String(count);
+                el.classList.remove('hidden');
+            } else {
+                el.textContent = '';
+                el.classList.add('hidden');
+            }
         }
-    }
 
         async function poll() {
-        if (minimized) return;
-        if (current === 'ai') return;
-        if (document.visibilityState === 'hidden') {
-            if (pollingEnabled) schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
-            return;
-        }
-        try {
-            const currentRes = await fetchMessages(current, true);
-            hasNewActivity(current, currentRes);
-            render(currentRes.messages);
-            const other = current === 'global' ? 'admin' : 'global';
-            const otherRes = await fetchMessages(other, false);
-            hasNewActivity(other, otherRes);
-            if (current === 'global') {
-                setBadge(globalBadge, 0);
-                setBadge(adminBadge, otherRes.unseenCount);
-            } else {
-                setBadge(adminBadge, 0);
-                setBadge(globalBadge, otherRes.unseenCount);
+            if (minimized) return;
+            if (current === 'ai') return;
+            if (document.visibilityState === 'hidden') {
+                if (pollingEnabled) schedulePoll(300000);   //300000 ms = 300 seconds = 5 minutes
+                return;
             }
-        } catch {}
-        if (pollingEnabled) {
-            schedulePoll(networkOk ? 30000 : 300000);   //30000 ms = 30 seconds, 300000 ms = 300 seconds = 5 minutes
+            try {
+                const currentRes = await fetchMessages(current, true);
+                hasNewActivity(current, currentRes);
+                render(currentRes.messages);
+                const other = current === 'global' ? 'admin' : 'global';
+                const otherRes = await fetchMessages(other, false);
+                hasNewActivity(other, otherRes);
+                if (current === 'global') {
+                    setBadge(globalBadge, 0);
+                    setBadge(adminBadge, otherRes.unseenCount);
+                } else {
+                    setBadge(adminBadge, 0);
+                    setBadge(globalBadge, otherRes.unseenCount);
+                }
+            } catch {}
+            if (pollingEnabled) {
+                schedulePoll(networkOk ? 30000 : 300000);   //30000 ms = 30 seconds, 300000 ms = 300 seconds = 5 minutes
+            }
         }
-    }
         if (!endpoint || !user) {
             showStatus('Chat is unavailable until you login.');
         }
@@ -1260,6 +1167,11 @@
         }
 
         bodyEl?.addEventListener('click', async (ev) => {
+            const loadBtn = ev.target?.closest('[data-load-older]');
+            if (loadBtn) {
+                await loadOlderMessages(loadBtn.dataset.loadOlder || current);
+                return;
+            }
             const copyBtn = ev.target?.closest('.chat-copy-btn');
             if (copyBtn) {
                 const item = copyBtn.closest('.chat-item');
@@ -1275,6 +1187,12 @@
             const index = Number(btn.dataset.index);
             await deleteMessages(scope, id, index, false);
             poll();
+        });
+        bodyEl?.addEventListener('scroll', () => {
+            if (current === 'ai') return;
+            if (bodyEl.scrollTop <= 16 && chatPages[current]?.hasMore && !chatPages[current]?.loadingOlder) {
+                loadOlderMessages(current);
+            }
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible' && !minimized && pollingEnabled) {

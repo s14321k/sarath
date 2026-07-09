@@ -541,10 +541,12 @@
                 scope,
                 to,
                 from: adminCreds.username,
+                password: adminCreds.password,
                 ...payload
             })
         });
-        if (!res.ok) throw new Error('Send failed');
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.error || json?.detail || `Send failed (${res.status})`);
     }
 
     async function fetchMessages(scope) {
@@ -559,8 +561,10 @@
                 password: adminCreds.password
             })
         });
-        if (!res.ok) throw new Error('Fetch failed');
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(json?.error || json?.detail || `Fetch failed (${res.status})`);
+        }
         return json.messages || [];
     }
 
@@ -814,9 +818,19 @@
             }
             const item = document.createElement('div');
             item.className = 'message-item';
-            if ((m.from || '').toLowerCase() === (adminCreds.username || '').toLowerCase()) {
+            const replyTo = scope === 'admin'
+                ? String(m.owner || m.from || '').trim()
+                : '';
+            const isOwnAdminMessage = (m.from || '').toLowerCase() === (adminCreds.username || '').toLowerCase();
+            if (isOwnAdminMessage) {
                 item.classList.add('chat-item-own');
             }
+            // Admin inbox messages now carry seenByUser/seenAtUser directly
+            // (single doc under users/{owner}/messages, no mirrored copy).
+            // Global messages keep their own seenBy-map handling and don't
+            // use this pair.
+            const receiptSeen = scope === 'admin' ? Boolean(m.seenByUser) : false;
+            const receiptSeenAt = scope === 'admin' ? m.seenAtUser : '';
             const meta = document.createElement('div');
             meta.className = 'message-meta';
             const timeText = m.time ? fmtTime(dt) : '';
@@ -861,15 +875,24 @@
             `;
             delBtn.dataset.scope = scope;
             if (m.id) delBtn.dataset.id = String(m.id);
+            if (scope === 'admin' && m.owner) delBtn.dataset.user = String(m.owner);
             delBtn.dataset.index = String(index);
             actions.appendChild(copyBtn);
+            if (scope === 'admin' && replyTo && !isOwnAdminMessage) {
+                const replyBtn = document.createElement('button');
+                replyBtn.type = 'button';
+                replyBtn.className = 'message-action-btn message-reply-btn';
+                replyBtn.textContent = 'Reply';
+                replyBtn.dataset.replyTo = replyTo;
+                actions.appendChild(replyBtn);
+            }
             actions.appendChild(delBtn);
             item.appendChild(meta);
             item.appendChild(body);
-            if (m.seenAt && (m.from || '').toLowerCase() === (adminCreds.username || '').toLowerCase()) {
+            if (receiptSeen && receiptSeenAt && isOwnAdminMessage) {
                 const seen = document.createElement('div');
                 seen.className = 'chat-seen';
-                seen.textContent = `seen ${new Date(m.seenAt).toLocaleString()}`;
+                seen.textContent = `seen ${new Date(receiptSeenAt).toLocaleString()}`;
                 item.appendChild(seen);
             }
             item.appendChild(actions);
@@ -900,6 +923,15 @@
         });
     }
 
+    function renderMessageStatus(container, message, isError) {
+        if (!container) return;
+        container.innerHTML = '';
+        const item = document.createElement('div');
+        item.className = `message-item${isError ? ' message-status-error' : ''}`;
+        item.textContent = message;
+        container.appendChild(item);
+    }
+
     async function handleLogin(ev) {
         ev.preventDefault();
         setError('');
@@ -908,6 +940,9 @@
         try {
             const data = await fetchStats(username, password);
             adminCreds = { username, password };
+            window.AdminSession = { username, password };
+            document.dispatchEvent(new CustomEvent('admin-login', { detail: { username, password } }));
+            window.AdminChat?.show?.();
             loginCard.classList.add('hidden');
             statsCard.classList.remove('hidden');
             renderTable(data.stats || []);
@@ -947,6 +982,7 @@
         messagesActive = false;
         approvalsActive = false;
         setActiveTab('dashboard');
+        document.dispatchEvent(new CustomEvent('admin-messages-active', { detail: { active: false } }));
     }
 
     function showTable() {
@@ -957,6 +993,7 @@
         messagesActive = false;
         approvalsActive = false;
         setActiveTab('table');
+        document.dispatchEvent(new CustomEvent('admin-messages-active', { detail: { active: false } }));
     }
 
     function showMessages() {
@@ -967,6 +1004,7 @@
         messagesActive = true;
         approvalsActive = false;
         setActiveTab('messages');
+        document.dispatchEvent(new CustomEvent('admin-messages-active', { detail: { active: true } }));
         pollMessages();
     }
 
@@ -978,6 +1016,7 @@
         messagesActive = false;
         approvalsActive = true;
         setActiveTab('approvals');
+        document.dispatchEvent(new CustomEvent('admin-messages-active', { detail: { active: false } }));
         await loadApprovals();
     }
 
@@ -1066,17 +1105,25 @@
             const to = (adminToUser?.value || '').trim();
             const raw = adminMessage?.value || '';
             if (!to || !raw.trim()) return;
-            await sendAdminMessage('user', to, raw);
-            adminMessage.value = '';
-            await pollMessages();
+            try {
+                await sendAdminMessage('user', to, raw);
+                adminMessage.value = '';
+                await pollMessages();
+            } catch (error) {
+                renderMessageStatus(adminInbox, error instanceof Error ? error.message : 'Send failed.', true);
+            }
         });
         adminGlobalForm?.addEventListener('submit', async (ev) => {
             ev.preventDefault();
             const raw = adminGlobalMessage?.value || '';
             if (!raw.trim()) return;
-            await sendAdminMessage('global', '', raw);
-            adminGlobalMessage.value = '';
-            await pollMessages();
+            try {
+                await sendAdminMessage('global', '', raw);
+                adminGlobalMessage.value = '';
+                await pollMessages();
+            } catch (error) {
+                renderMessageStatus(globalMessages, error instanceof Error ? error.message : 'Send failed.', true);
+            }
         });
     }
 
@@ -1097,15 +1144,16 @@
             return;
         }
         try {
-            const inbox = await fetchMessages('admin');
             const global = await fetchMessages('global');
-            renderMessages(adminInbox, inbox, 'admin');
             renderMessages(globalMessages, global, 'global');
-        } catch {}
+            if (!global.length) renderMessageStatus(globalMessages, 'No global messages yet.', false);
+        } catch (error) {
+            renderMessageStatus(globalMessages, error instanceof Error ? error.message : 'Global messages fetch failed.', true);
+        }
         schedulePoll(10000);
     }
 
-    async function deleteMessages(scope, index, deleteAll, id) {
+    async function deleteMessages(scope, index, deleteAll, id, user) {
         if (!endpoint) throw new Error('Missing endpoint');
         const res = await fetch(endpoint, {
             method: 'POST',
@@ -1114,12 +1162,15 @@
                 eventType: 'message_delete',
                 scope,
                 index,
+                id,
+                user,
                 deleteAll,
                 username: adminCreds.username,
                 password: adminCreds.password
             })
         });
-        if (!res.ok) throw new Error('Delete failed');
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json?.error || json?.detail || `Delete failed (${res.status})`);
     }
 
     adminInbox?.addEventListener('click', async (ev) => {
@@ -1131,13 +1182,25 @@
             copyText(msg);
             return;
         }
+        const replyBtn = ev.target?.closest('.message-reply-btn');
+        if (replyBtn) {
+            const to = replyBtn.dataset.replyTo || '';
+            if (adminToUser) adminToUser.value = to;
+            adminMessage?.focus();
+            return;
+        }
         const btn = ev.target?.closest('button[data-index]');
         if (!btn) return;
         const idx = Number(btn.dataset.index);
         const id = btn.dataset.id || '';
+        const user = btn.dataset.user || '';
         const scope = btn.dataset.scope || 'admin';
-        await deleteMessages(scope, idx, false, id);
-        await pollMessages();
+        try {
+            await deleteMessages(scope, idx, false, id, user);
+            await pollMessages();
+        } catch (error) {
+            renderMessageStatus(adminInbox, error instanceof Error ? error.message : 'Delete failed.', true);
+        }
     });
 
     globalMessages?.addEventListener('click', async (ev) => {
@@ -1154,18 +1217,30 @@
         const idx = Number(btn.dataset.index);
         const id = btn.dataset.id || '';
         const scope = btn.dataset.scope || 'global';
-        await deleteMessages(scope, idx, false, id);
-        await pollMessages();
+        try {
+            await deleteMessages(scope, idx, false, id);
+            await pollMessages();
+        } catch (error) {
+            renderMessageStatus(globalMessages, error instanceof Error ? error.message : 'Delete failed.', true);
+        }
     });
 
     adminInboxClear?.addEventListener('click', async () => {
-        await deleteMessages('admin', 0, true, '');
-        await pollMessages();
+        try {
+            await deleteMessages('admin', 0, true, '');
+            await pollMessages();
+        } catch (error) {
+            renderMessageStatus(adminInbox, error instanceof Error ? error.message : 'Delete failed.', true);
+        }
     });
 
     globalMessagesClear?.addEventListener('click', async () => {
-        await deleteMessages('global', 0, true, '');
-        await pollMessages();
+        try {
+            await deleteMessages('global', 0, true, '');
+            await pollMessages();
+        } catch (error) {
+            renderMessageStatus(globalMessages, error instanceof Error ? error.message : 'Delete failed.', true);
+        }
     });
 
     approvalApprove?.addEventListener('click', async () => {

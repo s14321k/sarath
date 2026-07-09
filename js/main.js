@@ -287,15 +287,36 @@
         let currentVisualizationSource = '';
         let currentVisualizationHistory = [];
         let aiSettingsModal = null;
-        let aiProviderInput = null;
-        let aiBaseUrlInput = null;
-        let aiModelInput = null;
-        let aiApiKeyInput = null;
+        // let aiProviderInput = null;
+        // let aiBaseUrlInput = null;
+        // let aiModelInput = null;
+        // let aiApiKeyInput = null;
         let aiProviderHelp = null;
         let aiConfigStatus = null;
-        let aiConfigCache = null;
+        // let aiConfigCache = null;
         let aiConfigLoadedForUser = '';
         const AI_PREFS_KEY = 'aiVisualPrefs:v1';
+
+        window.AiSettings.init({
+            callApi: callVisitApi,
+            getUser: getCurrentUser,
+            getSessionToken: getSessionToken,
+            requiresSessionUpgrade,
+            redirectToReLogin
+        });
+
+        function updateAiUiState() {
+            const hasConfig = window.AiSettings.hasUsableKey();
+            if (runnerForceVisualizeButton) {
+                runnerForceVisualizeButton.disabled = !hasConfig;
+                runnerForceVisualizeButton.textContent = hasConfig ? 'Use AI Again' : 'AI Setup Required';
+            }
+            if (runnerSaveVisualButton) runnerSaveVisualButton.disabled = !currentVisualization;
+            if (runnerVisualization && !hasConfig && !runnerVisualization.innerHTML.trim()) {
+                runnerVisualization.innerHTML = '<div class="logic-empty">Add AI settings to generate a visual explanation for this program.</div>';
+            }
+        }
+        window.AiSettings.onChange(updateAiUiState);
 
         function fallbackCopy(text) {
             const area = document.createElement('textarea');
@@ -432,57 +453,10 @@
             aiConfigStatus.classList.toggle('is-error', Boolean(isError));
         }
 
-        function applyAiProviderDefaults(forceModel) {
-            if (!aiProviderInput || !aiBaseUrlInput || !aiModelInput) return;
-            const provider = aiProviderInput.value || 'openai';
-            if (provider === 'openai') {
-                if (!aiBaseUrlInput.value.trim()) {
-                    aiBaseUrlInput.value = 'https://api.openai.com/v1';
-                }
-                if (forceModel || !aiModelInput.value.trim()) {
-                    aiModelInput.value = 'gpt-5.5';
-                }
-            } else if (provider === 'openrouter') {
-                if (forceModel || !aiBaseUrlInput.value.trim()) {
-                    aiBaseUrlInput.value = 'https://openrouter.ai/api/v1';
-                }
-                if (forceModel || !aiModelInput.value.trim()) {
-                    aiModelInput.value = 'openai/gpt-4.1-mini';
-                }
-            } else if (provider === 'groq') {
-                if (forceModel || !aiBaseUrlInput.value.trim()) {
-                    aiBaseUrlInput.value = 'https://api.groq.com/openai/v1';
-                }
-                if (forceModel || !aiModelInput.value.trim()) {
-                    aiModelInput.value = 'llama-3.1-8b-instant';
-                }
-            } else if (provider === 'together') {
-                if (forceModel || !aiBaseUrlInput.value.trim()) {
-                    aiBaseUrlInput.value = 'https://api.together.xyz/v1';
-                }
-                if (forceModel || !aiModelInput.value.trim()) {
-                    aiModelInput.value = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo';
-                }
-            } else if (provider === 'anthropic') {
-                if (forceModel || !aiBaseUrlInput.value.trim()) {
-                    aiBaseUrlInput.value = 'https://api.anthropic.com/v1';
-                }
-                if (forceModel || !aiModelInput.value.trim()) {
-                    aiModelInput.value = 'claude-3-5-sonnet-latest';
-                }
-            } else if (provider === 'gemini') {
-                if (forceModel || !aiBaseUrlInput.value.trim()) {
-                    aiBaseUrlInput.value = 'https://generativelanguage.googleapis.com/v1beta';
-                }
-                if (forceModel || !aiModelInput.value.trim()) {
-                    aiModelInput.value = 'gemini-2.5-flash';
-                }
-            }
-            updateAiProviderHelp();
-        }
+
 
         function updateAiUiState() {
-            const hasConfig = Boolean(aiConfigCache?.hasApiKey && aiConfigCache?.model);
+            const hasConfig = window.AiSettings.hasUsableKey();
             if (runnerVisualizeButton) {
                 runnerVisualizeButton.disabled = false;
                 runnerVisualizeButton.textContent = 'Visualize Logic';
@@ -499,238 +473,7 @@
             }
         }
 
-        function fillAiSettingsForm() {
-            if (!aiProviderInput || !aiBaseUrlInput || !aiModelInput || !aiApiKeyInput) return;
-            aiProviderInput.value = aiConfigCache?.provider || 'openai';
-            aiBaseUrlInput.value = aiConfigCache?.baseUrl || '';
-            aiModelInput.value = aiConfigCache?.model || '';
-            aiApiKeyInput.value = '';
-            applyAiProviderDefaults(false);
-            setAiConfigStatus(aiConfigCache?.hasApiKey ? 'API key saved for this user. Leave blank to keep it unchanged.' : 'Enter an API key and model to enable visualization.', false);
-        }
 
-        function updateAiProviderHelp() {
-            if (!aiProviderHelp || !aiProviderInput) return;
-            const provider = aiProviderInput.value || 'openai';
-            let title = 'Provider notes';
-            let body = 'Save the API key once for this authenticated user. It stays on the backend in encrypted form.';
-            if (provider === 'gemini') {
-                title = 'Gemini';
-                body = 'Create a Gemini API key in Google AI Studio. The key belongs to a Google Cloud project. For stronger control, restrict it to the Generative Language API in Google Cloud Console. Recommended model: gemini-2.5-flash.';
-            } else if (provider === 'openai') {
-                title = 'OpenAI';
-                body = 'Use an OpenAI API key from platform.openai.com. ChatGPT subscription access does not automatically include API quota. Recommended model: gpt-5.5.';
-            } else if (provider === 'anthropic') {
-                title = 'Anthropic';
-                body = 'Use an Anthropic Console API key. Recommended model: claude-3-5-sonnet-latest.';
-            } else if (provider === 'openrouter') {
-                title = 'OpenRouter';
-                body = 'Use an OpenRouter API key and an OpenRouter model id such as openai/gpt-4.1-mini or a supported free-tier model if available on your account.';
-            } else if (provider === 'groq') {
-                title = 'Groq';
-                body = 'Use a Groq API key and a Groq-supported model id. Recommended default: llama-3.1-8b-instant.';
-            } else if (provider === 'together') {
-                title = 'Together';
-                body = 'Use a Together API key and a Together model id. Recommended default: meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo.';
-            }
-            aiProviderHelp.innerHTML = `<strong>${escapeHtml(title)}:</strong> ${escapeHtml(body)}`;
-        }
-
-        async function loadAiConfig(forceReload) {
-            const user = getCurrentUser();
-            const sessionToken = getSessionToken();
-            if (requiresSessionUpgrade()) {
-                redirectToReLogin('Please log in again to use AI features.');
-                return null;
-            }
-            if (!user || !sessionToken) {
-                aiConfigCache = null;
-                aiConfigLoadedForUser = '';
-                updateAiUiState();
-                return null;
-            }
-            if (!forceReload && aiConfigCache && aiConfigLoadedForUser === user) {
-                return aiConfigCache;
-            }
-            try {
-                const data = await callVisitApi({
-                    eventType: 'ai_config_get',
-                    user,
-                    sessionToken
-                });
-                aiConfigCache = {
-                    hasApiKey: Boolean(data?.hasApiKey),
-                    provider: data?.provider || 'openai',
-                    model: data?.model || '',
-                    baseUrl: data?.baseUrl || '',
-                    updatedAt: data?.updatedAt || ''
-                };
-                aiConfigLoadedForUser = user;
-            } catch {
-                aiConfigCache = null;
-                aiConfigLoadedForUser = user;
-            }
-            fillAiSettingsForm();
-            updateAiUiState();
-            return aiConfigCache;
-        }
-
-        function ensureAiSettingsModal() {
-            if (aiSettingsModal) return;
-            aiSettingsModal = document.createElement('div');
-            aiSettingsModal.className = 'ai-settings-modal hidden';
-            aiSettingsModal.innerHTML = `
-                <div class="ai-settings-backdrop" data-ai-close="1"></div>
-                <section class="ai-settings-panel" role="dialog" aria-modal="true" aria-label="AI settings">
-                    <div class="ai-settings-header">
-                        <div>
-                            <div class="ai-settings-title">AI Settings</div>
-                            <div class="ai-settings-subtitle">Saved per authenticated user</div>
-                        </div>
-                        <button type="button" class="code-runner-button secondary" data-ai-close="1">Close</button>
-                    </div>
-                    <div class="ai-settings-body">
-                        <label class="code-runner-label" for="aiProviderInput">Provider</label>
-                        <select id="aiProviderInput" class="code-runner-select">
-                            <option value="openai">OpenAI</option>
-                            <option value="anthropic">Claude / Anthropic</option>
-                            <option value="gemini">Gemini</option>
-                            <option value="openrouter">OpenRouter</option>
-                            <option value="groq">Groq</option>
-                            <option value="together">Together</option>
-                        </select>
-                        <label class="code-runner-label" for="aiBaseUrlInput">Base URL</label>
-                        <input id="aiBaseUrlInput" class="code-runner-text" type="text" placeholder="https://api.openai.com/v1">
-                        <label class="code-runner-label" for="aiModelInput">Model</label>
-                        <input id="aiModelInput" class="code-runner-text" type="text" placeholder="gpt-4.1-mini">
-                        <label class="code-runner-label" for="aiApiKeyInput">API Key</label>
-                        <input id="aiApiKeyInput" class="code-runner-text" type="password" placeholder="sk-...">
-                        <div class="ai-provider-help" data-ai-provider-help></div>
-                        <div class="ai-settings-status" data-ai-config-status></div>
-                        <div class="ai-settings-actions">
-                            <button type="button" class="code-runner-button primary" data-ai-action="save">Save</button>
-                            <button type="button" class="code-runner-button secondary" data-ai-action="refresh">Refresh</button>
-                            <button type="button" class="code-runner-button secondary" data-ai-action="delete">Remove</button>
-                        </div>
-                    </div>
-                </section>
-            `;
-            document.body.appendChild(aiSettingsModal);
-            aiProviderInput = aiSettingsModal.querySelector('#aiProviderInput');
-            aiBaseUrlInput = aiSettingsModal.querySelector('#aiBaseUrlInput');
-            aiModelInput = aiSettingsModal.querySelector('#aiModelInput');
-            aiApiKeyInput = aiSettingsModal.querySelector('#aiApiKeyInput');
-            aiProviderHelp = aiSettingsModal.querySelector('[data-ai-provider-help]');
-            aiConfigStatus = aiSettingsModal.querySelector('[data-ai-config-status]');
-            aiProviderInput?.addEventListener('change', () => applyAiProviderDefaults(true));
-
-            aiSettingsModal.addEventListener('click', async (ev) => {
-                if (ev.target.closest('[data-ai-close="1"]')) {
-                    closeAiSettingsModal();
-                    return;
-                }
-                const action = ev.target.closest('[data-ai-action]')?.dataset.aiAction;
-                if (!action) return;
-                if (action === 'refresh') {
-                    await loadAiConfig(true);
-                    fillAiSettingsForm();
-                    return;
-                }
-                if (action === 'save') {
-                    await saveAiConfig();
-                    return;
-                }
-                if (action === 'delete') {
-                    await deleteAiConfig();
-                }
-            });
-        }
-
-        function openAiSettingsModal() {
-            if (requiresSessionUpgrade()) {
-                redirectToReLogin('Please log in again to use AI features.');
-                return;
-            }
-            ensureAiSettingsModal();
-            fillAiSettingsForm();
-            aiSettingsModal.classList.remove('hidden');
-            document.body.classList.add('ai-settings-open');
-            setTimeout(() => aiModelInput?.focus(), 0);
-        }
-
-        function closeAiSettingsModal() {
-            if (!aiSettingsModal) return;
-            aiSettingsModal.classList.add('hidden');
-            document.body.classList.remove('ai-settings-open');
-        }
-
-        async function saveAiConfig() {
-            const user = getCurrentUser();
-            const sessionToken = getSessionToken();
-            if (requiresSessionUpgrade()) {
-                redirectToReLogin('Please log in again to use AI features.');
-                return;
-            }
-            if (!user || !sessionToken) {
-                setAiConfigStatus('Login is required before saving AI settings.', true);
-                return;
-            }
-            const payload = {
-                eventType: 'ai_config_save',
-                user,
-                sessionToken,
-                provider: aiProviderInput?.value || 'openai',
-                baseUrl: aiBaseUrlInput?.value || '',
-                model: aiModelInput?.value || '',
-                apiKey: aiApiKeyInput?.value || ''
-            };
-            if (!payload.model.trim()) {
-                setAiConfigStatus('Model is required.', true);
-                return;
-            }
-            setAiConfigStatus('Saving AI settings...', false);
-            try {
-                await callVisitApi(payload);
-                await loadAiConfig(true);
-                fillAiSettingsForm();
-                setAiConfigStatus('AI settings saved.', false);
-            } catch (error) {
-                setAiConfigStatus(error instanceof Error ? error.message : 'Failed to save AI settings.', true);
-            }
-        }
-
-        async function deleteAiConfig() {
-            const user = getCurrentUser();
-            const sessionToken = getSessionToken();
-            if (requiresSessionUpgrade()) {
-                redirectToReLogin('Please log in again to use AI features.');
-                return;
-            }
-            if (!user || !sessionToken) {
-                setAiConfigStatus('Login is required before deleting AI settings.', true);
-                return;
-            }
-            setAiConfigStatus('Removing AI settings...', false);
-            try {
-                await callVisitApi({
-                    eventType: 'ai_config_delete',
-                    user,
-                    sessionToken
-                });
-                aiConfigCache = {
-                    hasApiKey: false,
-                    provider: 'openai',
-                    model: '',
-                    baseUrl: '',
-                    updatedAt: ''
-                };
-                fillAiSettingsForm();
-                updateAiUiState();
-                setAiConfigStatus('AI settings removed.', false);
-            } catch (error) {
-                setAiConfigStatus(error instanceof Error ? error.message : 'Failed to remove AI settings.', true);
-            }
-        }
 
         function renderVisualization(data) {
             if (!runnerVisualization) return;
@@ -1025,12 +768,10 @@
                 }
                 return;
             }
-            await loadAiConfig(false);
-            if (!aiConfigCache?.hasApiKey || !aiConfigCache?.model) {
-                openAiSettingsModal();
-                if (runnerVisualization) {
-                    runnerVisualization.innerHTML = '<div class="logic-empty">No approved visualization found. Save AI settings to generate one.</div>';
-                }
+            await window.AiSettings.loadConfig(false);
+            if (!window.AiSettings.hasUsableKey()) {
+                window.AiSettings.open();
+                if (runnerVisualization) runnerVisualization.innerHTML = '<div class="logic-empty">No approved visualization found. Save AI settings to generate one.</div>';
                 return;
             }
             const prefs = readAiPrefs();
@@ -1160,7 +901,7 @@
                 } else if (action === 'history') {
                     openVisualizationHistory();
                 } else if (action === 'ai-settings') {
-                    openAiSettingsModal();
+                    window.AiSettings.open();
                 } else if (action === 'open-ide') {
                     openJudge0Ide();
                 }
@@ -1222,7 +963,9 @@
             if (runnerHistoryContainer) {
                 runnerHistoryContainer.innerHTML = '';
             }
-            loadAiConfig(false);
+            window.AiSettings.loadConfig(false)
+                .then(updateAiUiState)
+                .catch(updateAiUiState);
             updateAiUiState();
             setTimeout(() => runnerEditor?.focus(), 0);
         }

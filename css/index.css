@@ -1315,6 +1315,18 @@ body {
     padding: 2px 4px;
 }
 
+.chat-load-more {
+    align-self: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 12px;
+}
+
 .chat-ai-modal.hidden {
     display: none;
 }
@@ -1369,6 +1381,52 @@ body {
 
 .chat-ai-modal .ai-settings-body {
     padding: 16px;
+}
+
+.chat-ai-modal .ai-key-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.chat-ai-modal .ai-key-empty,
+.chat-ai-modal .ai-key-item {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 12px;
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.chat-ai-modal .ai-key-item {
+    cursor: pointer;
+}
+
+.chat-ai-modal .ai-key-item.is-active,
+.chat-ai-modal .ai-key-item.is-editing {
+    border-color: rgba(233, 69, 96, 0.45);
+    background: rgba(233, 69, 96, 0.12);
+}
+
+.chat-ai-modal .ai-key-item-label {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.chat-ai-modal .ai-key-item-meta {
+    margin-top: 4px;
+}
+
+.chat-ai-modal .ai-key-active-badge {
+    display: inline-block;
+    margin-left: 6px;
+    color: var(--accent-light);
+    font-size: 11px;
+}
+
+.chat-ai-modal .ai-key-add-btn {
+    margin-bottom: 4px;
 }
 
 .chat-ai-modal .code-runner-label {

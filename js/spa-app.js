@@ -249,6 +249,7 @@ class LitSpaApp extends LitElement {
 
     async ensureContentBehavior() {
         await loadScript('js/highlight-local.js').catch((error) => console.warn(error));
+        await loadScript('js/Aisettings.js').catch((error) => console.warn(error));
         await loadScript('js/main.js').catch((error) => console.warn(error));
     }
 
