@@ -2,6 +2,10 @@
 
 This folder is the static frontend deployment root.
 
+## Important points
+
+- js files from the jsOld are retrieved from backend which is from private repo. Same replica js is just using here in jsOld for development.
+
 ## Entry Points
 
 - `login.html` is the public entry point for authentication.

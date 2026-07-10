@@ -61,12 +61,15 @@
         if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
         const response = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: encodeVisitPayload(payload)
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-            const err = new Error(data?.error || data?.detail || `HTTP ${response.status}`);
+            const message = response.status === 429
+                ? (data?.error || data?.detail || 'Login service is busy. Please try again shortly.')
+                : (data?.error || data?.detail || `HTTP ${response.status}`);
+            const err = new Error(message);
+            err.status = response.status;
             // Surface backend lockout/attempt info (see index.js's eventType
             // 'auth' handler) so the UI can show a concrete attempts-left
             // count or a wait-time warning instead of a generic message.
@@ -76,12 +79,25 @@
             if (data && typeof data.retryAfterMs !== 'undefined') {
                 err.retryAfterMs = data.retryAfterMs;
             }
+            const retryAfterSeconds = Number(response.headers.get('Retry-After'));
+            if (!err.retryAfterMs && !Number.isNaN(retryAfterSeconds) && retryAfterSeconds > 0) {
+                err.retryAfterMs = retryAfterSeconds * 1000;
+            }
             if (response.status === 423) {
                 err.locked = true;
             }
             throw err;
         }
         return data;
+    }
+
+    function encodeVisitPayload(payload) {
+        const params = new URLSearchParams();
+        Object.entries(payload || {}).forEach(([key, value]) => {
+            if (typeof value === 'undefined' || value === null) return;
+            params.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+        });
+        return params;
     }
 
     async function login(username, password) {

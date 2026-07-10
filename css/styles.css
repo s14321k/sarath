@@ -135,7 +135,8 @@ body {
             flex: 1;
             margin-left: 320px;
             padding: 40px 48px;
-            max-width: 1200px;
+            width: calc(100% - 320px);
+            max-width: none;
             background: var(--content-bg);
             min-height: 100vh;
         }
@@ -1393,6 +1394,7 @@ body {
 
             .content {
                 margin-left: 280px;
+                width: calc(100% - 280px);
                 padding: 32px 24px;
             }
         }
@@ -1409,6 +1411,7 @@ body {
 
             .content {
                 margin-left: 0;
+                width: 100%;
                 padding: 24px 16px;
             }
 

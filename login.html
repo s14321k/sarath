@@ -442,6 +442,12 @@
       transform: translateY(-1px);
     }
     .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled {
+      cursor: wait;
+      opacity: .68;
+      box-shadow: none;
+      transform: none;
+    }
 
     /* footer note */
     .auth-note {
@@ -973,7 +979,6 @@
   </div>
 </div>
 
-<script src="js/auth-client.js"></script>
 <script>
   /* ── Matrix Rain ── */
   (function() {
@@ -1237,6 +1242,19 @@
       }, 6000);
     }
 
+    function resetShatterPage() {
+      document.body.classList.remove('shattering');
+      const stage = document.getElementById('shatterStage');
+      if (!stage) return;
+      stage.classList.remove('active');
+      stage.innerHTML = '';
+    }
+
+    function setSubmitting(button, submitting) {
+      button.disabled = submitting;
+      button.setAttribute('aria-busy', submitting ? 'true' : 'false');
+    }
+
     // Ensure a minimum visible loading time (2-3s) even if the API responds instantly
     function withMinDelay(promise, minMs) {
       const delayPromise = new Promise(resolve => setTimeout(resolve, minMs));
@@ -1251,10 +1269,11 @@
     const loginError = document.getElementById('loginError');
     const loginUser  = document.getElementById('loginUser');
     const loginPass  = document.getElementById('loginPass');
+    let loginSubmitting = false;
 
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (document.body.classList.contains('shattering')) return;
+      if (loginSubmitting || document.body.classList.contains('shattering')) return;
 
       let invalid = false;
       [loginUser, loginPass].forEach(f => {
@@ -1266,6 +1285,8 @@
         return;
       }
       loginError.textContent = '';
+      loginSubmitting = true;
+      setSubmitting(loginBtn, true);
 
       const authPromise = window.AuthClient.login(loginUser.value, loginPass.value);
       const shatterPromise = shatterPage();
@@ -1277,7 +1298,9 @@
           const msg = buildLoginErrorMessage(authResult.reason);
           loginError.textContent = msg;
           showDanger(msg);
-          setTimeout(() => window.location.reload(), 6000);
+          setSubmitting(loginBtn, false);
+          loginSubmitting = false;
+          setTimeout(resetShatterPage, 600);
         }
       });
     });
@@ -1322,10 +1345,11 @@
     const signupUser    = document.getElementById('signupUser');
     const signupPass    = document.getElementById('signupPass');
     const signupConfirm = document.getElementById('signupConfirm');
+    let signupSubmitting = false;
 
     signupForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (document.body.classList.contains('shattering')) return;
+      if (signupSubmitting || document.body.classList.contains('shattering')) return;
 
       let invalid = false;
       [signupUser, signupPass, signupConfirm].forEach(f => {
@@ -1341,12 +1365,14 @@
         signupError.textContent = 'Passwords do not match.';
         shatterPage().then(() => {
           showDanger('Passwords do not match');
-          setTimeout(() => window.location.reload(), 2500);
+          setTimeout(resetShatterPage, 600);
         });
         return;
       }
 
       signupError.textContent = '';
+      signupSubmitting = true;
+      setSubmitting(signupBtn, true);
 
       const authPromise = window.AuthClient.signup(signupUser.value, signupPass.value);
       const shatterPromise = shatterPage();
@@ -1358,7 +1384,9 @@
           const msg = authResult.reason?.message || 'Sign up failed. Please try again.';
           signupError.textContent = msg;
           showDanger(msg);
-          setTimeout(() => window.location.reload(), 2500);
+          setSubmitting(signupBtn, false);
+          signupSubmitting = false;
+          setTimeout(resetShatterPage, 600);
         }
       });
     });
@@ -1370,7 +1398,7 @@
      <script> above, since it calls window.AuthClient on submit. -->
 <script src="js/visit-config.js"></script>
 <script src="js/auth-client.js"></script>
-<script src="js/login-page.js"></script>
+<script src="js/js-loader.js" data-mode="login"></script>
 
 </body>
 </html>

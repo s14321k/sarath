@@ -30,11 +30,19 @@
         };
     }
 
+    function encodeVisitPayload(payload) {
+        const params = new URLSearchParams();
+        Object.entries(payload || {}).forEach(([key, value]) => {
+            if (typeof value === 'undefined' || value === null) return;
+            params.set(key, String(value));
+        });
+        return params;
+    }
+
     function fetchPage(endpoint, page, kind) {
         return fetch(endpoint, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
+            body: encodeVisitPayload({
                 eventType: 'page_content',
                 page,
                 kind
@@ -48,8 +56,7 @@
     function fetchPageBundle(endpoint, page) {
         return fetch(endpoint, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
+            body: encodeVisitPayload({
                 eventType: 'page_content',
                 page,
                 kind: 'page'
