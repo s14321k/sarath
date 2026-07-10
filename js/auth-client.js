@@ -61,7 +61,8 @@
         if (!endpoint) throw new Error('VISIT_ENDPOINT is not configured');
         const response = await fetch(endpoint, {
             method: 'POST',
-            body: encodeVisitPayload(payload)
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(payload)
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -81,15 +82,6 @@
             throw err;
         }
         return data;
-    }
-
-    function encodeVisitPayload(payload) {
-        const params = new URLSearchParams();
-        Object.entries(payload || {}).forEach(([key, value]) => {
-            if (typeof value === 'undefined' || value === null) return;
-            params.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-        });
-        return params;
     }
 
     async function login(username, password) {

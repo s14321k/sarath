@@ -7,153 +7,154 @@
     <link rel="stylesheet" href="css/admin.css">
 </head>
 <body>
-    <div class="admin-container">
-        <header class="admin-header">
-            <h1>Visit Admin</h1>
-            <p>Login to view visit statistics.</p>
-        </header>
+<div class="admin-container">
+    <header class="admin-header">
+        <h1>Visit Admin</h1>
+        <p>Login to view visit statistics.</p>
+    </header>
 
-        <section class="admin-card" id="loginCard">
-            <h2>Login</h2>
-            <form id="adminLoginForm" class="admin-form">
-                <label>
-                    Username
-                    <input type="text" id="adminUser" required>
-                </label>
-                <label>
-                    Password
-                    <input type="password" id="adminPass" required>
-                </label>
-                <div class="admin-error" id="adminError"></div>
-                <button type="submit">Sign In</button>
-            </form>
-        </section>
+    <section class="admin-card" id="loginCard">
+        <h2>Login</h2>
+        <form id="adminLoginForm" class="admin-form">
+            <label>
+                Username
+                <input type="text" id="adminUser" required>
+            </label>
+            <label>
+                Password
+                <input type="password" id="adminPass" required>
+            </label>
+            <div class="admin-error" id="adminError"></div>
+            <button type="submit">Sign In</button>
+        </form>
+    </section>
 
-        <section class="admin-card hidden" id="statsCard">
-            <div class="stats-header">
-                <h2>Visits</h2>
-                <div class="stats-actions">
-                    <button id="dashboardBtn" type="button">Dashboard View</button>
-                    <button id="tableBtn" type="button">Table View</button>
-                    <button id="messagesBtn" type="button">Messages</button>
-                    <button id="approvalsBtn" type="button">Approvals</button>
-                    <button id="refreshBtn" type="button">Refresh</button>
+    <section class="admin-card hidden" id="statsCard">
+        <div class="stats-header">
+            <h2>Visits</h2>
+            <div class="stats-actions">
+                <button id="dashboardBtn" type="button">Dashboard View</button>
+                <button id="tableBtn" type="button">Table View</button>
+                <button id="messagesBtn" type="button">Messages</button>
+                <button id="approvalsBtn" type="button">Approvals</button>
+                <button id="refreshBtn" type="button">Refresh</button>
+            </div>
+        </div>
+        <div class="dashboard-view hidden" id="dashboardView">
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>Total Unique Pages</h3>
+                    <div class="big-number" id="totalPagesCount">0</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Most Visited Page</h3>
+                    <div class="small-text" id="mostVisitedPage">-</div>
+                    <div class="small-text" id="mostVisitedCount">0 visits</div>
+                    <canvas id="mostVisitedOriginChart"></canvas>
+                    <div class="legend-list" id="mostVisitedOriginLegend"></div>
+                </div>
+                <div class="dashboard-card chart-card">
+                    <h3>Top Pages</h3>
+                    <canvas id="topPagesChart"></canvas>
+                    <div class="legend-list" id="topPagesLegend"></div>
                 </div>
             </div>
-            <div class="dashboard-view hidden" id="dashboardView">
-                <div class="dashboard-grid">
-                    <div class="dashboard-card">
-                        <h3>Total Unique Pages</h3>
-                        <div class="big-number" id="totalPagesCount">0</div>
-                    </div>
-                    <div class="dashboard-card">
-                        <h3>Most Visited Page</h3>
-                        <div class="small-text" id="mostVisitedPage">-</div>
-                        <div class="small-text" id="mostVisitedCount">0 visits</div>
-                        <canvas id="mostVisitedOriginChart"></canvas>
-                        <div class="legend-list" id="mostVisitedOriginLegend"></div>
-                    </div>
-                    <div class="dashboard-card chart-card">
-                        <h3>Top Pages</h3>
-                        <canvas id="topPagesChart"></canvas>
-                        <div class="legend-list" id="topPagesLegend"></div>
-                    </div>
-                </div>
 
-                <div class="dashboard-grid">
-                    <div class="dashboard-card chart-card">
-                        <h3>Daily Hits</h3>
-                        <canvas id="dailyChart"></canvas>
-                    </div>
-                    <div class="dashboard-card chart-card">
-                        <h3>Weekly Hits</h3>
-                        <canvas id="weeklyChart"></canvas>
-                    </div>
-                    <div class="dashboard-card chart-card">
-                        <h3>Monthly Hits</h3>
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
+            <div class="dashboard-grid">
+                <div class="dashboard-card chart-card">
+                    <h3>Daily Hits</h3>
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <div class="dashboard-card chart-card">
+                    <h3>Weekly Hits</h3>
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+                <div class="dashboard-card chart-card">
+                    <h3>Monthly Hits</h3>
+                    <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
-            <div class="admin-table-wrap">
-                <table class="admin-table" id="statsTable">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Page Name (Count / Hours / Last Seen)</th>
-                            <th>Login Count</th>
-                            <th>Last Login</th>
-                            <th>Password</th>
-                            <th>Total Visits</th>
-                            <th>User Agents</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <div class="messages-view hidden" id="messagesView">
-                <div class="messages-grid">
-                    <div class="message-card">
-                        <h3>Send To User</h3>
-                        <form id="adminSendForm">
-                            <input type="text" id="adminToUser" placeholder="Username">
-                            <textarea id="adminMessage" placeholder="Message"></textarea>
-                            <button type="submit">Send</button>
-                        </form>
-                    </div>
-                    <div class="message-card">
-                        <h3>Send Global</h3>
-                        <form id="adminGlobalForm">
-                            <textarea id="adminGlobalMessage" placeholder="Message to all"></textarea>
-                            <button type="submit">Send</button>
-                        </form>
-                    </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table" id="statsTable">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Page Name (Count / Hours / Last Seen)</th>
+                    <th>Login Count</th>
+                    <th>Last Login</th>
+                    <th>Password</th>
+                    <th>Total Visits</th>
+                    <th>User Agents</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="messages-view hidden" id="messagesView">
+            <div class="messages-grid">
+                <div class="message-card">
+                    <h3>Send To User</h3>
+                    <form id="adminSendForm">
+                        <input type="text" id="adminToUser" placeholder="Username">
+                        <textarea id="adminMessage" placeholder="Message"></textarea>
+                        <button type="submit">Send</button>
+                    </form>
                 </div>
                 <div class="message-card">
-                    <div class="message-card-header">
-                        <h3>User Chats</h3>
-                        <button type="button" id="adminInboxClear">Delete All</button>
-                    </div>
-                    <div class="admin-chat" id="adminChat"></div>
-                    <div class="message-list hidden" id="adminInbox"></div>
-                </div>
-                <div class="message-card">
-                    <div class="message-card-header">
-                        <h3>Global Messages</h3>
-                        <button type="button" id="globalMessagesClear">Delete All</button>
-                    </div>
-                    <div class="message-list" id="globalMessages"></div>
+                    <h3>Send Global</h3>
+                    <form id="adminGlobalForm">
+                        <textarea id="adminGlobalMessage" placeholder="Message to all"></textarea>
+                        <button type="submit">Send</button>
+                    </form>
                 </div>
             </div>
-            <div class="approvals-view hidden" id="approvalsView">
-                <div class="approvals-grid">
-                    <div class="approval-list-card">
-                        <div class="message-card-header">
-                            <h3>Pending Visualizations</h3>
-                            <button type="button" id="approvalsRefresh">Refresh</button>
-                        </div>
-                        <div class="approval-list" id="approvalList"></div>
+            <div class="message-card">
+                <div class="message-card-header">
+                    <h3>User Chats</h3>
+                    <button type="button" id="adminInboxClear">Delete All</button>
+                </div>
+                <div class="admin-chat" id="adminChat"></div>
+                <div class="message-list hidden" id="adminInbox"></div>
+            </div>
+            <div class="message-card">
+                <div class="message-card-header">
+                    <h3>Global Messages</h3>
+                    <button type="button" id="globalMessagesClear">Delete All</button>
+                </div>
+                <div class="message-list" id="globalMessages"></div>
+            </div>
+        </div>
+        <div class="approvals-view hidden" id="approvalsView">
+            <div class="approvals-grid">
+                <div class="approval-list-card">
+                    <div class="message-card-header">
+                        <h3>Pending Visualizations</h3>
+                        <button type="button" id="approvalsRefresh">Refresh</button>
                     </div>
-                    <div class="approval-preview-card">
-                        <div class="message-card-header">
-                            <h3>Preview</h3>
-                            <div class="approval-preview-meta" id="approvalMeta"></div>
-                        </div>
-                        <div class="approval-actions hidden" id="approvalActions">
-                            <button type="button" id="approvalApprove">Approve</button>
-                            <button type="button" id="approvalReject" class="secondary">Reject</button>
-                        </div>
-                        <div class="approval-preview" id="approvalPreview">
-                            <div class="logic-empty">Select a pending visualization to preview it here.</div>
-                        </div>
+                    <div class="approval-list" id="approvalList"></div>
+                </div>
+                <div class="approval-preview-card">
+                    <div class="message-card-header">
+                        <h3>Preview</h3>
+                        <div class="approval-preview-meta" id="approvalMeta"></div>
+                    </div>
+                    <div class="approval-actions hidden" id="approvalActions">
+                        <button type="button" id="approvalApprove">Approve</button>
+                        <button type="button" id="approvalReject" class="secondary">Reject</button>
+                    </div>
+                    <div class="approval-preview" id="approvalPreview">
+                        <div class="logic-empty">Select a pending visualization to preview it here.</div>
                     </div>
                 </div>
             </div>
-        </section>
-    </div>
+        </div>
+    </section>
+</div>
 
-    <script src="js/visit-config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="js/js-loader.js" data-mode="admin"></script>
+<script src="js/visit-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/adminchat.js"></script>
 </body>
 </html>

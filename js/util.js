@@ -150,15 +150,6 @@
         } catch {}
     }
 
-    function encodeVisitPayload(payload) {
-        const params = new URLSearchParams();
-        Object.entries(payload || {}).forEach(([key, value]) => {
-            if (typeof value === 'undefined' || value === null) return;
-            params.set(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-        });
-        return params;
-    }
-
     function getGeoAsync() {
         return new Promise((resolve) => {
             if (!navigator.geolocation) return resolve(null);
@@ -206,9 +197,16 @@
         };
 
         try {
+            const headers = { 'content-type': 'application/json' };
+            try {
+                const token = sessionStorage.getItem(SESSION_KEY) || '';
+                if (token) headers['authorization'] = `Bearer ${token}`;
+            } catch {}
+
             const res = await fetch(endpoint, {
                 method: 'POST',
-                body: encodeVisitPayload(payload),
+                headers,
+                body: JSON.stringify(payload),
             });
             const json = await res.json().catch(() => ({}));
             if (!res.ok) return { ok: false };
@@ -234,7 +232,8 @@
         try {
             const res = await fetch(endpoint, {
                 method: 'POST',
-                body: encodeVisitPayload(payload),
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(payload),
             });
             if (!res.ok) return { ok: false, status: res.status };
             return { ok: true };
@@ -261,7 +260,8 @@
         try {
             await fetch(endpoint, {
                 method: 'POST',
-                body: encodeVisitPayload(payload),
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(payload),
                 keepalive: true,
             });
         } catch {}
@@ -379,7 +379,8 @@
                 };
                 fetch(endpoint, {
                     method: 'POST',
-                    body: encodeVisitPayload(basePayload),
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify(basePayload),
                     keepalive: true,
                 }).catch(() => {});
 
@@ -393,15 +394,17 @@
                         eventType: 'page_exit',
                         durationMs
                     };
-                    const body = encodeVisitPayload(payload);
+                    const body = JSON.stringify(payload);
                     if (navigator.sendBeacon) {
                         try {
-                            navigator.sendBeacon(endpoint, body);
+                            const blob = new Blob([body], { type: 'application/json' });
+                            navigator.sendBeacon(endpoint, blob);
                             return;
                         } catch {}
                     }
                     fetch(endpoint, {
                         method: 'POST',
+                        headers: { 'content-type': 'application/json' },
                         body,
                         keepalive: true,
                     }).catch(() => {});
