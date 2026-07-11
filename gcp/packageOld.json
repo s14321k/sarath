@@ -1,0 +1,17 @@
+{
+  "name": "visit-ingest",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check index.js",
+    "migrate": "node migrate-to-firestore.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "firebase-admin": "^12.5.0"
+  }
+}
