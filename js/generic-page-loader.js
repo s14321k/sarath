@@ -31,7 +31,11 @@
             }
 
             // Fetch from backend API
-            const response = await fetch('https://visit-ingest-342647168408.asia-south1.run.app/', {
+            const endpoint = window.VISIT_ENDPOINT || '';
+            if (!endpoint) {
+                throw new Error('VISIT_ENDPOINT is not configured');
+            }
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -147,4 +151,3 @@
         initPage();
     }
 })();
-

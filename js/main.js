@@ -287,14 +287,8 @@
         let currentVisualizationSource = '';
         let currentVisualizationHistory = [];
         let aiSettingsModal = null;
-        // let aiProviderInput = null;
-        // let aiBaseUrlInput = null;
-        // let aiModelInput = null;
-        // let aiApiKeyInput = null;
         let aiProviderHelp = null;
         let aiConfigStatus = null;
-        // let aiConfigCache = null;
-        let aiConfigLoadedForUser = '';
         const AI_PREFS_KEY = 'aiVisualPrefs:v1';
 
         window.AiSettings.init({
@@ -305,18 +299,19 @@
             redirectToReLogin
         });
 
-        function updateAiUiState() {
-            const hasConfig = window.AiSettings.hasUsableKey();
-            if (runnerForceVisualizeButton) {
-                runnerForceVisualizeButton.disabled = !hasConfig;
-                runnerForceVisualizeButton.textContent = hasConfig ? 'Use AI Again' : 'AI Setup Required';
-            }
-            if (runnerSaveVisualButton) runnerSaveVisualButton.disabled = !currentVisualization;
-            if (runnerVisualization && !hasConfig && !runnerVisualization.innerHTML.trim()) {
-                runnerVisualization.innerHTML = '<div class="logic-empty">Add AI settings to generate a visual explanation for this program.</div>';
-            }
-        }
-        window.AiSettings.onChange(updateAiUiState);
+        // Future cleanup
+        // function updateAiUiState() {
+        //     const hasConfig = window.AiSettings.hasUsableKey();
+        //     if (runnerForceVisualizeButton) {
+        //         runnerForceVisualizeButton.disabled = !hasConfig;
+        //         runnerForceVisualizeButton.textContent = hasConfig ? 'Use AI Again' : 'AI Setup Required';
+        //     }
+        //     if (runnerSaveVisualButton) runnerSaveVisualButton.disabled = !currentVisualization;
+        //     if (runnerVisualization && !hasConfig && !runnerVisualization.innerHTML.trim()) {
+        //         runnerVisualization.innerHTML = '<div class="logic-empty">Add AI settings to generate a visual explanation for this program.</div>';
+        //     }
+        // }
+        // window.AiSettings.onChange(updateAiUiState);
 
         function fallbackCopy(text) {
             const area = document.createElement('textarea');
@@ -472,7 +467,7 @@
                 runnerVisualization.innerHTML = '<div class="logic-empty">Add AI settings to generate a visual explanation for this program.</div>';
             }
         }
-
+        window.AiSettings.onChange(updateAiUiState);
 
 
         function renderVisualization(data) {
@@ -795,7 +790,18 @@
                 renderVisualization(result?.visualization || {});
             } catch (error) {
                 if (runnerVisualization) {
-                    runnerVisualization.innerHTML = `<div class="logic-empty">Visualization failed: ${escapeHtml(error instanceof Error ? error.message : 'Unknown error')}</div>`;
+                    let errorTitle = 'Visualization failed';
+                    let errorDetail = error instanceof Error ? error.message : 'Unknown error';
+
+                    // If the error is a JSON response with error/detail fields, parse it
+                    try {
+                        const parsed = typeof error === 'string' ? JSON.parse(error) : error;
+                        if (parsed?.error) errorTitle = parsed.error;
+                        if (parsed?.detail) errorDetail = parsed.detail;
+                    } catch (_) {
+                        // not JSON, fall back to error.message as detail
+                    }
+                    runnerVisualization.innerHTML = `<div class="logic-empty">Visualization failed: ${escapeHtml(errorTitle)}</div>`;
                 }
             }
         }
