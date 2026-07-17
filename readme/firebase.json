@@ -1,5 +1,0 @@
-{
-  "firestore": {
-    "indexes": "gcp/firestore.indexes.json"
-  }
-}
