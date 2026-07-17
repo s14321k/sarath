@@ -1460,6 +1460,10 @@
             toggleBtn.type = 'button';
             toggleBtn.textContent = 'Maximize All';
             toggleBtn.setAttribute('aria-label', 'Maximize All');
+            toggleBtn.style.position = 'fixed';
+            toggleBtn.style.top = '52px';
+            toggleBtn.style.right = '12px';
+            toggleBtn.style.zIndex = '9998';
             document.body.appendChild(toggleBtn);
             return toggleBtn;
         }
