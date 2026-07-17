@@ -168,7 +168,7 @@
                 .md-editor-ai-row { grid-template-columns: 1fr 1fr; }
                 .md-editor-ai-row input { grid-column: 1 / -1; }
                 .md-editor-panel { height: 94vh; }
-                .md-editor-actions { right: 14px; bottom: 84px; }
+                .md-editor-actions { right: 14px; bottom: 155px; }
             }
         `;
         document.head.appendChild(style);

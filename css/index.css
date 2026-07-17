@@ -1139,7 +1139,7 @@ body {
 
 @media (max-width: 768px) {
     .chat-bubble {
-        bottom: 136px;
+        bottom: 250px;
     }
 }
 
