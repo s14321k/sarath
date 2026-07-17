@@ -29,15 +29,15 @@
     }
 
     function toPageUrl(href, query) {
-        // href looks like "pages/microservice.html" or "pages1/foo.html"
-        const match = href.match(/^(.*\/)?([^\/]+)\.html(\?.*)?$/i);
-        if (!match) return href; // fallback, unexpected format
-        const dir = match[1] || '';
-        const slug = match[2];
-        const params = new URLSearchParams();
-        params.set('page', slug);
-        if (query) params.set('q', query);
-        return `${dir}page.html?${params.toString()}`;
+        if (!href) return '';
+
+        // Case 1: Already a generic page URL (e.g., "pages/page.html?page=spring-complex-topics")
+        if (href.includes('page.html?')) {
+            const [base, search] = href.split('?');
+            const params = new URLSearchParams(search);
+            if (query) params.set('q', query);
+            return `${base}?${params.toString()}`;
+        }
     }
 
     function addResult(item, snippet, query) {
