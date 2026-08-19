@@ -1925,9 +1925,14 @@
 // Chat widget (for content pages)
 document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.includes('/pages/')) {
-        const script = document.createElement('script');
-        script.src = '../js/chat.js';
-        document.body.appendChild(script);
+        const chatEnabledForAll = Boolean(window.CHAT_BOX_FOR_ALL);
+        const visitorName = String(sessionStorage.getItem('visitorName') || '').trim().toLowerCase();
+        const canLoadChat = chatEnabledForAll || visitorName === 'sarath';
+        if (canLoadChat) {
+            const script = document.createElement('script');
+            script.src = '../js/chat.js';
+            document.body.appendChild(script);
+        }
 
         const kuralScript = document.createElement('script');
         kuralScript.src = '../js/kural-widget.js';

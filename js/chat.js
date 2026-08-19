@@ -5,7 +5,14 @@
     const POLLING_KEY = 'chatPollingEnabled';
     const CHAT_CACHE_PREFIX = 'chatCache:v1:';
     const CHAT_PAGE_SIZE = 5;
+    const CHAT_BOX_FOR_ALL = Boolean(window.CHAT_BOX_FOR_ALL);
     let user = sessionStorage.getItem('visitorName') || '';
+    let chatInitialized = false;
+
+    function canUseChat(userName) {
+        if (CHAT_BOX_FOR_ALL) return true;
+        return String(userName || '').trim().toLowerCase() === 'sarath';
+    }
 
     function initChat() {
         const container = document.createElement('div');
@@ -1209,13 +1216,17 @@
         poll();
     }
 
-    if (user) {
+    if (user && canUseChat(user)) {
+        chatInitialized = true;
         initChat();
     }
     document.addEventListener('visit-login', (ev) => {
         const name = ev?.detail?.username || sessionStorage.getItem('visitorName') || '';
-        if (name && !user) {
+        if (name) {
             user = name;
+        }
+        if (!chatInitialized && canUseChat(user)) {
+            chatInitialized = true;
             initChat();
         }
     });
