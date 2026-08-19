@@ -41,7 +41,7 @@
                     logoutBtn.style.position = 'fixed';
                     logoutBtn.style.top = '12px';
                     logoutBtn.style.right = '12px';
-                    logoutBtn.style.zIndex = '9999';
+                    logoutBtn.style.zIndex = '200';
                     logoutBtn.addEventListener('click', () => {
                         [
                             'visitRecorded',
@@ -83,7 +83,7 @@
                     logoutBtn.style.position = 'fixed';
                     logoutBtn.style.top = '12px';
                     logoutBtn.style.right = '12px';
-                    logoutBtn.style.zIndex = '9999';
+                    logoutBtn.style.zIndex = '200';
                     // Click handler: clear known session keys and redirect to login
                     logoutBtn.addEventListener('click', () => {
                         [

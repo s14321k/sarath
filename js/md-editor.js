@@ -7,7 +7,8 @@
         path: '',
         sha: '',
         folder: 'md2',
-        page: ''
+        page: '',
+        view: 'raw'
     };
 
     function sessionUser() {
@@ -88,17 +89,17 @@
                 backdrop-filter: blur(10px);
                 display: grid;
                 place-items: center;
-                padding: 20px;
+                padding: 0;
             }
             .md-editor-panel {
-                width: min(1100px, 96vw);
-                height: min(860px, 92vh);
+                width: 100vw;
+                height: 100vh;
                 display: grid;
                 grid-template-rows: auto auto auto 1fr auto;
                 gap: 12px;
                 background: #101923;
                 border: 1px solid rgba(255,255,255,.14);
-                border-radius: 18px;
+                border-radius: 0;
                 color: #f4f7fb;
                 padding: 18px;
                 box-shadow: 0 26px 80px rgba(0,0,0,.45);
@@ -135,6 +136,70 @@
                 min-height: 420px;
                 line-height: 1.55;
             }
+            .md-editor-preview {
+                display: none;
+                height: 100%;
+                min-height: 420px;
+                border: 1px solid rgba(255,255,255,.14);
+                border-radius: 12px;
+                background: rgba(255,255,255,.06);
+                color: #f4f7fb;
+                padding: 12px;
+                overflow: auto;
+                font: 500 14px/1.6 'Work Sans', sans-serif;
+            }
+            .md-editor-preview h1,
+            .md-editor-preview h2,
+            .md-editor-preview h3,
+            .md-editor-preview h4 {
+                margin: 0 0 12px;
+                line-height: 1.3;
+            }
+            .md-editor-preview p,
+            .md-editor-preview ul,
+            .md-editor-preview ol {
+                margin: 0 0 10px;
+            }
+            .md-editor-preview code {
+                background: rgba(255,255,255,.14);
+                border-radius: 6px;
+                padding: 1px 5px;
+                font: 500 13px/1.4 'JetBrains Mono', monospace;
+            }
+            .md-editor-preview pre {
+                background: rgba(0,0,0,.35);
+                border-radius: 10px;
+                padding: 10px;
+                overflow: auto;
+            }
+            .md-editor-preview pre code {
+                background: transparent;
+                padding: 0;
+            }
+            .md-editor-preview img {
+                max-width: 100%;
+                height: auto;
+                border-radius: 8px;
+                border: 1px solid rgba(255,255,255,.14);
+                display: block;
+                margin: 8px 0 12px;
+            }
+            .md-editor-preview table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 0 0 12px;
+            }
+            .md-editor-preview th,
+            .md-editor-preview td {
+                border: 1px solid rgba(255,255,255,.18);
+                padding: 8px 10px;
+                text-align: left;
+                vertical-align: top;
+            }
+            .md-editor-preview th {
+                background: rgba(255,255,255,.08);
+                font-weight: 700;
+            }
             .md-editor-actions-row {
                 display: flex;
                 align-items: center;
@@ -143,7 +208,7 @@
             }
             .md-editor-ai-row {
                 display: grid;
-                grid-template-columns: 1fr auto auto auto auto;
+                grid-template-columns: 1fr auto auto auto auto auto;
                 gap: 8px;
                 align-items: center;
             }
@@ -163,11 +228,19 @@
             .md-editor-save { background: #9fd8c9; color: #06221c; }
             .md-editor-close { background: rgba(255,255,255,.12); color: #fff; }
             .md-editor-ai { background: rgba(159,216,201,.16); color: #d9fff5; }
+            .md-editor-view {
+                background: rgba(255,255,255,.1);
+                color: #eef4fb;
+            }
+            .md-editor-view.is-active {
+                background: rgba(159,216,201,.28);
+                color: #d9fff5;
+            }
             @media (max-width: 760px) {
                 .md-editor-grid { grid-template-columns: 1fr; }
                 .md-editor-ai-row { grid-template-columns: 1fr 1fr; }
                 .md-editor-ai-row input { grid-column: 1 / -1; }
-                .md-editor-panel { height: 94vh; }
+                .md-editor-panel { height: 100vh; }
                 .md-editor-actions { right: 14px; bottom: 155px; }
             }
         `;
@@ -196,8 +269,10 @@
                     <button type="button" class="md-editor-ai" data-md-ai="improve">Improve</button>
                     <button type="button" class="md-editor-ai" data-md-ai="summarize">Summarize</button>
                     <button type="button" class="md-editor-ai" data-md-ai="append">Append Answer</button>
+                    <button type="button" class="md-editor-view" data-md-view-toggle="1">Preview</button>
                 </div>
                 <textarea id="mdEditorText" class="md-editor-textarea" spellcheck="false"></textarea>
+                <div id="mdEditorPreview" class="md-editor-preview" aria-live="polite"></div>
                 <div class="md-editor-actions-row">
                     <div id="mdEditorStatus" class="md-editor-status"></div>
                     <button type="button" id="mdEditorSave" class="md-editor-save">Commit & Run Converter</button>
@@ -209,11 +284,163 @@
             if (ev.target === modal || ev.target.closest('[data-md-close="1"]')) closeModal();
         });
         document.getElementById('mdEditorSave')?.addEventListener('click', saveMarkdown);
+        document.getElementById('mdEditorText')?.addEventListener('input', refreshPreview);
         modal.addEventListener('click', (ev) => {
             const action = ev.target?.closest?.('[data-md-ai]')?.dataset.mdAi;
             if (action) runMarkdownAi(action);
         });
+        modal.addEventListener('click', (ev) => {
+            if (ev.target?.closest?.('[data-md-view-toggle="1"]')) {
+                setView(state.view === 'raw' ? 'preview' : 'raw');
+            }
+        });
         return modal;
+    }
+
+    function escapeHtml(text) {
+        return (text || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function parseInlineMarkdown(text) {
+        return escapeHtml(text || '')
+            .replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/g, (match, alt, src, title) => {
+                const safeAlt = alt || '';
+                const safeTitle = title ? ` title="${title}"` : '';
+                return `<img src="${src}" alt="${safeAlt}"${safeTitle}>`;
+            })
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    }
+
+    function parseTableRow(line) {
+        if (!line || !line.includes('|')) return null;
+        const normalized = line.trim();
+        if (!normalized) return null;
+        const cells = normalized
+            .replace(/^\|/, '')
+            .replace(/\|$/, '')
+            .split('|')
+            .map((cell) => cell.trim());
+        return cells.length ? cells : null;
+    }
+
+    function isTableDividerLine(line) {
+        const cells = parseTableRow(line);
+        if (!cells || !cells.length) return false;
+        return cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+    }
+
+    function markdownToHtml(source) {
+        const lines = (source || '').replace(/\r\n/g, '\n').split('\n');
+        const html = [];
+        let inCodeBlock = false;
+        let listType = '';
+
+        const closeList = () => {
+            if (!listType) return;
+            html.push(listType === 'ol' ? '</ol>' : '</ul>');
+            listType = '';
+        };
+
+        for (let i = 0; i < lines.length; i += 1) {
+            const line = lines[i];
+            if (line.trim().startsWith('```')) {
+                closeList();
+                if (inCodeBlock) {
+                    html.push('</code></pre>');
+                    inCodeBlock = false;
+                } else {
+                    html.push('<pre><code>');
+                    inCodeBlock = true;
+                }
+                continue;
+            }
+            if (inCodeBlock) {
+                html.push(`${escapeHtml(line)}\n`);
+                continue;
+            }
+
+            const heading = line.match(/^(#{1,4})\s+(.+)$/);
+            if (heading) {
+                closeList();
+                const level = heading[1].length;
+                html.push(`<h${level}>${parseInlineMarkdown(heading[2])}</h${level}>`);
+                continue;
+            }
+
+            const currentRow = parseTableRow(line);
+            const nextLine = lines[i + 1] || '';
+            if (currentRow && isTableDividerLine(nextLine)) {
+                closeList();
+                const headerCells = currentRow.map((cell) => `<th>${parseInlineMarkdown(cell)}</th>`).join('');
+                html.push(`<table><thead><tr>${headerCells}</tr></thead><tbody>`);
+                i += 1;
+                while (i + 1 < lines.length) {
+                    const rowCells = parseTableRow(lines[i + 1]);
+                    if (!rowCells || isTableDividerLine(lines[i + 1])) break;
+                    const rowHtml = rowCells.map((cell) => `<td>${parseInlineMarkdown(cell)}</td>`).join('');
+                    html.push(`<tr>${rowHtml}</tr>`);
+                    i += 1;
+                }
+                html.push('</tbody></table>');
+                continue;
+            }
+
+            const unordered = line.match(/^\s*[-*]\s+(.+)$/);
+            if (unordered) {
+                if (listType !== 'ul') {
+                    closeList();
+                    html.push('<ul>');
+                    listType = 'ul';
+                }
+                html.push(`<li>${parseInlineMarkdown(unordered[1])}</li>`);
+                continue;
+            }
+
+            const ordered = line.match(/^\s*\d+\.\s+(.+)$/);
+            if (ordered) {
+                if (listType !== 'ol') {
+                    closeList();
+                    html.push('<ol>');
+                    listType = 'ol';
+                }
+                html.push(`<li>${parseInlineMarkdown(ordered[1])}</li>`);
+                continue;
+            }
+
+            closeList();
+            if (!line.trim()) continue;
+            html.push(`<p>${parseInlineMarkdown(line)}</p>`);
+        }
+
+        if (inCodeBlock) html.push('</code></pre>');
+        closeList();
+        return html.join('');
+    }
+
+    function refreshPreview() {
+        const source = document.getElementById('mdEditorText')?.value || '';
+        const preview = document.getElementById('mdEditorPreview');
+        if (!preview) return;
+        preview.innerHTML = markdownToHtml(source);
+    }
+
+    function setView(nextView) {
+        state.view = nextView === 'preview' ? 'preview' : 'raw';
+        const textarea = document.getElementById('mdEditorText');
+        const preview = document.getElementById('mdEditorPreview');
+        const viewToggle = document.querySelector('[data-md-view-toggle="1"]');
+        if (textarea) textarea.style.display = state.view === 'raw' ? 'block' : 'none';
+        if (preview) preview.style.display = state.view === 'preview' ? 'block' : 'none';
+        if (viewToggle) {
+            viewToggle.textContent = state.view === 'raw' ? 'Preview' : 'Raw';
+            viewToggle.classList.toggle('is-active', state.view === 'preview');
+        }
+        if (state.view === 'preview') refreshPreview();
     }
 
     function setStatus(message, isError) {
@@ -309,6 +536,7 @@
         const modal = ensureModal();
         document.getElementById('mdEditorTitle').textContent = title;
         modal.classList.remove('hidden');
+        setView('raw');
     }
 
     async function openEdit() {
