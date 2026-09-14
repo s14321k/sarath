@@ -1,5 +1,5 @@
 // Set this to your deployed worker URL, e.g. https://visit-ingest.yourname.workers.dev
-window.VISIT_ENDPOINT = "https://visit-ingest-func-ofmel7gutq-el.a.run.app";
+window.VISIT_ENDPOINT = "https://d1o3oz2umz6du6.cloudfront.net"
 
 window.CHAT_BOX_FOR_ALL = false;
 
