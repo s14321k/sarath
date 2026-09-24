@@ -4,11 +4,11 @@
 // window.VISIT_ENDPOINT = "https://visit-ingest-func-ofmel7gutq-el.a.run.app"
 
 //Cloud-Run-function
-// window.VISIT_ENDPOINT = "https://visit-ingest-342647168408.asia-south1.run.app"
+window.VISIT_ENDPOINT = "https://visit-ingest-342647168408.asia-south1.run.app"
 
 
 // AWS
-window.VISIT_ENDPOINT = "https://d1o3oz2umz6du6.cloudfront.net"
+// window.VISIT_ENDPOINT = "https://d1o3oz2umz6du6.cloudfront.net"
 
 // AWS endpoint
 // Use the local API while previewing the UI on localhost; keep the deployed
