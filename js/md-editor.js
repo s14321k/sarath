@@ -8,6 +8,7 @@
         sha: '',
         folder: 'md2',
         page: '',
+        selectedImages: [],
         view: 'raw'
     };
 
@@ -299,6 +300,8 @@
                 font: 600 12px/1.3 'Work Sans', sans-serif;
             }
             .md-editor-selected-file[hidden] { display: none; }
+            .md-editor-selected-images { display: flex; flex-wrap: wrap; gap: 10px; }
+            .md-editor-selected-images[hidden] { display: none; }
             .md-editor-selected-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .md-editor-file-remove {
                 position: absolute;
@@ -390,12 +393,10 @@
                 </div>
                 <div class="md-editor-image-row">
                     <div class="md-editor-file-picker">
-                        <input id="mdEditorImageFile" class="md-editor-file-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp">
+                        <input id="mdEditorImageFile" class="md-editor-file-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,.svg" multiple>
                         <label class="md-editor-file-choose" for="mdEditorImageFile">Choose image</label>
                     </div>
-                    <div id="mdEditorSelectedFile" class="md-editor-selected-file" hidden>
-                        <span id="mdEditorSelectedName" class="md-editor-selected-name"></span>
-                        <button type="button" id="mdEditorRemoveImage" class="md-editor-file-remove" aria-label="Remove selected image">×</button>
+                    <div id="mdEditorSelectedImages" class="md-editor-selected-images" hidden>
                     </div>
                     <select id="mdEditorImageFolder" class="md-editor-folder-select" aria-label="Choose image subfolder">
                         <option value="">Loading image folders…</option>
@@ -421,11 +422,16 @@
         document.getElementById('mdEditorSave')?.addEventListener('click', saveMarkdown);
         document.getElementById('mdEditorUploadImage')?.addEventListener('click', uploadEditorImage);
         document.getElementById('mdEditorImageFile')?.addEventListener('change', (ev) => {
-            const file = ev.target.files?.[0];
-            document.getElementById('mdEditorSelectedName').textContent = file?.name || '';
-            document.getElementById('mdEditorSelectedFile').hidden = !file;
+            const incoming = Array.from(ev.target.files || []);
+            const keys = new Set(state.selectedImages.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+            for (const file of incoming) {
+                const key = `${file.name}:${file.size}:${file.lastModified}`;
+                if (!keys.has(key)) state.selectedImages.push(file);
+                keys.add(key);
+            }
+            ev.target.value = '';
+            renderSelectedImages();
         });
-        document.getElementById('mdEditorRemoveImage')?.addEventListener('click', clearSelectedImage);
         document.getElementById('mdEditorImageFolder')?.addEventListener('change', (ev) => {
             const isNewFolder = ev.target.value === '__new__';
             document.getElementById('mdEditorNewImageFolder').hidden = !isNewFolder;
@@ -436,6 +442,11 @@
         });
         document.getElementById('mdEditorText')?.addEventListener('input', refreshPreview);
         modal.addEventListener('click', (ev) => {
+            const removeImage = ev.target?.closest?.('[data-remove-image]');
+            if (removeImage) {
+                removeSelectedImage(Number(removeImage.dataset.removeImage));
+                return;
+            }
             const action = ev.target?.closest?.('[data-md-ai]')?.dataset.mdAi;
             if (action) runMarkdownAi(action);
         });
@@ -451,7 +462,9 @@
         return (text || '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function parseInlineMarkdown(text) {
@@ -794,72 +807,105 @@
     }
 
     async function uploadEditorImage() {
-        const fileInput = document.getElementById('mdEditorImageFile');
-        const file = fileInput?.files?.[0];
+        const files = [...state.selectedImages];
         const folderSelect = document.getElementById('mdEditorImageFolder');
         const folder = folderSelect?.value === '__new__'
             ? (document.getElementById('mdEditorNewImageFolder')?.value || '').trim()
             : (folderSelect?.value || '');
-        if (!file) return setStatus('Choose an image file to upload.', true);
+        if (!files.length) return setStatus('Choose one or more image files to upload.', true);
         if (!folder) return setStatus('Choose an existing image folder or enter a new folder name.', true);
-        if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024) {
-            return setStatus('Choose a PNG, JPEG, GIF, or WebP image up to 8 MB.', true);
+        const supportedMimes = {
+            png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+            gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml'
+        };
+        const invalid = files.find((file) => {
+            const extension = file.name.split('.').pop().toLowerCase();
+            return !supportedMimes[extension] || (file.type && file.type !== supportedMimes[extension]) || file.size > 8 * 1024 * 1024;
+        });
+        if (invalid) {
+            return setStatus(`${invalid.name} is unsupported. Choose PNG, JPEG, GIF, WebP, or SVG files up to 8 MB each.`, true);
         }
-        setStatus('Uploading image to the interView repository…');
-        try {
-            const dataUrl = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result || ''));
-                reader.onerror = () => reject(new Error('Unable to read the selected image.'));
-                reader.readAsDataURL(file);
-            });
-            const result = await callApi({
-                eventType: 'image_upload',
-                folder,
-                filename: file.name,
-                mimeType: file.type,
-                contentBase64: dataUrl.slice(dataUrl.indexOf(',') + 1)
-            });
-            const imageUrl = `/${result.path.split('/').map((part) => encodeURIComponent(part)).join('/')}`;
-            const alt = file.name.replace(/\.[^.]+$/, '').replace(/[\[\]]/g, '');
-            const markdown = `![${alt}](${imageUrl})`;
+        const uploadedMarkdown = [];
+        const failedFiles = [];
+        for (let index = 0; index < files.length; index += 1) {
+            const file = files[index];
+            setStatus(`Uploading image ${index + 1} of ${files.length}: ${file.name}`);
+            try {
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result || ''));
+                    reader.onerror = () => reject(new Error('Unable to read the selected image.'));
+                    reader.readAsDataURL(file);
+                });
+                const extension = file.name.split('.').pop().toLowerCase();
+                const result = await callApi({
+                    eventType: 'image_upload',
+                    folder,
+                    filename: file.name,
+                    mimeType: file.type || supportedMimes[extension],
+                    contentBase64: dataUrl.slice(dataUrl.indexOf(',') + 1)
+                });
+                const imageUrl = `/${result.path.split('/').map((part) => encodeURIComponent(part)).join('/')}`;
+                const alt = file.name.replace(/\.[^.]+$/, '').replace(/[\[\]]/g, '');
+                uploadedMarkdown.push(`![${alt}](${imageUrl})`);
+            } catch (error) {
+                failedFiles.push({ file, error: error.message || 'Upload failed.' });
+            }
+        }
+
+        if (uploadedMarkdown.length) {
             const textarea = document.getElementById('mdEditorText');
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
             const before = textarea.value.slice(0, start);
             const after = textarea.value.slice(end);
+            const block = uploadedMarkdown.join('\n');
             const prefix = before && !before.endsWith('\n') ? '\n' : '';
             const suffix = after && !after.startsWith('\n') ? '\n' : '';
-            const insertion = `${prefix}${markdown}${suffix}`;
+            const insertion = `${prefix}${block}${suffix}`;
             textarea.value = `${before}${insertion}${after}`;
             textarea.focus();
             textarea.selectionStart = textarea.selectionEnd = start + insertion.length;
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            clearSelectedImage();
-            setStatus(`Uploaded to ${result.path} and inserted the Markdown image link.`);
-        } catch (error) {
-            setStatus(error.message || 'Image upload failed.', true);
+        }
+        state.selectedImages = failedFiles.map((entry) => entry.file);
+        renderSelectedImages();
+        if (failedFiles.length) {
+            setStatus(`Uploaded ${uploadedMarkdown.length} image(s). ${failedFiles.length} failed: ${failedFiles.map((entry) => `${entry.file.name} (${entry.error})`).join('; ')}`, true);
+        } else {
+            setStatus(`Uploaded and inserted ${uploadedMarkdown.length} image(s).`);
         }
     }
 
-    function clearSelectedImage() {
-        const fileInput = document.getElementById('mdEditorImageFile');
-        if (fileInput) fileInput.value = '';
-        const selected = document.getElementById('mdEditorSelectedFile');
-        if (selected) selected.hidden = true;
-        const name = document.getElementById('mdEditorSelectedName');
-        if (name) name.textContent = '';
+    function renderSelectedImages() {
+        const container = document.getElementById('mdEditorSelectedImages');
+        if (!container) return;
+        container.innerHTML = state.selectedImages.map((file, index) => `
+            <span class="md-editor-selected-file" title="${escapeHtml(file.name)}">
+                <span class="md-editor-selected-name">${escapeHtml(file.name)}</span>
+                <button type="button" class="md-editor-file-remove" data-remove-image="${index}" aria-label="Remove ${escapeHtml(file.name)}">&#215;</button>
+            </span>
+        `).join('');
+        container.hidden = state.selectedImages.length === 0;
+    }
+
+    function removeSelectedImage(index) {
+        if (!Number.isInteger(index) || index < 0 || index >= state.selectedImages.length) return;
+        state.selectedImages.splice(index, 1);
+        renderSelectedImages();
     }
 
     async function openEdit() {
         const route = currentRoute();
         if (!route) return;
+        state.selectedImages = [];
         state.mode = 'edit';
         state.folder = route.folder;
         state.page = route.page;
         state.path = '';
         state.sha = '';
         openModal('Edit Markdown');
+        renderSelectedImages();
         loadImageFolderOptions();
         document.getElementById('mdEditorNewFolderRow')?.classList.remove('is-visible');
         setStatus('Loading Markdown...');
@@ -883,12 +929,14 @@
     }
 
     function openNew() {
+        state.selectedImages = [];
         state.mode = 'new';
         state.folder = 'md2';
         state.page = '';
         state.path = '';
         state.sha = '';
         openModal('New Markdown Page');
+        renderSelectedImages();
         loadImageFolderOptions();
         document.getElementById('mdEditorNewFolderRow')?.classList.add('is-visible');
         loadMarkdownFolderOptions();
