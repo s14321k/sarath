@@ -95,7 +95,7 @@
                 width: 100vw;
                 height: 100vh;
                 display: grid;
-                grid-template-rows: auto auto auto auto 1fr auto;
+                grid-template-rows: auto auto auto auto auto 1fr auto;
                 gap: 12px;
                 background: #101923;
                 border: 1px solid rgba(255,255,255,.14);
@@ -240,6 +240,83 @@
                 min-width: 220px;
                 background-color: darkslategray;
             }
+            .md-editor-image-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            .md-editor-image-row label { color: #c5d3df; font: 600 13px/1.3 'Work Sans', sans-serif; }
+            .md-editor-image-row input[type="text"] { max-width: 220px; }
+            .md-editor-file-picker { position: relative; display: inline-flex; }
+            .md-editor-file-input {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border: 0;
+            }
+            .md-editor-file-choose {
+                display: inline-flex;
+                align-items: center;
+                gap: 9px;
+                min-height: 42px;
+                padding: 0 16px;
+                border: 1px solid rgba(159,216,201,.42);
+                border-radius: 12px;
+                background: linear-gradient(135deg, rgba(27,75,83,.95), rgba(31,48,67,.98));
+                color: #e9fff9 !important;
+                font: 700 13px/1 'Work Sans', sans-serif !important;
+                cursor: pointer;
+                box-shadow: 0 8px 22px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.08);
+                transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+            }
+            .md-editor-file-choose::before { content: '＋'; font-size: 18px; color: #9fd8c9; }
+            .md-editor-file-choose:hover {
+                transform: translateY(-1px);
+                border-color: #9fd8c9;
+                box-shadow: 0 11px 26px rgba(0,0,0,.3), 0 0 18px rgba(159,216,201,.12);
+            }
+            .md-editor-file-input:focus-visible + .md-editor-file-choose {
+                outline: 2px solid #9fd8c9;
+                outline-offset: 3px;
+            }
+            .md-editor-selected-file {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                min-height: 36px;
+                max-width: 260px;
+                padding: 0 18px 0 11px;
+                border: 1px solid rgba(159,216,201,.24);
+                border-radius: 10px;
+                background: rgba(159,216,201,.08);
+                color: #e4f4ef;
+                font: 600 12px/1.3 'Work Sans', sans-serif;
+            }
+            .md-editor-selected-file[hidden] { display: none; }
+            .md-editor-selected-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .md-editor-file-remove {
+                position: absolute;
+                top: -9px;
+                right: -9px;
+                width: 21px;
+                height: 21px;
+                display: grid;
+                place-items: center;
+                padding: 0 !important;
+                border: 1px solid rgba(255,255,255,.7) !important;
+                border-radius: 50% !important;
+                background: #d94c60 !important;
+                color: #fff !important;
+                font: 700 15px/1 'Work Sans', sans-serif !important;
+                cursor: pointer;
+                box-shadow: 0 2px 8px rgba(0,0,0,.38);
+            }
             .md-editor-ai-row {
                 display: grid;
                 grid-template-columns: 1fr auto auto auto auto auto;
@@ -311,6 +388,21 @@
                     <button type="button" class="md-editor-ai" data-md-ai="append">Append Answer</button>
                     <button type="button" class="md-editor-view" data-md-view-toggle="1">Preview</button>
                 </div>
+                <div class="md-editor-image-row">
+                    <div class="md-editor-file-picker">
+                        <input id="mdEditorImageFile" class="md-editor-file-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp">
+                        <label class="md-editor-file-choose" for="mdEditorImageFile">Choose image</label>
+                    </div>
+                    <div id="mdEditorSelectedFile" class="md-editor-selected-file" hidden>
+                        <span id="mdEditorSelectedName" class="md-editor-selected-name"></span>
+                        <button type="button" id="mdEditorRemoveImage" class="md-editor-file-remove" aria-label="Remove selected image">×</button>
+                    </div>
+                    <select id="mdEditorImageFolder" class="md-editor-folder-select" aria-label="Choose image subfolder">
+                        <option value="">Loading image folders…</option>
+                    </select>
+                    <input id="mdEditorNewImageFolder" class="md-editor-input" type="text" placeholder="New child folder name" hidden>
+                    <button type="button" id="mdEditorUploadImage" class="md-editor-ai">Upload &amp; Insert</button>
+                </div>
                 <div class="md-editor-input-wrap">
                     <textarea id="mdEditorText" class="md-editor-textarea" spellcheck="false"></textarea>
                     <output id="mdEditorCount" class="md-editor-count" aria-live="polite">0 characters</output>
@@ -327,6 +419,18 @@
             if (ev.target === modal || ev.target.closest('[data-md-close="1"]')) closeModal();
         });
         document.getElementById('mdEditorSave')?.addEventListener('click', saveMarkdown);
+        document.getElementById('mdEditorUploadImage')?.addEventListener('click', uploadEditorImage);
+        document.getElementById('mdEditorImageFile')?.addEventListener('change', (ev) => {
+            const file = ev.target.files?.[0];
+            document.getElementById('mdEditorSelectedName').textContent = file?.name || '';
+            document.getElementById('mdEditorSelectedFile').hidden = !file;
+        });
+        document.getElementById('mdEditorRemoveImage')?.addEventListener('click', clearSelectedImage);
+        document.getElementById('mdEditorImageFolder')?.addEventListener('change', (ev) => {
+            const isNewFolder = ev.target.value === '__new__';
+            document.getElementById('mdEditorNewImageFolder').hidden = !isNewFolder;
+            if (isNewFolder) document.getElementById('mdEditorNewImageFolder').focus();
+        });
         document.getElementById('mdEditorFolderSelect')?.addEventListener('change', (ev) => {
             state.folder = ev.target.value || 'md2';
         });
@@ -661,6 +765,92 @@
         }
     }
 
+    async function loadImageFolderOptions() {
+        const select = document.getElementById('mdEditorImageFolder');
+        if (!select) return;
+        select.innerHTML = '<option value="">Loading image folders…</option>';
+        try {
+            const data = await callApi({ eventType: 'image_folders' });
+            const folders = Array.isArray(data.folders) ? data.folders : [];
+            const options = folders.map((folder) =>
+                `<option value="${escapeHtml(folder)}">images/${escapeHtml(folder)}/</option>`
+            ).join('');
+            select.innerHTML = options + '<option value="__new__">Create a new folder…</option>';
+            if (folders.length) {
+                select.value = folders[0];
+                document.getElementById('mdEditorNewImageFolder').hidden = true;
+            } else {
+                select.innerHTML = '<option value="">No child folders found</option>' + select.innerHTML;
+                select.value = '';
+                document.getElementById('mdEditorNewImageFolder').hidden = true;
+                setStatus(`Cloud Run found no child folders under images/ in ${data.repo || 'the configured GH_FE_REPO'} (${data.branch || 'configured branch'}).`, true);
+            }
+        } catch (error) {
+            select.innerHTML = '<option value="">Existing folders unavailable</option><option value="__new__">Create a new folder…</option>';
+            select.value = '';
+            document.getElementById('mdEditorNewImageFolder').hidden = true;
+            setStatus(error.message || 'Unable to load image folders from the configured GitHub repository.', true);
+        }
+    }
+
+    async function uploadEditorImage() {
+        const fileInput = document.getElementById('mdEditorImageFile');
+        const file = fileInput?.files?.[0];
+        const folderSelect = document.getElementById('mdEditorImageFolder');
+        const folder = folderSelect?.value === '__new__'
+            ? (document.getElementById('mdEditorNewImageFolder')?.value || '').trim()
+            : (folderSelect?.value || '');
+        if (!file) return setStatus('Choose an image file to upload.', true);
+        if (!folder) return setStatus('Choose an existing image folder or enter a new folder name.', true);
+        if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type) || file.size > 8 * 1024 * 1024) {
+            return setStatus('Choose a PNG, JPEG, GIF, or WebP image up to 8 MB.', true);
+        }
+        setStatus('Uploading image to the interView repository…');
+        try {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(new Error('Unable to read the selected image.'));
+                reader.readAsDataURL(file);
+            });
+            const result = await callApi({
+                eventType: 'image_upload',
+                folder,
+                filename: file.name,
+                mimeType: file.type,
+                contentBase64: dataUrl.slice(dataUrl.indexOf(',') + 1)
+            });
+            const imageUrl = `/${result.path.split('/').map((part) => encodeURIComponent(part)).join('/')}`;
+            const alt = file.name.replace(/\.[^.]+$/, '').replace(/[\[\]]/g, '');
+            const markdown = `![${alt}](${imageUrl})`;
+            const textarea = document.getElementById('mdEditorText');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const before = textarea.value.slice(0, start);
+            const after = textarea.value.slice(end);
+            const prefix = before && !before.endsWith('\n') ? '\n' : '';
+            const suffix = after && !after.startsWith('\n') ? '\n' : '';
+            const insertion = `${prefix}${markdown}${suffix}`;
+            textarea.value = `${before}${insertion}${after}`;
+            textarea.focus();
+            textarea.selectionStart = textarea.selectionEnd = start + insertion.length;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+            clearSelectedImage();
+            setStatus(`Uploaded to ${result.path} and inserted the Markdown image link.`);
+        } catch (error) {
+            setStatus(error.message || 'Image upload failed.', true);
+        }
+    }
+
+    function clearSelectedImage() {
+        const fileInput = document.getElementById('mdEditorImageFile');
+        if (fileInput) fileInput.value = '';
+        const selected = document.getElementById('mdEditorSelectedFile');
+        if (selected) selected.hidden = true;
+        const name = document.getElementById('mdEditorSelectedName');
+        if (name) name.textContent = '';
+    }
+
     async function openEdit() {
         const route = currentRoute();
         if (!route) return;
@@ -670,6 +860,7 @@
         state.path = '';
         state.sha = '';
         openModal('Edit Markdown');
+        loadImageFolderOptions();
         document.getElementById('mdEditorNewFolderRow')?.classList.remove('is-visible');
         setStatus('Loading Markdown...');
         try {
@@ -698,6 +889,7 @@
         state.path = '';
         state.sha = '';
         openModal('New Markdown Page');
+        loadImageFolderOptions();
         document.getElementById('mdEditorNewFolderRow')?.classList.add('is-visible');
         loadMarkdownFolderOptions();
         document.getElementById('mdEditorFilename').disabled = false;
