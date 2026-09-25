@@ -135,6 +135,25 @@
                 height: 100%;
                 min-height: 420px;
                 line-height: 1.55;
+                padding-bottom: 38px;
+            }
+            .md-editor-input-wrap {
+                position: relative;
+                min-height: 420px;
+            }
+            .md-editor-count {
+                position: absolute;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 1;
+                padding: 4px 10px;
+                border: 1px solid rgba(255,255,255,.16);
+                border-radius: 999px;
+                background: rgba(16,25,35,.9);
+                color: #c5d3df;
+                font: 600 12px/1.2 'Work Sans', sans-serif;
+                pointer-events: none;
             }
             .md-editor-preview {
                 display: none;
@@ -271,7 +290,10 @@
                     <button type="button" class="md-editor-ai" data-md-ai="append">Append Answer</button>
                     <button type="button" class="md-editor-view" data-md-view-toggle="1">Preview</button>
                 </div>
-                <textarea id="mdEditorText" class="md-editor-textarea" spellcheck="false"></textarea>
+                <div class="md-editor-input-wrap">
+                    <textarea id="mdEditorText" class="md-editor-textarea" spellcheck="false"></textarea>
+                    <output id="mdEditorCount" class="md-editor-count" aria-live="polite">0 characters</output>
+                </div>
                 <div id="mdEditorPreview" class="md-editor-preview" aria-live="polite"></div>
                 <div class="md-editor-actions-row">
                     <div id="mdEditorStatus" class="md-editor-status"></div>
@@ -424,6 +446,11 @@
 
     function refreshPreview() {
         const source = document.getElementById('mdEditorText')?.value || '';
+        const count = document.getElementById('mdEditorCount');
+        if (count) {
+            const total = Array.from(source).length;
+            count.textContent = `${total.toLocaleString()} ${total === 1 ? 'character' : 'characters'}`;
+        }
         const preview = document.getElementById('mdEditorPreview');
         if (!preview) return;
         preview.innerHTML = markdownToHtml(source);
@@ -561,6 +588,7 @@
             document.getElementById('mdEditorFilename').disabled = true;
             document.getElementById('mdEditorCommit').value = `Update ${data.filename || route.page}`;
             document.getElementById('mdEditorText').value = data.content || '';
+            refreshPreview();
             setStatus('');
         } catch (error) {
             setStatus(error.message || 'Unable to load Markdown.', true);
@@ -578,6 +606,7 @@
         document.getElementById('mdEditorFilename').value = '';
         document.getElementById('mdEditorCommit').value = 'Add new markdown page';
         document.getElementById('mdEditorText').value = '# New Page\n\nAdd content here.\n';
+        refreshPreview();
         setStatus('New files are created under md2/.');
     }
 
