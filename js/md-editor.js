@@ -32,9 +32,9 @@
         // Generic page.html?page=gcp pattern
         const pageParam = url.searchParams.get('page');
         if (pageParam && /\/pages1?\/page\.html$/i.test(url.pathname)) {
-            const folder = url.pathname.includes('/pages1/') ? 'md1' : 'md2';
+            const folder = url.searchParams.get('folder') || (url.pathname.includes('/pages1/') ? 'md1' : 'md2');
             const clean = pageParam.replace(/[^a-zA-Z0-9_-]/g, '');
-            if (clean && clean !== 'pdf-viewer') {
+            if (clean && clean !== 'pdf-viewer' && /^(md1|md2)(\/[a-zA-Z0-9 _.-]+)*$/.test(folder)) {
                 return { folder, page: clean };
             }
         }
@@ -95,7 +95,7 @@
                 width: 100vw;
                 height: 100vh;
                 display: grid;
-                grid-template-rows: auto auto auto 1fr auto;
+                grid-template-rows: auto auto auto auto 1fr auto;
                 gap: 12px;
                 background: #101923;
                 border: 1px solid rgba(255,255,255,.14);
@@ -120,6 +120,7 @@
                 gap: 10px;
             }
             .md-editor-input,
+            .md-editor-folder-select,
             .md-editor-textarea {
                 width: 100%;
                 border: 1px solid rgba(255,255,255,.14);
@@ -225,6 +226,20 @@
                 justify-content: space-between;
                 gap: 12px;
             }
+            .md-editor-new-folder-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: #c5d3df;
+                font: 600 13px/1.3 'Work Sans', sans-serif;
+                visibility: hidden;
+            }
+            .md-editor-new-folder-row.is-visible { visibility: visible; }
+            .md-editor-folder-select {
+                width: auto;
+                min-width: 220px;
+                background-color: darkslategray;
+            }
             .md-editor-ai-row {
                 display: grid;
                 grid-template-columns: 1fr auto auto auto auto auto;
@@ -282,6 +297,12 @@
                     <input id="mdEditorFilename" class="md-editor-input" placeholder="Filename, e.g. Java Notes.md">
                     <input id="mdEditorCommit" class="md-editor-input" placeholder="Commit message">
                 </div>
+                <div class="md-editor-new-folder-row" id="mdEditorNewFolderRow">
+                    <span>New files are created under</span>
+                    <select id="mdEditorFolderSelect" class="md-editor-folder-select" aria-label="Folder for new Markdown file">
+                        <option value="md2">md2/</option>
+                    </select>
+                </div>
                 <div class="md-editor-ai-row">
                     <input id="mdEditorAiPrompt" class="md-editor-input" placeholder="Ask AI about this Markdown">
                     <button type="button" class="md-editor-ai" data-md-ai="settings">AI Settings</button>
@@ -306,6 +327,9 @@
             if (ev.target === modal || ev.target.closest('[data-md-close="1"]')) closeModal();
         });
         document.getElementById('mdEditorSave')?.addEventListener('click', saveMarkdown);
+        document.getElementById('mdEditorFolderSelect')?.addEventListener('change', (ev) => {
+            state.folder = ev.target.value || 'md2';
+        });
         document.getElementById('mdEditorText')?.addEventListener('input', refreshPreview);
         modal.addEventListener('click', (ev) => {
             const action = ev.target?.closest?.('[data-md-ai]')?.dataset.mdAi;
@@ -566,6 +590,77 @@
         setView('raw');
     }
 
+    async function loadMarkdownFolderOptions() {
+        const select = document.getElementById('mdEditorFolderSelect');
+        if (!select) return;
+        const cacheKey = 'mdEditorMarkdownFolders';
+        const validFolder = (folder) => /^md2(?:\/[a-zA-Z0-9 _.-]+)*$/.test(folder);
+        const renderOptions = (folders) => {
+            const uniqueFolders = [...new Set(['md2', ...folders.filter(validFolder)])];
+            const selected = state.folder || 'md2';
+            select.innerHTML = uniqueFolders.map((folder) =>
+                `<option value="${escapeHtml(folder)}">${escapeHtml(folder)}/</option>`
+            ).join('');
+            select.value = uniqueFolders.includes(selected) ? selected : 'md2';
+            state.folder = select.value;
+        };
+
+        // Restore the last known folder list immediately while the index refreshes.
+        try {
+            const cached = JSON.parse(sessionStorage.getItem(cacheKey) || '[]');
+            if (Array.isArray(cached)) renderOptions(cached);
+        } catch {}
+
+        let data = null;
+        if (endpoint) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ eventType: 'index_content' })
+                });
+                if (response.ok) data = await response.json();
+            } catch {}
+        }
+        const hasTree = Array.isArray(data?.markdownTree) || Array.isArray(data?.cards) || Array.isArray(data);
+        if (!hasTree) {
+            try {
+                const response = await fetch('data/index.json', { cache: 'no-store' });
+                if (response.ok) data = await response.json();
+            } catch {}
+        }
+        const folders = [];
+        const visit = (items, parent) => {
+            for (const item of (Array.isArray(items) ? items : [])) {
+                if (item.type === 'folder' && item.name) {
+                    const path = `${parent}/${item.name}`;
+                    if (validFolder(path)) folders.push(path);
+                    visit(item.children, path);
+                } else if (item.type === 'page' && validFolder(item.folder || '')) {
+                    const parts = item.folder.split('/');
+                    for (let i = 2; i <= parts.length; i += 1) folders.push(parts.slice(0, i).join('/'));
+                }
+            }
+        };
+        const addFoldersFrom = (sourceData) => {
+            const sources = [sourceData?.markdownTree, sourceData?.cards, Array.isArray(sourceData) ? sourceData : null];
+            for (const source of sources) visit(source, 'md2');
+        };
+        addFoldersFrom(data);
+        // A legacy Cloud Run response may contain flat cards but omit markdownTree.
+        // In that case use the locally deployed index tree if it is available.
+        if (!folders.length && endpoint) {
+            try {
+                const response = await fetch('data/index.json', { cache: 'no-store' });
+                if (response.ok) addFoldersFrom(await response.json());
+            } catch {}
+        }
+        if (folders.length) {
+            try { sessionStorage.setItem(cacheKey, JSON.stringify([...new Set(folders)])); } catch {}
+            renderOptions(folders);
+        }
+    }
+
     async function openEdit() {
         const route = currentRoute();
         if (!route) return;
@@ -575,6 +670,7 @@
         state.path = '';
         state.sha = '';
         openModal('Edit Markdown');
+        document.getElementById('mdEditorNewFolderRow')?.classList.remove('is-visible');
         setStatus('Loading Markdown...');
         try {
             const data = await callApi({
@@ -602,12 +698,14 @@
         state.path = '';
         state.sha = '';
         openModal('New Markdown Page');
+        document.getElementById('mdEditorNewFolderRow')?.classList.add('is-visible');
+        loadMarkdownFolderOptions();
         document.getElementById('mdEditorFilename').disabled = false;
         document.getElementById('mdEditorFilename').value = '';
         document.getElementById('mdEditorCommit').value = 'Add new markdown page';
         document.getElementById('mdEditorText').value = '# New Page\n\nAdd content here.\n';
         refreshPreview();
-        setStatus('New files are created under md2/.');
+        setStatus('');
     }
 
     async function saveMarkdown() {

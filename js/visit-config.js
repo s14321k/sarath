@@ -1,10 +1,10 @@
 // Set this to your deployed worker URL, e.g. https://visit-ingest.yourname.workers.dev
 
 //Cloud-Run
-// window.VISIT_ENDPOINT = "https://visit-ingest-func-ofmel7gutq-el.a.run.app"
+window.VISIT_ENDPOINT = "https://visit-ingest-func-ofmel7gutq-el.a.run.app"
 
 //Cloud-Run-function
-window.VISIT_ENDPOINT = "https://visit-ingest-342647168408.asia-south1.run.app"
+// window.VISIT_ENDPOINT = "https://visit-ingest-342647168408.asia-south1.run.app"
 
 
 // AWS

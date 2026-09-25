@@ -85,20 +85,27 @@
          * This allows the loader to access page metadata without making extra requests
          */
         const registry = {};
-        for (const card of cards) {
-            if (card.type === 'page' && card.href) {
+        const visit = (items) => {
+            for (const card of items) {
+                if (card.type === 'folder') {
+                    visit(Array.isArray(card.children) ? card.children : []);
+                    continue;
+                }
+                if (card.type === 'page' && card.href) {
                 // Extract page name from href like: pages/page.html?page=java-basics
-                const match = card.href.match(/\?page=([^&]+)/);
-                if (match) {
-                    const pageName = match[1];
-                    registry[pageName] = {
-                        title: card.title,
-                        description: card.description,
-                        icon: card.icon
-                    };
+                    const match = card.href.match(/\?page=([^&]+)/);
+                    if (match) {
+                        const pageName = match[1];
+                        registry[pageName] = {
+                            title: card.name || card.title,
+                            description: card.description || '',
+                            icon: card.icon || ''
+                        };
+                    }
                 }
             }
-        }
+        };
+        visit(cards);
         return registry;
     }
 
@@ -120,17 +127,58 @@
 
         try {
             const data = await loadIndexData();
-            const cards = Array.isArray(data?.cards) ? data.cards : [];
+            // Accept both the current { cards, markdownTree } format and the
+            // legacy index.json format where the file itself is a cards array.
+            const cards = Array.isArray(data) ? data : (Array.isArray(data?.cards) ? data.cards : []);
 
             // Build page registry for generic page loader
             window.pageRegistry = buildPageRegistry(cards);
 
-            $('cardsGrid').innerHTML = cards.map(cardHtml).join('');
-            renderLibraryLists();
-            if (status) status.textContent = '';
+            const grid = $('cardsGrid');
+            const tree = Array.isArray(data?.markdownTree)
+                ? data.markdownTree
+                : cards
+                    .filter((card) => card.type === 'page' && /^pages\//.test(card.href || ''))
+                    .map((card) => ({ type: 'page', name: card.title, href: card.href }));
+            renderMarkdownTree(grid, tree);
+            if (status) status.textContent = tree.length ? '' : 'No Markdown pages found in md2.';
         } catch (err) {
             if (status) status.textContent = 'Unable to load index content.';
         }
+    }
+
+    function renderMarkdownTree(grid, tree) {
+        if (!grid) return;
+        let current = tree;
+        const trail = [];
+        const draw = () => {
+            const crumbs = trail.map((entry, index) => `<button type="button" class="folder-crumb" data-crumb="${index}">${escapeHtml(entry.name)}</button>`).join(' / ');
+            grid.innerHTML = `${trail.length ? `<div class="folder-navigation"><button type="button" class="folder-back" data-back>← Back</button><span>${crumbs}</span></div>` : ''}` +
+                current.map((item) => item.type === 'folder'
+                    ? `<button type="button" class="card folder-card" data-folder="${escapeHtml(item.name)}"><div class="card-icon" aria-hidden="true">📁</div><h2>${escapeHtml(item.name)}</h2><p>Open folder</p></button>`
+                    : `<a class="card markdown-card" href="${escapeHtml(item.href)}"><div class="card-icon" aria-hidden="true">📄</div><h2>${escapeHtml(item.name)}</h2><p>Markdown guide</p><span class="card-status available">Available</span></a>`).join('');
+            grid.querySelectorAll('[data-folder]').forEach((button) => button.addEventListener('click', () => {
+                const folder = current.find((item) => item.type === 'folder' && item.name === button.dataset.folder);
+                if (!folder) return;
+                trail.push({ name: folder.name, items: current });
+                current = folder.children || [];
+                draw();
+            }));
+            grid.querySelector('[data-back]')?.addEventListener('click', () => {
+                const parent = trail.pop();
+                if (!parent) return;
+                current = parent.items;
+                draw();
+            });
+            grid.querySelectorAll('[data-crumb]').forEach((button) => button.addEventListener('click', () => {
+                const index = Number(button.dataset.crumb);
+                const parent = trail[index];
+                current = parent.items;
+                trail.length = index;
+                draw();
+            }));
+        };
+        draw();
     }
 
     if (document.readyState === 'loading') {
