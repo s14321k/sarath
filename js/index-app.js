@@ -135,19 +135,20 @@
             window.pageRegistry = buildPageRegistry(cards);
 
             const grid = $('cardsGrid');
+            const libraryCards = cards.filter((card) => card.type === 'pdf-list' || card.type === 'html-list');
             const tree = Array.isArray(data?.markdownTree)
                 ? data.markdownTree
                 : cards
                     .filter((card) => card.type === 'page' && /^pages\//.test(card.href || ''))
                     .map((card) => ({ type: 'page', name: card.title, href: card.href }));
-            renderMarkdownTree(grid, tree);
+            renderMarkdownTree(grid, tree, libraryCards);
             if (status) status.textContent = tree.length ? '' : 'No Markdown pages found in md2.';
         } catch (err) {
             if (status) status.textContent = 'Unable to load index content.';
         }
     }
 
-    function renderMarkdownTree(grid, tree) {
+    function renderMarkdownTree(grid, tree, libraryCards = []) {
         if (!grid) return;
         let current = tree;
         const trail = [];
@@ -157,6 +158,8 @@
                 current.map((item) => item.type === 'folder'
                     ? `<button type="button" class="card folder-card" data-folder="${escapeHtml(item.name)}"><div class="card-icon" aria-hidden="true">📁</div><h2>${escapeHtml(item.name)}</h2><p>Open folder</p></button>`
                     : `<a class="card markdown-card" href="${escapeHtml(item.href)}"><div class="card-icon" aria-hidden="true">📄</div><h2>${escapeHtml(item.name)}</h2><p>Markdown guide</p><span class="card-status available">Available</span></a>`).join('');
+            if (!trail.length && libraryCards.length) grid.insertAdjacentHTML('afterbegin', libraryCards.map(cardHtml).join(''));
+            renderLibraryLists();
             grid.querySelectorAll('[data-folder]').forEach((button) => button.addEventListener('click', () => {
                 const folder = current.find((item) => item.type === 'folder' && item.name === button.dataset.folder);
                 if (!folder) return;
